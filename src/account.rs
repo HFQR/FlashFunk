@@ -37,7 +37,8 @@ impl Account {
         self.pre_balance + self.float_pnl() + close_profit - frozen_fee - fee - self.margin() - self.frozen_margin()
     }
     /// 净值
-    fn balance() -> f64 { unimplemented!() }
+    fn balance(&mut self) -> f64 {
+    }
     /// 更新成交单
     fn update_trade(&mut self, data: TradeData) { unimplemented!() }
     /// 更新报单
