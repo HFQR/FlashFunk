@@ -7,40 +7,40 @@ use std::option::Option;
 /// Tick Data
 #[allow(dead_code)]
 pub struct TickData {
-    symbol: Option<String>,
-    exchange: Option<Exchange>,
-    datetime: Option<DateTime<Utc>>,
-    name: Option<String>,
-    volume: f64,
-    open_interest: f64,
-    last_price: f64,
-    last_volume: f64,
-    limit_up: f64,
-    limit_down: f64,
-    open_price: f64,
-    high_price: f64,
-    low_price: f64,
-    pre_close: f64,
-    bid_price_1: f64,
-    bid_price_2: f64,
-    bid_price_3: f64,
-    bid_price_4: f64,
-    bid_price_5: f64,
-    ask_price_1: f64,
-    ask_price_2: f64,
-    ask_price_3: f64,
-    ask_price_4: f64,
-    ask_price_5: f64,
-    bid_volume_1: f64,
-    bid_volume_2: f64,
-    bid_volume_3: f64,
-    bid_volume_4: f64,
-    bid_volume_5: f64,
-    ask_volume_1: f64,
-    ask_volume_2: f64,
-    ask_volume_3: f64,
-    ask_volume_4: f64,
-    ask_volume_5: f64,
+    pub symbol: Option<String>,
+    pub exchange: Option<Exchange>,
+    pub datetime: Option<DateTime<Utc>>,
+    pub name: Option<String>,
+    pub volume: f64,
+    pub open_interest: f64,
+    pub last_price: f64,
+    pub last_volume: f64,
+    pub limit_up: f64,
+    pub limit_down: f64,
+    pub open_price: f64,
+    pub high_price: f64,
+    pub low_price: f64,
+    pub pre_close: f64,
+    pub bid_price_1: f64,
+    pub bid_price_2: f64,
+    pub bid_price_3: f64,
+    pub bid_price_4: f64,
+    pub bid_price_5: f64,
+    pub ask_price_1: f64,
+    pub ask_price_2: f64,
+    pub ask_price_3: f64,
+    pub ask_price_4: f64,
+    pub ask_price_5: f64,
+    pub bid_volume_1: f64,
+    pub bid_volume_2: f64,
+    pub bid_volume_3: f64,
+    pub bid_volume_4: f64,
+    pub bid_volume_5: f64,
+    pub ask_volume_1: f64,
+    pub ask_volume_2: f64,
+    pub ask_volume_3: f64,
+    pub ask_volume_4: f64,
+    pub ask_volume_5: f64,
 }
 
 impl Default for TickData {
@@ -87,16 +87,16 @@ impl Default for TickData {
 /// Bar Data
 #[allow(dead_code)]
 pub struct BarData {
-    symbol: Option<String>,
-    exchange: Option<Exchange>,
-    datetime: Option<DateTime<Utc>>,
-    interval: Option<Interval>,
-    volume: f64,
-    open_interest: f64,
-    open_price: f64,
-    high_price: f64,
-    low_price: f64,
-    close_price: f64,
+    pub symbol: Option<String>,
+    pub exchange: Option<Exchange>,
+    pub datetime: Option<DateTime<Utc>>,
+    pub interval: Option<Interval>,
+    pub volume: f64,
+    pub open_interest: f64,
+    pub open_price: f64,
+    pub high_price: f64,
+    pub low_price: f64,
+    pub close_price: f64,
 }
 
 impl Default for BarData {
@@ -119,17 +119,17 @@ impl Default for BarData {
 /// Order Data
 #[allow(dead_code)]
 pub struct OrderData {
-    symbol: Option<String>,
-    exchange: Option<Exchange>,
-    datetime: Option<DateTime<Utc>>,
-    orderid: Option<String>,
-    order_type: OrderType,
-    direction: Option<Direction>,
-    offset: Offset,
-    price: f64,
-    volume: f64,
-    traded: f64,
-    status: Option<Status>,
+    pub symbol: Option<String>,
+    pub exchange: Option<Exchange>,
+    pub datetime: Option<DateTime<Utc>>,
+    pub orderid: Option<String>,
+    pub order_type: OrderType,
+    pub direction: Option<Direction>,
+    pub offset: Offset,
+    pub price: f64,
+    pub volume: f64,
+    pub traded: f64,
+    pub status: Option<Status>,
 }
 
 impl Default for OrderData {
@@ -153,15 +153,15 @@ impl Default for OrderData {
 /// Trade Data
 #[allow(dead_code)]
 pub struct TradeData {
-    symbol: Option<String>,
-    exchange: Option<Exchange>,
-    datetime: Option<DateTime<Utc>>,
-    orderid: Option<String>,
-    tradeid: Option<String>,
-    direction: Option<Direction>,
-    offset: Option<Offset>,
-    price: f64,
-    volume: f64,
+    pub symbol: Option<String>,
+    pub exchange: Option<Exchange>,
+    pub datetime: Option<DateTime<Utc>>,
+    pub orderid: Option<String>,
+    pub tradeid: Option<String>,
+    pub direction: Option<Direction>,
+    pub offset: Option<Offset>,
+    pub price: f64,
+    pub volume: f64,
 }
 
 impl Default for TradeData {
@@ -183,14 +183,15 @@ impl Default for TradeData {
 /// Position Data
 #[allow(dead_code)]
 pub struct PositionData {
-    symbol: Option<String>,
-    exchange: Option<Exchange>,
-    direction: Option<Direction>,
-    volume: f64,
-    frozen: f64,
-    price: f64,
-    pnl: f64,
-    yd_volume: f64,
+    pub symbol: Option<String>,
+    pub exchange: Option<Exchange>,
+    pub direction: Option<Direction>,
+    pub volume: f64,
+    pub frozen: f64,
+    pub price: f64,
+    pub pnl: f64,
+    pub yd_volume: f64,
+    pub available: f64,
 }
 
 impl Default for PositionData {
@@ -204,6 +205,7 @@ impl Default for PositionData {
             price: 0.0,
             pnl: 0.0,
             yd_volume: 0.0,
+            available: 0.0,
         }
     }
 }
@@ -211,30 +213,30 @@ impl Default for PositionData {
 /// Account Data
 #[allow(dead_code)]
 pub struct AccountData {
-    accountid: String,
-    balance: f64,
-    frozen: f64,
+    pub accountid: String,
+    pub balance: f64,
+    pub frozen: f64,
 }
 
 /// Contract Data
 #[allow(dead_code)]
 pub struct ContractData {
-    symbol: Option<String>,
-    exchange: Option<Exchange>,
-    name: Option<String>,
-    product: Option<Product>,
-    size: Option<i32>,
-    pricetick: f64,
-    min_volume: f64,
-    stop_supported: bool,
-    net_position: bool,
-    history_data: bool,
-    option_strike: f64,
-    option_underlying: Option<String>,
-    option_type: Option<OptionType>,
-    option_expiry: Option<DateTime<Utc>>,
-    option_portfolio: Option<String>,
-    option_index: Option<String>,
+    pub symbol: Option<String>,
+    pub exchange: Option<Exchange>,
+    pub name: Option<String>,
+    pub product: Option<Product>,
+    pub size: Option<i32>,
+    pub pricetick: f64,
+    pub min_volume: f64,
+    pub stop_supported: bool,
+    pub net_position: bool,
+    pub history_data: bool,
+    pub option_strike: f64,
+    pub option_underlying: Option<String>,
+    pub option_type: Option<OptionType>,
+    pub option_expiry: Option<DateTime<Utc>>,
+    pub option_portfolio: Option<String>,
+    pub option_index: Option<String>,
 }
 
 impl Default for ContractData {
@@ -263,37 +265,46 @@ impl Default for ContractData {
 /// Subscribe Request
 #[allow(dead_code)]
 pub struct SubscribeRequest {
-    symbol: String,
-    exchange: Exchange,
+    pub symbol: String,
+    pub exchange: Exchange,
 }
 
 /// Order Request
 #[allow(dead_code)]
 pub struct OrderRequest {
-    symbol: String,
-    exchange: Exchange,
-    direction: Direction,
-    order_type: OrderType,
-    volume: f64,
-    price: f64,
-    offset: Offset,
-    reference: Option<String>,
+    pub symbol: String,
+    pub exchange: Exchange,
+    pub direction: Direction,
+    pub order_type: OrderType,
+    pub volume: f64,
+    pub price: f64,
+    pub offset: Offset,
+    pub reference: Option<String>,
 }
 
 /// Cancel Request
 #[allow(dead_code)]
 pub struct CancelRequest {
-    orderid: String,
-    symbol: String,
-    exchange: Exchange,
+    pub orderid: String,
+    pub symbol: String,
+    pub exchange: Exchange,
 }
 
 /// History Request
 #[allow(dead_code)]
 pub struct HistoryRequest {
-    symbol: String,
-    exchange: Exchange,
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
-    interval: Interval,
+    pub symbol: String,
+    pub exchange: Exchange,
+    pub start: DateTime<Utc>,
+    pub end: DateTime<Utc>,
+    pub interval: Interval,
+}
+
+
+#[allow(dead_code)]
+pub struct ConnectInfo {}
+
+#[allow(dead_code)]
+pub struct Params {
+    pub connect_info: ConnectInfo
 }
