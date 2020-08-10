@@ -1,6 +1,6 @@
 //! # General Structs
 //! Author: Aaron Qiu
-use crate::enums::*;
+use crate::constants::*;
 use chrono::{DateTime, Utc};
 use std::option::Option;
 
