@@ -1,20 +1,23 @@
 //! # General Enum
 //! Author: Aaron Qiu
 
+#[allow(dead_code)]
 pub enum Direction {
     LONG,
     NET,
     SHORT,
 }
 
+#[allow(dead_code)]
 pub enum Offset {
+    NONE,
     CLOSE,
     CLOSETODAY,
     CLOSEYESTERDAY,
-    NONE,
     OPEN,
 }
 
+#[allow(dead_code)]
 pub enum Status {
     ALLTRADED,
     CANCELLED,
@@ -24,6 +27,7 @@ pub enum Status {
     SUBMITTING,
 }
 
+#[allow(dead_code)]
 pub enum Product {
     BOND,
     EQUITY,
@@ -38,6 +42,7 @@ pub enum Product {
     WARRANT,
 }
 
+#[allow(dead_code)]
 pub enum OrderType {
     FAK,
     FOK,
@@ -47,11 +52,13 @@ pub enum OrderType {
     STOP,
 }
 
+#[allow(dead_code)]
 pub enum OptionType {
     CALL,
     PUT,
 }
 
+#[allow(dead_code)]
 pub enum Exchange {
     // Chinese
     CFETS,
@@ -110,12 +117,14 @@ pub enum Exchange {
     OKEX,
 }
 
+#[allow(dead_code)]
 pub enum Currency {
     CNY,
     HKD,
     USD,
 }
 
+#[allow(dead_code)]
 pub enum Interval {
     MINUTE,
     HOUR,

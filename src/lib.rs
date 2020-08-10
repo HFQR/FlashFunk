@@ -1,6 +1,5 @@
-
-
-
+mod enums;
+mod structs;
 #[cfg(test)]
 mod tests {
     #[test]
