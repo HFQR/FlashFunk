@@ -1,5 +1,7 @@
+
 mod constants;
 mod structs;
+
 #[cfg(test)]
 mod tests {
     #[test]
