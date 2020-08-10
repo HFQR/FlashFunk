@@ -4,6 +4,7 @@ use crate::constants::*;
 use chrono::{DateTime, Utc};
 use std::option::Option;
 
+/// Tick Data
 #[allow(dead_code)]
 pub struct TickData {
     symbol: Option<String>,
@@ -83,6 +84,7 @@ impl Default for TickData {
     }
 }
 
+/// Bar Data
 #[allow(dead_code)]
 pub struct BarData {
     symbol: Option<String>,
@@ -114,6 +116,7 @@ impl Default for BarData {
     }
 }
 
+/// Order Data
 #[allow(dead_code)]
 pub struct OrderData {
     symbol: Option<String>,
@@ -147,6 +150,7 @@ impl Default for OrderData {
     }
 }
 
+/// Trade Data
 #[allow(dead_code)]
 pub struct TradeData {
     symbol: Option<String>,
@@ -176,6 +180,7 @@ impl Default for TradeData {
     }
 }
 
+/// Position Data
 #[allow(dead_code)]
 pub struct PositionData {
     symbol: Option<String>,
@@ -203,6 +208,7 @@ impl Default for PositionData {
     }
 }
 
+/// Account Data
 #[allow(dead_code)]
 pub struct AccountData {
     accountid: String,
@@ -210,6 +216,7 @@ pub struct AccountData {
     frozen: f64,
 }
 
+/// Contract Data
 #[allow(dead_code)]
 pub struct ContractData {
     symbol: Option<String>,
@@ -253,12 +260,14 @@ impl Default for ContractData {
     }
 }
 
+/// Subscribe Request
 #[allow(dead_code)]
 pub struct SubscribeRequest {
     symbol: String,
     exchange: Exchange,
 }
 
+/// Order Request
 #[allow(dead_code)]
 pub struct OrderRequest {
     symbol: String,
@@ -271,6 +280,7 @@ pub struct OrderRequest {
     reference: Option<String>,
 }
 
+/// Cancel Request
 #[allow(dead_code)]
 pub struct CancelRequest {
     orderid: String,
@@ -278,6 +288,7 @@ pub struct CancelRequest {
     exchange: Exchange,
 }
 
+/// History Request
 #[allow(dead_code)]
 pub struct HistoryRequest {
     symbol: String,
