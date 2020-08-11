@@ -1,11 +1,11 @@
 //! # General Structs
 //! Author: Aaron Qiu
+#![allow(dead_code)]
 use crate::constants::*;
 use chrono::{DateTime, Utc};
 use std::option::Option;
 
 /// Tick Data
-#[allow(dead_code)]
 pub struct TickData {
     pub symbol: Option<String>,
     pub exchange: Option<Exchange>,
@@ -85,7 +85,6 @@ impl Default for TickData {
 }
 
 /// Bar Data
-#[allow(dead_code)]
 pub struct BarData {
     pub symbol: Option<String>,
     pub exchange: Option<Exchange>,
@@ -117,7 +116,6 @@ impl Default for BarData {
 }
 
 /// Order Data
-#[allow(dead_code)]
 pub struct OrderData {
     pub symbol: Option<String>,
     pub exchange: Option<Exchange>,
@@ -151,7 +149,6 @@ impl Default for OrderData {
 }
 
 /// Trade Data
-#[allow(dead_code)]
 pub struct TradeData {
     pub symbol: Option<String>,
     pub exchange: Option<Exchange>,
@@ -181,7 +178,6 @@ impl Default for TradeData {
 }
 
 /// Position Data
-#[allow(dead_code)]
 pub struct PositionData {
     pub symbol: Option<String>,
     pub exchange: Option<Exchange>,
@@ -211,7 +207,6 @@ impl Default for PositionData {
 }
 
 /// Account Data
-#[allow(dead_code)]
 pub struct AccountData {
     pub accountid: String,
     pub balance: f64,
@@ -219,7 +214,6 @@ pub struct AccountData {
 }
 
 /// Contract Data
-#[allow(dead_code)]
 pub struct ContractData {
     pub symbol: Option<String>,
     pub exchange: Option<Exchange>,
@@ -263,14 +257,12 @@ impl Default for ContractData {
 }
 
 /// Subscribe Request
-#[allow(dead_code)]
 pub struct SubscribeRequest {
     pub symbol: String,
     pub exchange: Exchange,
 }
 
 /// Order Request
-#[allow(dead_code)]
 pub struct OrderRequest {
     pub symbol: String,
     pub exchange: Exchange,
@@ -283,7 +275,6 @@ pub struct OrderRequest {
 }
 
 /// Cancel Request
-#[allow(dead_code)]
 pub struct CancelRequest {
     pub orderid: String,
     pub symbol: String,
@@ -291,7 +282,6 @@ pub struct CancelRequest {
 }
 
 /// History Request
-#[allow(dead_code)]
 pub struct HistoryRequest {
     pub symbol: String,
     pub exchange: Exchange,
@@ -301,10 +291,8 @@ pub struct HistoryRequest {
 }
 
 
-#[allow(dead_code)]
 pub struct ConnectInfo {}
 
-#[allow(dead_code)]
 pub struct Params {
     pub connect_info: ConnectInfo
 }
