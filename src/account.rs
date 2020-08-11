@@ -24,7 +24,7 @@ pub struct Account {
     pub margin_ratio: HashMap<String, f64>,
     pub size_map: HashMap<String, f64>,
     // 冻结的手续费
-    pub frozen_fee: HashMap<String, Vec<OrderData>>,
+    pub frozen_fee: HashMap<String, f64>,
     // 手续费
     pub fee: HashMap<String, f64>,
     // 平仓盈亏
@@ -37,35 +37,39 @@ pub struct Account {
 
 
 impl Account {
-    /// 返回账户可用资金
     fn available(&mut self) -> f64 {
-        let frozen_fee: f64 = self.frozen_fee.values().into_iter().map(|x| {
-            let mut sum = 0.0;
-            for c in x {
-                sum += c.price * c.volume * self.commission_ratio.get(c.symbol.clone().unwrap().as_str()).unwrap().clone();
-            }
-            sum
-        }).collect::<Vec<f64>>().iter().sum();
+        let frozen_fee: f64 = self.frozen_fee.values().into_iter().sum();
         let fee: f64 = self.fee.values().into_iter().map(|x| { x.clone() }).collect::<Vec<f64>>().iter().sum();
         let close_profit: f64 = self.close_profit.values().into_iter().map(|x| { x.clone() }).collect::<Vec<f64>>().iter().sum();
         self.pre_balance + self.float_pnl() + close_profit - frozen_fee - fee - self.margin() - self.frozen_margin()
     }
-    /// 净值
+
     fn balance(&mut self) -> f64 {
         self.available() + self.margin()
     }
-    /// 更新成交单
-    /// 此处根据成交单更新成交
+    /// update trade
+    /// 1. add fee to actual fee
+    /// 2.remove frozen_fee if exist
+    /// 3.remove frozen if exist
+    /// 4. add close_profit
     fn update_trade(&mut self, data: TradeData) {
         let symbol: String = data.symbol.clone().unwrap().to_string();
-        // 手续费更新
+        // calculate fee for trade_data
         let commision = data.volume * data.price * *self.get_commission_ratio(symbol.as_str());
+
+        // Check the orderid if has been frozen
+        if let Some(order_id) = &data.orderid {
+            if self.frozen_fee.contains_key(order_id) {
+                self.frozen_fee.remove(order_id);
+            }
+        }
+        // insert fee to fact
         if let Some(t) = self.fee.get(symbol.as_str()) {
             self.fee.insert(symbol.clone(), commision + *t);
         } else {
             self.fee.insert(symbol.clone(), commision);
         }
-        // 成交单更新
+        // update margin_frozen if open else add close_profit for close action
         match data.offset.unwrap() {
             Offset::OPEN => {
                 self.count += 1.0;
@@ -75,13 +79,11 @@ impl Account {
                     }
                 }
             }
-            Offset::CLOSE => {
-                // 平仓
-                // let pos =
-                // let symbol = &data.symbol.clone().unwrap();
+            _ => {
+                // todo : let pos =
                 let close_profit = match data.direction.unwrap() {
                     Direction::LONG => {
-                        // 计算平仓盈亏
+                        //  replace 0.0 with  position avg price
                         (0.0 - data.price) * data.volume * *self.get_size_map(&symbol)
                     }
                     Direction::SHORT => {
@@ -95,44 +97,52 @@ impl Account {
                     self.close_profit.insert(symbol.clone(), close_profit);
                 }
             }
-            Offset::CLOSETODAY => {
-                match data.direction.unwrap() {
-                    Direction::LONG => {}
-                    Direction::SHORT => {}
-                    _ => {}
-                }
-            }
-            Offset::CLOSEYESTERDAY => {}
-            _ => { panic!("At Bad TradeData offset setting,  please checking your code first") }
         }
     }
+    /// return size by passed symbol
     fn get_size_map(&mut self, symbol: &str) -> &f64 {
         self.size_map.get(symbol).unwrap_or(0.0.borrow())
     }
-
+    /// return commission_ration by passed symbol
     fn get_commission_ratio(&mut self, symbol: &str) -> &f64 {
         self.commission_ratio.get(symbol).unwrap_or(0.0.borrow())
     }
-
+    /// return margin_ratio by passed symbol
     fn get_margin_ratio(&mut self, symbol: &str) -> &f64 {
         self.margin_ratio.get(symbol).unwrap_or(0.0.borrow())
     }
-    /// 更新报单
-    fn update_order(&mut self, data: OrderData) { unimplemented!() }
-    /// 更新仓位,主要用于更新仓位的实时价格
+    /// update order
+    /// 1.add frozen fee if open
+    /// 2.add margin_frozen if open
+    fn update_order(&mut self, data: OrderData) {
+        let symbol: String = data.symbol.clone().unwrap().to_string();
+        let commission_ratio = self.get_commission_ratio(&symbol).clone();
+        self.frozen_fee.insert(symbol.clone(), commission_ratio * data.volume * data.price);
+        match data.offset {
+            Offset::OPEN => {
+                // Add Margin frozen
+                let margin_ratio = self.get_margin_ratio(&symbol).clone();
+                self.margin_frozen_container.insert(data.orderid.unwrap().clone(), data.volume * data.price * margin_ratio);
+            }
+            _ => {}
+        }
+    }
+    /// update position by tick
+    /// refresh pnl in time
     fn update_tick(&mut self, tick: TickData) { unimplemented!() }
-    /// 浮动盈亏
+    ///  get the float pnl for account
     fn float_pnl(&mut self) -> f64 { unimplemented!() }
-    /// 保证金占用
+    ///  get the margin of position for the account
     fn margin(&mut self) -> f64 { unimplemented!() }
-    /// 结算
+    /// settle the account by passed a datetime
     fn settle(&mut self) -> bool { unimplemented!() }
-    /// 更新参数
+    /// update the params by pass a Params
+    /// it looks like hard to understand
     fn update_params(&mut self, params: Params) { unimplemented!() }
-    /// 冻结保证金
+    /// get the frozen , when day,end ,it will zero
     fn frozen_margin(&mut self) -> f64 { unimplemented!() }
 
-
+    /// generator a Account object named DailyResult, it will be written into database
     fn generate_self(&mut self) -> DailyResult { unimplemented!() }
 }
 
