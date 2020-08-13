@@ -44,6 +44,8 @@ pub struct Account {
     // 持仓冻结
     pub margin_frozen_container: HashMap<String, f64>,
     pub position_manager: PositionManager,
+    pub pre_close: HashMap<String, f64>,
+    pub price_mapping: HashMap<String, f64>,
 }
 
 
@@ -71,7 +73,7 @@ impl Account {
     /// 3.remove frozen if exist
     /// 4. add close_profit
     pub fn update_trade(&mut self, data: TradeData) {
-        let symbol: String = data.symbol.clone().unwrap().to_string();
+        let symbol = data.symbol.clone();
         // calculate fee for trade_data
         let commision = data.volume * data.price * *self.get_commission_ratio(symbol.as_str());
 
@@ -135,7 +137,7 @@ impl Account {
     /// 1.add frozen fee if open
     /// 2.add margin_frozen if open
     pub fn update_order(&mut self, data: OrderData) {
-        let symbol: String = data.symbol.clone().unwrap().to_string();
+        let symbol: String = data.symbol.clone();
         let commission_ratio = self.get_commission_ratio(&symbol).clone();
         self.frozen_fee.insert(symbol.clone(), commission_ratio * data.volume * data.price);
         match data.offset {
@@ -150,17 +152,53 @@ impl Account {
     /// update position by tick
     /// refresh pnl in time
     pub fn update_tick(&mut self, tick: TickData) { unimplemented!() }
-    ///  get the float pnl for account
-    pub fn float_pnl(&mut self) -> f64 { unimplemented!() }
+    /// Get the float pnl for account!
+    /// so the most important things is to calculate the float pnl. It should be regard as a  import things
+    /// And we should use replace the price  with pre_close_price  for yd `position`, and `price` for today volume,
+    /// so we had to maintain the pre_close and real_price both in looper or realtime trade
+    pub fn float_pnl(&mut self) -> f64 {
+        self.position_manager.get_all_positions().iter().map(|x| {
+            let real_price = self.get_real_price(x.symbol.as_str());
+            match x.direction.as_ref().unwrap() {
+                Direction::LONG => {
+                    if x.yd_volume.eq(&0.0) {
+                        x.volume * (real_price - x.price) * *self.get_size_map(x.symbol.as_str())
+                    } else {
+                        let today = x.volume - x.yd_volume;
+                        today * (real_price - x.price) * *self.get_size_map(x.symbol.as_str()) +
+                            x.yd_volume * (real_price - self.get_pre_price(x.symbol.as_str())) * *self.get_size_map(x.symbol.as_str())
+                    }
+                }
+                Direction::SHORT => {
+                    if x.yd_volume.eq(&0.0) {
+                        x.volume * (x.price - real_price) * *self.get_size_map(x.symbol.as_str())
+                    } else {
+                        let today = x.volume - x.yd_volume;
+                        today * (x.price - real_price) * *self.get_size_map(x.symbol.as_str()) +
+                            x.yd_volume * (self.get_pre_price(x.symbol.as_str()) - real_price) * *self.get_size_map(x.symbol.as_str())
+                    }
+                }
+                Direction::NET => {
+                    panic!("暂不支持")
+                }
+            }
+        }).collect::<Vec<f64>>().iter().sum()
+    }
+    /// 获取实时价格
+    fn get_real_price(&mut self, symbol: &str) -> f64 {
+        self.price_mapping.get(symbol).unwrap_or(&0.0).clone()
+    }
+    /// 获取昨日收盘价
+    fn get_pre_price(&mut self, symbol: &str) -> f64 {
+        self.pre_close.get(symbol).unwrap_or(&0.0).clone()
+    }
     ///  get the margin of position for the account
     pub fn margin(&mut self) -> f64 {
         let mut rs = 0.0;
 
         for pos in self.position_manager.get_all_positions() {
-            if let Some(t) = &pos.symbol {
-                let size = *self.get_size_map(t.as_str());
-                rs += pos.price * pos.volume * *self.get_margin_ratio(t.as_str()) * size
-            }
+            let size = *self.get_size_map(pos.symbol.as_str());
+            rs += pos.price * pos.volume * *self.get_margin_ratio(pos.symbol.as_str()) * size
         };
         rs
     }
@@ -171,7 +209,6 @@ impl Account {
     fn update_params(&mut self, params: Params) { unimplemented!() }
     /// get the frozen , when day,end ,it will zero
     pub fn frozen_margin(&mut self) -> f64 { unimplemented!() }
-
     /// generator a Account object named DailyResult, it will be written into database
     fn generate_self(&mut self) -> DailyResult {
         DailyResult {

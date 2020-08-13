@@ -8,7 +8,7 @@ use std::option::Option;
 
 /// Tick Data
 pub struct TickData {
-    pub symbol: Option<String>,
+    pub symbol: String,
     pub exchange: Option<Exchange>,
     pub datetime: Option<DateTime<Utc>>,
     pub name: Option<String>,
@@ -47,7 +47,7 @@ pub struct TickData {
 impl Default for TickData {
     fn default() -> TickData {
         TickData {
-            symbol: None,
+            symbol: "".to_string(),
             exchange: None,
             datetime: None,
             name: None,
@@ -87,7 +87,7 @@ impl Default for TickData {
 
 /// Bar Data
 pub struct BarData {
-    pub symbol: Option<String>,
+    pub symbol: String,
     pub exchange: Option<Exchange>,
     pub datetime: Option<DateTime<Utc>>,
     pub interval: Option<Interval>,
@@ -102,7 +102,7 @@ pub struct BarData {
 impl Default for BarData {
     fn default() -> BarData {
         BarData {
-            symbol: None,
+            symbol: "".to_string(),
             exchange: None,
             datetime: None,
             interval: None,
@@ -118,7 +118,7 @@ impl Default for BarData {
 
 /// Order Data
 pub struct OrderData {
-    pub symbol: Option<String>,
+    pub symbol: String,
     pub exchange: Option<Exchange>,
     pub datetime: Option<DateTime<Utc>>,
     pub orderid: Option<String>,
@@ -134,7 +134,7 @@ pub struct OrderData {
 impl Default for OrderData {
     fn default() -> OrderData {
         OrderData {
-            symbol: None,
+            symbol: "".to_string(),
             exchange: None,
             datetime: None,
             orderid: None,
@@ -151,7 +151,7 @@ impl Default for OrderData {
 
 /// Trade Data
 pub struct TradeData {
-    pub symbol: Option<String>,
+    pub symbol: String,
     pub exchange: Option<Exchange>,
     pub datetime: Option<DateTime<Utc>>,
     pub orderid: Option<String>,
@@ -165,7 +165,7 @@ pub struct TradeData {
 impl Default for TradeData {
     fn default() -> TradeData {
         TradeData {
-            symbol: None,
+            symbol: "".to_string(),
             exchange: None,
             datetime: None,
             orderid: None,
@@ -180,7 +180,7 @@ impl Default for TradeData {
 
 /// Position Data
 pub struct PositionData {
-    pub symbol: Option<String>,
+    pub symbol: String,
     pub exchange: Option<Exchange>,
     pub direction: Option<Direction>,
     pub volume: f64,
@@ -194,7 +194,7 @@ pub struct PositionData {
 impl Default for PositionData {
     fn default() -> PositionData {
         PositionData {
-            symbol: None,
+            symbol: "".to_string(),
             exchange: None,
             direction: None,
             volume: 0.0,
@@ -216,7 +216,7 @@ pub struct AccountData {
 
 /// Contract Data
 pub struct ContractData {
-    pub symbol: Option<String>,
+    pub symbol: String,
     pub exchange: Option<Exchange>,
     pub name: Option<String>,
     pub product: Option<Product>,
@@ -237,7 +237,7 @@ pub struct ContractData {
 impl Default for ContractData {
     fn default() -> ContractData {
         ContractData {
-            symbol: None,
+            symbol: "".to_string(),
             exchange: None,
             name: None,
             product: None,
