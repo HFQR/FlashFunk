@@ -2,19 +2,27 @@ use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::ops::{DerefMut, Deref};
 
-use crate::structs::{AccountData, OrderData, Params, TickData, TradeData};
+use crate::structs::{AccountData, OrderData, Params, TickData, TradeData, DailyResult};
 use std::borrow::Borrow;
 use crate::constants::{Offset, Direction};
 
-pub struct DailyResult {
-    available: f64,
-    balance: f64,
-    fee: f64,
-    margin: f64,
-    date: String,
+use crate::structs::PositionData;
+use std::sync::Arc;
+
+pub struct PositionManager {
+    pub account: Box<Arc<Account>>
 }
 
-///
+impl PositionManager {
+    fn get_all_positions(&mut self) -> Vec<PositionData> {
+        unimplemented!()
+    }
+}
+
+
+/// Account Instance
+/// It provides most public API to Accept data or solve data
+/// 
 pub struct Account {
     name: f64,
     pre_balance: f64,
@@ -33,17 +41,20 @@ pub struct Account {
     pub count: f64,
     // 持仓冻结
     pub margin_frozen_container: HashMap<String, f64>,
+    pub position_manager: PositionManager,
 }
 
 
 impl Account {
     fn available(&mut self) -> f64 {
         let frozen_fee: f64 = self.frozen_fee.values().into_iter().sum();
-        let fee: f64 = self.fee.values().into_iter().map(|x| { x.clone() }).collect::<Vec<f64>>().iter().sum();
+        let fee: f64 = self.get_fee_sum();
         let close_profit: f64 = self.close_profit.values().into_iter().map(|x| { x.clone() }).collect::<Vec<f64>>().iter().sum();
         self.pre_balance + self.float_pnl() + close_profit - frozen_fee - fee - self.margin() - self.frozen_margin()
     }
-
+    fn get_fee_sum(&mut self) -> f64 {
+        self.fee.values().into_iter().map(|x| { x.clone() }).collect::<Vec<f64>>().iter().sum()
+    }
     fn balance(&mut self) -> f64 {
         self.available() + self.margin()
     }
@@ -133,7 +144,17 @@ impl Account {
     ///  get the float pnl for account
     fn float_pnl(&mut self) -> f64 { unimplemented!() }
     ///  get the margin of position for the account
-    fn margin(&mut self) -> f64 { unimplemented!() }
+    fn margin(&mut self) -> f64 {
+        let mut rs = 0.0;
+
+        for pos in self.position_manager.get_all_positions() {
+            if let Some(t) = &pos.symbol {
+                let size = *self.get_size_map(t.as_str());
+                rs += pos.price * pos.volume * *self.get_margin_ratio(t.as_str()) * size
+            }
+        };
+        rs
+    }
     /// settle the account by passed a datetime
     fn settle(&mut self) -> bool { unimplemented!() }
     /// update the params by pass a Params
@@ -143,7 +164,15 @@ impl Account {
     fn frozen_margin(&mut self) -> f64 { unimplemented!() }
 
     /// generator a Account object named DailyResult, it will be written into database
-    fn generate_self(&mut self) -> DailyResult { unimplemented!() }
+    fn generate_self(&mut self) -> DailyResult {
+        DailyResult {
+            available: self.available(),
+            balance: self.balance(),
+            fee: self.get_fee_sum(),
+            margin: 0.0,
+            date: "".to_string(),
+        }
+    }
 }
 
 impl From<HashMap<String, f64>> for Account {

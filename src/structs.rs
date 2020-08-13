@@ -1,6 +1,7 @@
 //! # General Structs
 //! Author: Aaron Qiu
 #![allow(dead_code)]
+
 use crate::constants::*;
 use chrono::{DateTime, Utc};
 use std::option::Option;
@@ -295,4 +296,12 @@ pub struct ConnectInfo {}
 
 pub struct Params {
     pub connect_info: ConnectInfo
+}
+
+pub struct DailyResult {
+    pub available: f64,
+    pub balance: f64,
+    pub fee: f64,
+    pub margin: f64,
+    pub date: String,
 }
