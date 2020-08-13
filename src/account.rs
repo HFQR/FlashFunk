@@ -75,7 +75,7 @@ impl Account {
     pub fn update_trade(&mut self, data: TradeData) {
         let symbol = data.symbol.clone();
         // calculate fee for trade_data
-        let commision = data.volume * data.price * *self.get_commission_ratio(symbol.as_str());
+        let commision = data.volume * data.price * self.get_commission_ratio(symbol.as_str());
 
         // Check the orderid if has been frozen
         if let Some(order_id) = &data.orderid {
@@ -105,10 +105,10 @@ impl Account {
                 let close_profit = match data.direction.unwrap() {
                     Direction::LONG => {
                         //  replace 0.0 with  position avg price
-                        (0.0 - data.price) * data.volume * *self.get_size_map(&symbol)
+                        (0.0 - data.price) * data.volume * self.get_size_map(&symbol)
                     }
                     Direction::SHORT => {
-                        (data.price - 0.0) * data.volume * *self.get_size_map(&symbol)
+                        (data.price - 0.0) * data.volume * self.get_size_map(&symbol)
                     }
                     Direction::NET => { 0.0 }
                 };
@@ -122,16 +122,16 @@ impl Account {
         }
     }
     /// return size by passed symbol
-    fn get_size_map(&mut self, symbol: &str) -> &f64 {
-        self.size_map.get(symbol).unwrap_or(0.0.borrow())
+    fn get_size_map(&mut self, symbol: &str) -> f64 {
+        self.size_map.get(symbol).unwrap_or(0.0.borrow()).clone()
     }
     /// return commission_ration by passed symbol
-    fn get_commission_ratio(&mut self, symbol: &str) -> &f64 {
-        self.commission_ratio.get(symbol).unwrap_or(0.0.borrow())
+    fn get_commission_ratio(&mut self, symbol: &str) -> f64 {
+        self.commission_ratio.get(symbol).unwrap_or(0.0.borrow()).clone()
     }
     /// return margin_ratio by passed symbol
-    fn get_margin_ratio(&mut self, symbol: &str) -> &f64 {
-        self.margin_ratio.get(symbol).unwrap_or(0.0.borrow())
+    fn get_margin_ratio(&mut self, symbol: &str) -> f64 {
+        self.margin_ratio.get(symbol).unwrap_or(0.0.borrow()).clone()
     }
     /// update order
     /// 1.add frozen fee if open
@@ -143,8 +143,8 @@ impl Account {
         match data.offset {
             Offset::OPEN => {
                 // Add Margin frozen
-                let margin_ratio = self.get_margin_ratio(&symbol).clone();
-                self.margin_frozen_container.insert(data.orderid.unwrap().clone(), data.volume * data.price * margin_ratio);
+                let ratio = self.get_margin_ratio(&symbol);
+                self.margin_frozen_container.insert(data.orderid.unwrap().clone(), data.volume * data.price * ratio );
             }
             _ => {}
         }
@@ -162,20 +162,20 @@ impl Account {
             match x.direction.as_ref().unwrap() {
                 Direction::LONG => {
                     if x.yd_volume.eq(&0.0) {
-                        x.volume * (real_price - x.price) * *self.get_size_map(x.symbol.as_str())
+                        x.volume * (real_price - x.price) * self.get_size_map(x.symbol.as_str())
                     } else {
                         let today = x.volume - x.yd_volume;
-                        today * (real_price - x.price) * *self.get_size_map(x.symbol.as_str()) +
-                            x.yd_volume * (real_price - self.get_pre_price(x.symbol.as_str())) * *self.get_size_map(x.symbol.as_str())
+                        today * (real_price - x.price) * self.get_size_map(x.symbol.as_str()) +
+                            x.yd_volume * (real_price - self.get_pre_price(x.symbol.as_str())) * self.get_size_map(x.symbol.as_str())
                     }
                 }
                 Direction::SHORT => {
                     if x.yd_volume.eq(&0.0) {
-                        x.volume * (x.price - real_price) * *self.get_size_map(x.symbol.as_str())
+                        x.volume * (x.price - real_price) * self.get_size_map(x.symbol.as_str())
                     } else {
                         let today = x.volume - x.yd_volume;
-                        today * (x.price - real_price) * *self.get_size_map(x.symbol.as_str()) +
-                            x.yd_volume * (self.get_pre_price(x.symbol.as_str()) - real_price) * *self.get_size_map(x.symbol.as_str())
+                        today * (x.price - real_price) * self.get_size_map(x.symbol.as_str()) +
+                            x.yd_volume * (self.get_pre_price(x.symbol.as_str()) - real_price) * self.get_size_map(x.symbol.as_str())
                     }
                 }
                 Direction::NET => {
@@ -197,8 +197,7 @@ impl Account {
         let mut rs = 0.0;
 
         for pos in self.position_manager.get_all_positions() {
-            let size = *self.get_size_map(pos.symbol.as_str());
-            rs += pos.price * pos.volume * *self.get_margin_ratio(pos.symbol.as_str()) * size
+            rs += pos.price * pos.volume * self.get_margin_ratio(pos.symbol.as_str()) * self.get_size_map(pos.symbol.as_str())
         };
         rs
     }
