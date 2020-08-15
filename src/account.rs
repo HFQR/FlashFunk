@@ -250,7 +250,7 @@ impl Account {
             balance: self.balance(),
             fee: self.get_fee_sum(),
             margin: self.margin(),
-            date: "".to_string(),
+            date: self.date.to_string(),
         }
     }
 }
