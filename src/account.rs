@@ -10,6 +10,10 @@ use crate::constants::{Offset, Direction};
 use crate::structs::PositionData;
 use std::sync::Arc;
 
+
+use chrono::{Date, Utc};
+
+
 pub struct PositionManager {
     pub account: Box<Arc<Account>>
 }
@@ -26,7 +30,7 @@ impl PositionManager {
 
 ///
 pub struct Account {
-    name: f64,
+    name: String,
     pre_balance: f64,
     // 手续费占用率
     pub commission_ratio: HashMap<String, f64>,
@@ -46,6 +50,28 @@ pub struct Account {
     pub position_manager: PositionManager,
     pub pre_close: HashMap<String, f64>,
     pub price_mapping: HashMap<String, f64>,
+    pub date: Date<Utc>,
+}
+
+impl Default for Account {
+    fn default() -> Self {
+        Account {
+            name: "ctpbee".to_owned(),
+            pre_balance: 0.0,
+            commission_ratio: Default::default(),
+            margin_ratio: Default::default(),
+            size_map: Default::default(),
+            frozen_fee: Default::default(),
+            fee: Default::default(),
+            close_profit: Default::default(),
+            count: 0.0,
+            margin_frozen_container: Default::default(),
+            position_manager: PositionManager { account: Box::new(Arc::new(Default::default())) },
+            pre_close: Default::default(),
+            price_mapping: Default::default(),
+            date: Utc::today(),
+        }
+    }
 }
 
 
@@ -144,7 +170,7 @@ impl Account {
             Offset::OPEN => {
                 // Add Margin frozen
                 let ratio = self.get_margin_ratio(&symbol);
-                self.margin_frozen_container.insert(data.orderid.unwrap().clone(), data.volume * data.price * ratio );
+                self.margin_frozen_container.insert(data.orderid.unwrap().clone(), data.volume * data.price * ratio);
             }
             _ => {}
         }
@@ -195,19 +221,28 @@ impl Account {
     ///  get the margin of position for the account
     pub fn margin(&mut self) -> f64 {
         let mut rs = 0.0;
-
         for pos in self.position_manager.get_all_positions() {
             rs += pos.price * pos.volume * self.get_margin_ratio(pos.symbol.as_str()) * self.get_size_map(pos.symbol.as_str())
         };
         rs
     }
     /// settle the account by passed a datetime
-    pub fn settle(&mut self) -> bool { unimplemented!() }
+    pub fn settle(&mut self, date: Date<Utc>) -> bool {
+        if self.date == date {
+            false
+        } else {
+            let p = self.generate_self();
+            self.date = date;
+            true
+        }
+    }
     /// update the params by pass a Params
     /// it looks like hard to understand
     fn update_params(&mut self, params: Params) { unimplemented!() }
     /// get the frozen , when day,end ,it will zero
-    pub fn frozen_margin(&mut self) -> f64 { unimplemented!() }
+    pub fn frozen_margin(&mut self) -> f64 {
+        self.margin_frozen_container.values().into_iter().map(|x| x.clone()).collect::<Vec<f64>>().iter().sum()
+    }
     /// generator a Account object named DailyResult, it will be written into database
     fn generate_self(&mut self) -> DailyResult {
         DailyResult {
@@ -227,8 +262,12 @@ impl From<HashMap<String, f64>> for Account {
 }
 
 impl From<AccountData> for Account {
-    fn from(_: AccountData) -> Self {
-        unimplemented!()
+    fn from(acc: AccountData) -> Self {
+        Account {
+            pre_balance: acc.balance,
+            ..Account::default()
+        }
     }
 }
+
 
