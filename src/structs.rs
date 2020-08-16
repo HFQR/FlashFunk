@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use crate::constants::*;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, Date};
 use std::option::Option;
 
 /// Tick Data
@@ -212,6 +212,7 @@ pub struct AccountData {
     pub accountid: String,
     pub balance: f64,
     pub frozen: f64,
+    pub date: Date<Utc>,
 }
 
 /// Contract Data
@@ -304,4 +305,13 @@ pub struct DailyResult {
     pub fee: f64,
     pub margin: f64,
     pub date: String,
+}
+
+pub struct LoginForm {
+    user_id: String,
+    password: String,
+    app_id: String,
+    address: String,
+    auth_code: String,
+    production_info: String,
 }

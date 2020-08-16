@@ -26,8 +26,7 @@ impl PositionManager {
 
 
 /// Account Instance
-/// It provides most public API to Accept data or solve data
-
+/// It provides most public ctp to Accept data or solve data
 ///
 pub struct Account {
     name: String,
@@ -265,9 +264,9 @@ impl From<AccountData> for Account {
     fn from(acc: AccountData) -> Self {
         Account {
             pre_balance: acc.balance,
+            date: acc.date,
             ..Account::default()
         }
     }
 }
-
 
