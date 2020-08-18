@@ -89,7 +89,7 @@ impl Default for TickData {
 }
 
 /// Bar Data
-#[derive(Message)]
+#[derive(Message,)]
 #[rtype(result = "()")]
 pub struct BarData {
     pub symbol: String,
@@ -122,7 +122,7 @@ impl Default for BarData {
 }
 
 /// Order Data
-#[derive(Message)]
+#[derive(Message,)]
 #[rtype(result = "()")]
 pub struct OrderData {
     pub symbol: String,
@@ -157,7 +157,7 @@ impl Default for OrderData {
 }
 
 /// Trade Data
-#[derive(Message)]
+#[derive(Message,)]
 #[rtype(result = "()")]
 pub struct TradeData {
     pub symbol: String,
@@ -188,7 +188,7 @@ impl Default for TradeData {
 }
 
 /// Position Data
-#[derive(Message)]
+#[derive(Message,)]
 #[rtype(result = "()")]
 pub struct PositionData {
     pub symbol: String,
@@ -219,7 +219,7 @@ impl Default for PositionData {
 }
 
 /// Account Data
-#[derive(Message)]
+#[derive(Message,)]
 #[rtype(result = "()")]
 pub struct AccountData {
     pub accountid: String,
@@ -229,7 +229,7 @@ pub struct AccountData {
 }
 
 /// Contract Data
-#[derive(Message)]
+#[derive(Message,)]
 #[rtype(result = "()")]
 pub struct ContractData {
     pub symbol: String,

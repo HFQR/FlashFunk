@@ -1,18 +1,23 @@
 #![allow(dead_code, unused_variables)]
 
-use actix::{Actor, Handler, Context};
+use actix::{Actor, Handler, Context, Addr, AsyncContext};
 use super::interface::Interface;
 use crate::constants::{OrderType, Direction};
 use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractData};
 use crate::account::Account;
+use std::collections::HashMap;
+use crate::ac::{Ac, BoxedAc};
 
 /// ctpbee核心运行器
 /// 作为该运行器
 pub struct CtpbeeR {
     name: String,
-    md: Box<dyn Interface>,
-    td: Box<dyn Interface>,
+    md: Option<Box<dyn Interface>>,
+    td: Option<Box<dyn Interface>>,
     acc: Account,
+    addr: Option<Addr<Self>>,
+    login_info: HashMap<String, String>,
+    strategies: Vec<Addr<BoxedAc>>,
 }
 
 impl Actor for CtpbeeR {
@@ -20,19 +25,45 @@ impl Actor for CtpbeeR {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         println!("Ctpbee started, Application: {:?}", self.name);
+        self.addr = Some(ctx.address());
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {
-        self.md.exit();
-        self.td.exit();
+        self.md.as_mut().unwrap().exit();
+        self.td.as_mut().unwrap().exit();
         println!("Task stopped, Exit successful ")
     }
 }
 
 impl CtpbeeR {
-    pub fn new() -> CtpbeeR {
-        unimplemented!()
+    pub fn new(name: String) -> CtpbeeR {
+        CtpbeeR {
+            name,
+            md: None,
+            td: None,
+            acc: Default::default(),
+            addr: None,
+            login_info: HashMap::new(),
+            strategies: vec![],
+        }
     }
+    pub fn login(&mut self) -> bool {
+        true
+    }
+    /// 增加策略, 注意会被call, 他是一个Actor，等待所有相关实现, 注意CtpbeeR会把自己的引用传给他 可以他进行快速发单
+    pub fn add_strategy(&mut self, strategy: Box<dyn Ac>) {
+        let addr = BoxedAc(strategy).start();
+        self.strategies.push(addr);
+    }
+    /// 从HashMap载入登录信息
+    pub fn load_setting(&mut self, map: HashMap<String, String>) {
+        let mut dt = HashMap::new();
+        for (key, value) in map {
+            dt.insert(key, value);
+        }
+        self.login_info = dt;
+    }
+
     /// 获取当前的持仓信息
     fn get_positions(&mut self, symbol: &str, direction: &Direction) -> Option<PositionData> {
         unimplemented!()
