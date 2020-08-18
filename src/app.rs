@@ -7,7 +7,6 @@ use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractDa
 use crate::account::Account;
 use std::collections::HashMap;
 use crate::ac::{Ac, BoxedAc};
-use std::borrow::Borrow;
 
 /// ctpbee核心运行器
 /// 作为该运行器
