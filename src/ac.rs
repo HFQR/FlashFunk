@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_variables)]
+
 use crate::structs::{BarData, TickData, ContractData, PositionData, AccountData, TradeData, OrderData};
 use actix::{Handler, Context, Actor};
 
