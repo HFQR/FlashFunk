@@ -5,8 +5,11 @@
 use crate::constants::*;
 use chrono::{DateTime, Utc, Date};
 use std::option::Option;
+use actix::Message;
 
 /// Tick Data
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct TickData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -86,6 +89,8 @@ impl Default for TickData {
 }
 
 /// Bar Data
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct BarData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -117,6 +122,8 @@ impl Default for BarData {
 }
 
 /// Order Data
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct OrderData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -150,6 +157,8 @@ impl Default for OrderData {
 }
 
 /// Trade Data
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct TradeData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -179,6 +188,8 @@ impl Default for TradeData {
 }
 
 /// Position Data
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct PositionData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -208,6 +219,8 @@ impl Default for PositionData {
 }
 
 /// Account Data
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct AccountData {
     pub accountid: String,
     pub balance: f64,
@@ -216,6 +229,8 @@ pub struct AccountData {
 }
 
 /// Contract Data
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct ContractData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
