@@ -25,7 +25,7 @@ pub trait Ac {
 
 
 pub struct BoxedAc(
-    pub Box<dyn Ac>,
+    pub Box<dyn Ac + Send>,
 );
 
 

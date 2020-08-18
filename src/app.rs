@@ -1,12 +1,13 @@
 #![allow(dead_code, unused_variables)]
 
-use actix::{Actor, Handler, Context, Addr, AsyncContext};
+use actix::{Actor, Handler, Context, Addr, AsyncContext, Arbiter};
 use super::interface::Interface;
 use crate::constants::{OrderType, Direction};
 use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractData};
 use crate::account::Account;
 use std::collections::HashMap;
 use crate::ac::{Ac, BoxedAc};
+use std::borrow::Borrow;
 
 /// ctpbee核心运行器
 /// 作为该运行器
@@ -50,9 +51,10 @@ impl CtpbeeR {
     pub fn login(&mut self) -> bool {
         true
     }
-    /// 增加策略, 注意会被call, 他是一个Actor，等待所有相关实现, 注意CtpbeeR会把自己的引用传给他 可以他进行快速发单
-    pub fn add_strategy(&mut self, strategy: Box<dyn Ac>) {
-        let addr = BoxedAc(strategy).start();
+    /// 增加策略, 注意会被call, 他是一个Actor，等待所有相关实现,
+    pub fn add_strategy(&mut self, strategy: Box<dyn Ac + Send>) {
+        let arbiter = Arbiter::new();
+        let addr = BoxedAc::start_in_arbiter(&arbiter, |_| { BoxedAc(strategy) });
         self.strategies.push(addr);
     }
     /// 从HashMap载入登录信息
