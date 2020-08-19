@@ -7,6 +7,10 @@ use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractDa
 use crate::account::Account;
 use std::collections::HashMap;
 use crate::ac::{Ac, BoxedAc};
+use futures::SinkExt;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::{Mutex, Arc};
 
 /// ctpbee核心运行器
 /// 作为该运行器
@@ -14,7 +18,7 @@ pub struct CtpbeeR {
     name: String,
     md: Option<Box<dyn Interface>>,
     td: Option<Box<dyn Interface>>,
-    acc: Account,
+    acc:Arc<Mutex<Account>>,
     addr: Option<Addr<Self>>,
     login_info: HashMap<String, String>,
     strategies: Vec<Addr<BoxedAc>>,
@@ -45,7 +49,7 @@ impl CtpbeeR {
             name,
             md: None,
             td: None,
-            acc: Default::default(),
+            acc: Account::new(),
             addr: None,
             login_info: HashMap::new(),
             strategies: vec![],

@@ -4,18 +4,20 @@ use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 
 use crate::structs::{AccountData, OrderData, Params, TickData, TradeData, DailyResult};
-use std::borrow::Borrow;
+use std::borrow::{Borrow, BorrowMut};
 use crate::constants::{Offset, Direction};
 
 use crate::structs::PositionData;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 
 use chrono::{Date, Utc};
-
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::ops::Deref;
 
 pub struct PositionManager {
-    pub account: Box<Arc<Account>>
+    pub account: Arc<Mutex<Account>>
 }
 
 impl PositionManager {
@@ -27,7 +29,6 @@ impl PositionManager {
 
 /// Account Instance
 /// It provides most public ctp to Accept data or solve data
-///
 pub struct Account {
     name: String,
     pre_balance: f64,
@@ -46,15 +47,15 @@ pub struct Account {
     pub count: f64,
     // 持仓冻结
     pub margin_frozen_container: HashMap<String, f64>,
-    pub position_manager: PositionManager,
+    pub position_manager: Option<PositionManager>,
     pub pre_close: HashMap<String, f64>,
     pub price_mapping: HashMap<String, f64>,
     pub date: Date<Utc>,
 }
 
-impl Default for Account {
-    fn default() -> Self {
-        Account {
+impl Account {
+    pub(crate) fn new() -> Arc<Mutex<Account>> {
+        let mut account = Account {
             name: "ctpbee".to_owned(),
             pre_balance: 0.0,
             commission_ratio: Default::default(),
@@ -65,16 +66,23 @@ impl Default for Account {
             close_profit: Default::default(),
             count: 0.0,
             margin_frozen_container: Default::default(),
-            position_manager: PositionManager { account: Box::new(Arc::new(Default::default())) },
+            position_manager: None,
             pre_close: Default::default(),
             price_mapping: Default::default(),
             date: Utc::today(),
-        }
+        };
+        let mut arc = Arc::new(Mutex::new(account));
+        let pos = PositionManager {
+            account: arc.clone()
+        };
+        arc.get_mut().unwrap().add_position_manager(pos);
+        arc
     }
-}
 
+    fn add_position_manager(mut self, pos: PositionManager) {
+        self.position_manager = Option::from(pos);
+    }
 
-impl Account {
     pub fn balance(&mut self) -> f64 {
         self.available() + self.margin()
     }
@@ -182,7 +190,7 @@ impl Account {
     /// And we should use replace the price  with pre_close_price  for yd `position`, and `price` for today volume,
     /// so we had to maintain the pre_close and real_price both in looper or realtime trade
     pub fn float_pnl(&mut self) -> f64 {
-        self.position_manager.get_all_positions().iter().map(|x| {
+        self.position_manager.unwrap().get_all_positions().iter().map(|x| {
             let real_price = self.get_real_price(x.symbol.as_str());
             match x.direction.as_ref().unwrap() {
                 Direction::LONG => {
@@ -220,7 +228,7 @@ impl Account {
     ///  get the margin of position for the account
     pub fn margin(&mut self) -> f64 {
         let mut rs = 0.0;
-        for pos in self.position_manager.get_all_positions() {
+        for pos in &(self.position_manager).unwrap().get_all_positions() {
             rs += pos.price * pos.volume * self.get_margin_ratio(pos.symbol.as_str()) * self.get_size_map(pos.symbol.as_str())
         };
         rs
@@ -259,14 +267,3 @@ impl From<HashMap<String, f64>> for Account {
         unimplemented!()
     }
 }
-
-impl From<AccountData> for Account {
-    fn from(acc: AccountData) -> Self {
-        Account {
-            pre_balance: acc.balance,
-            date: acc.date,
-            ..Account::default()
-        }
-    }
-}
-
