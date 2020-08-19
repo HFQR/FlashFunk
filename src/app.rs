@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_variables)]
 
-use actix::{Actor, Handler, Context, Addr, AsyncContext, Arbiter};
+use actix::prelude::*;
 use super::interface::Interface;
 use crate::constants::{OrderType, Direction};
 use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractData};
@@ -18,10 +18,13 @@ pub struct CtpbeeR {
     addr: Option<Addr<Self>>,
     login_info: HashMap<String, String>,
     strategies: Vec<Addr<BoxedAc>>,
+    sender: Option<futures::channel::oneshot::Sender<()>>,
+    receiver: Option<futures::channel::oneshot::Receiver<()>>,
 }
 
 impl Actor for CtpbeeR {
     type Context = Context<Self>;
+
 
     fn started(&mut self, ctx: &mut Self::Context) {
         println!("Ctpbee started, Application: {:?}", self.name);
@@ -31,6 +34,7 @@ impl Actor for CtpbeeR {
     fn stopped(&mut self, ctx: &mut Self::Context) {
         self.md.as_mut().unwrap().exit();
         self.td.as_mut().unwrap().exit();
+        let _ = self.sender.take().unwrap().send(());
         println!("Task stopped, Exit successful ")
     }
 }
@@ -45,6 +49,8 @@ impl CtpbeeR {
             addr: None,
             login_info: HashMap::new(),
             strategies: vec![],
+            sender: None,
+            receiver: None,
         }
     }
     pub fn login(&mut self) -> bool {
@@ -56,6 +62,7 @@ impl CtpbeeR {
         let addr = BoxedAc::start_in_arbiter(&arbiter, |_| { BoxedAc(strategy) });
         self.strategies.push(addr);
     }
+
     /// 从HashMap载入登录信息
     pub fn load_setting(&mut self, map: HashMap<String, String>) {
         let mut dt = HashMap::new();
@@ -63,6 +70,13 @@ impl CtpbeeR {
             dt.insert(key, value);
         }
         self.login_info = dt;
+    }
+
+    pub fn run_forever(mut self) -> (Addr<CtpbeeR>, futures::channel::oneshot::Receiver<()>) {
+        let (tx, rx) = futures::channel::oneshot::channel::<()>();
+        self.sender = Some(tx);
+        let addr = self.start();
+        (addr, rx)
     }
 
     /// 获取当前的持仓信息
