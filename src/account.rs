@@ -3,21 +3,18 @@
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 
-use crate::structs::{AccountData, OrderData, Params, TickData, TradeData, DailyResult};
-use std::borrow::{Borrow, BorrowMut};
+use crate::structs::{ OrderData, Params, TickData, TradeData, DailyResult};
+use std::borrow::{Borrow};
 use crate::constants::{Offset, Direction};
 
 use crate::structs::PositionData;
-use std::sync::{Arc, Mutex};
-
 
 use chrono::{Date, Utc};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::ops::Deref;
 
 pub struct PositionManager {
-    pub account: Arc<Mutex<Account>>
+    pub account: Rc<RefCell<Account>>
 }
 
 impl PositionManager {
@@ -54,8 +51,8 @@ pub struct Account {
 }
 
 impl Account {
-    pub(crate) fn new() -> Arc<Mutex<Account>> {
-        let mut account = Account {
+    pub(crate) fn new() -> Rc<RefCell<Account>> {
+        let account = Account {
             name: "ctpbee".to_owned(),
             pre_balance: 0.0,
             commission_ratio: Default::default(),
@@ -71,15 +68,15 @@ impl Account {
             price_mapping: Default::default(),
             date: Utc::today(),
         };
-        let mut arc = Arc::new(Mutex::new(account));
+        let arc = Rc::new(RefCell::new(account));
         let pos = PositionManager {
             account: arc.clone()
         };
-        arc.get_mut().unwrap().add_position_manager(pos);
+        (*arc).borrow_mut().add_position_manager(pos);
         arc
     }
 
-    fn add_position_manager(mut self, pos: PositionManager) {
+    fn add_position_manager(&mut self, pos: PositionManager) {
         self.position_manager = Option::from(pos);
     }
 
@@ -190,7 +187,7 @@ impl Account {
     /// And we should use replace the price  with pre_close_price  for yd `position`, and `price` for today volume,
     /// so we had to maintain the pre_close and real_price both in looper or realtime trade
     pub fn float_pnl(&mut self) -> f64 {
-        self.position_manager.unwrap().get_all_positions().iter().map(|x| {
+        self.position_manager.as_mut().unwrap().get_all_positions().iter().map(|x| {
             let real_price = self.get_real_price(x.symbol.as_str());
             match x.direction.as_ref().unwrap() {
                 Direction::LONG => {
@@ -228,7 +225,7 @@ impl Account {
     ///  get the margin of position for the account
     pub fn margin(&mut self) -> f64 {
         let mut rs = 0.0;
-        for pos in &(self.position_manager).unwrap().get_all_positions() {
+        for pos in self.position_manager.as_mut().unwrap().get_all_positions() {
             rs += pos.price * pos.volume * self.get_margin_ratio(pos.symbol.as_str()) * self.get_size_map(pos.symbol.as_str())
         };
         rs
