@@ -20,14 +20,14 @@ pub struct CtpbeeR {
     acc: Rc<RefCell<Account>>,
     addr: Option<Addr<Self>>,
     login_info: HashMap<String, String>,
-    strategies: Vec<Addr<BoxedAc>>,
+    strategy_addrs: Vec<Addr<BoxedAc>>,
+    str: Vec<BoxedAc>,
     sender: Option<futures::channel::oneshot::Sender<()>>,
     receiver: Option<futures::channel::oneshot::Receiver<()>>,
 }
 
 impl Actor for CtpbeeR {
     type Context = Context<Self>;
-
 
     fn started(&mut self, ctx: &mut Self::Context) {
         println!(">>> Ctpbee started, Application: {:?}", self.name);
@@ -51,19 +51,14 @@ impl CtpbeeR {
             acc: Account::new(),
             addr: None,
             login_info: HashMap::new(),
-            strategies: vec![],
+            strategy_addrs: vec![],
+            str: vec![],
             sender: None,
             receiver: None,
         }
     }
     pub fn login(&mut self) -> bool {
         true
-    }
-    /// 增加策略, 注意会被call, 他是一个Actor，等待所有相关实现,
-    pub fn add_strategy(&mut self, strategy: Box<dyn Ac + Send>) {
-        let arbiter = Arbiter::new();
-        let addr = BoxedAc::start_in_arbiter(&arbiter, |_| { BoxedAc(strategy) });
-        self.strategies.push(addr);
     }
 
     /// 从HashMap载入登录信息
@@ -74,41 +69,22 @@ impl CtpbeeR {
         }
         self.login_info = dt;
     }
-
+    /// 增加策略, 注意会被call, 他是一个Actor，等待所有相关实现,
+    pub fn add_strategy(&mut self, strategy: Box<dyn Ac + Send>) {
+        self.str.push(BoxedAc(strategy));
+    }
     pub fn run_forever(mut self) -> (Addr<CtpbeeR>, futures::channel::oneshot::Receiver<()>) {
         let (tx, rx) = futures::channel::oneshot::channel::<()>();
         self.sender = Some(tx);
+        let mut temp_acs = vec![];
+        for ac in self.str.pop() {
+            temp_acs.push(ac);
+        }
         let addr = self.start();
+        for rc in temp_acs.pop() {
+            addr.do_send(rc)
+        }
         (addr, rx)
-    }
-
-    /// 获取当前的持仓信息
-    fn get_positions(&mut self, symbol: &str, direction: &Direction) -> Option<PositionData> {
-        unimplemented!()
-    }
-    /// 获取所有的活跃报单
-    fn get_active_orders(&mut self) -> Vec<OrderData> {
-        unimplemented!()
-    }
-    /// 多开
-    fn buy(&mut self, price: f64, volume: f64, price_type: OrderType) {
-        unimplemented!()
-    }
-    /// 空开
-    fn short(&mut self, price: f64, volume: f64, price_type: OrderType) {
-        unimplemented!()
-    }
-    /// 平多头
-    fn cover(&mut self, price: f64, volume: f64, price_type: OrderType) {
-        unimplemented!()
-    }
-    /// 平空头
-    fn sell(&mut self, price: f64, volume: f64, price_type: OrderType) {
-        unimplemented!()
-    }
-    /// 撤单
-    fn cancel(&mut self, order_id: &str) {
-        unimplemented!()
     }
 }
 
@@ -116,7 +92,7 @@ impl Handler<TradeData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: TradeData, ctx: &mut Context<Self>) -> Self::Result {
-        for x in &self.strategies {
+        for x in &self.strategy_addrs {
             x.do_send(msg.clone());
         }
     }
@@ -126,7 +102,7 @@ impl Handler<OrderData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: OrderData, ctx: &mut Context<Self>) -> Self::Result {
-        for x in &self.strategies {
+        for x in &self.strategy_addrs {
             x.do_send(msg.clone());
         }
     }
@@ -137,7 +113,7 @@ impl Handler<TickData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: TickData, ctx: &mut Context<Self>) -> Self::Result {
-        for x in &self.strategies {
+        for x in &self.strategy_addrs {
             x.do_send(msg.clone());
         }
     }
@@ -148,7 +124,7 @@ impl Handler<BarData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: BarData, ctx: &mut Context<Self>) -> Self::Result {
-        for x in &self.strategies {
+        for x in &self.strategy_addrs {
             x.do_send(msg.clone());
         }
     }
@@ -159,7 +135,7 @@ impl Handler<AccountData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: AccountData, ctx: &mut Context<Self>) -> Self::Result {
-        for x in &self.strategies {
+        for x in &self.strategy_addrs {
             x.do_send(msg.clone());
         }
     }
@@ -169,7 +145,7 @@ impl Handler<PositionData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: PositionData, ctx: &mut Context<Self>) -> Self::Result {
-        for x in &self.strategies {
+        for x in &self.strategy_addrs {
             x.do_send(msg.clone());
         }
     }
@@ -179,8 +155,18 @@ impl Handler<ContractData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: ContractData, ctx: &mut Context<Self>) -> Self::Result {
-        for x in &self.strategies {
+        for x in &self.strategy_addrs {
             x.do_send(msg.clone());
         }
+    }
+}
+
+impl Handler<BoxedAc> for CtpbeeR {
+    type Result = ();
+
+    fn handle(&mut self, msg: BoxedAc, ctx: &mut Context<Self>) -> Self::Result {
+        let arbiter = Arbiter::new();
+        let addr = BoxedAc::start_in_arbiter(&arbiter, |_| { msg });
+        self.strategy_addrs.push(addr);
     }
 }

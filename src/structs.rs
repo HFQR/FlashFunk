@@ -47,47 +47,6 @@ pub struct TickData {
     pub ask_volume_5: f64,
 }
 
-// impl Clone for TickData {
-//     fn clone(&self) -> Self {
-//         TickData {
-//             symbol: self.symbol.clone(),
-//             exchange: self.exchange.as_mut().unwrap(),
-//             datetime: None,
-//             name: None,
-//             volume: 0.0,
-//             open_interest: 0.0,
-//             last_price: 0.0,
-//             last_volume: 0.0,
-//             limit_up: 0.0,
-//             limit_down: 0.0,
-//             open_price: 0.0,
-//             high_price: 0.0,
-//             low_price: 0.0,
-//             pre_close: 0.0,
-//             bid_price_1: 0.0,
-//             bid_price_2: 0.0,
-//             bid_price_3: 0.0,
-//             bid_price_4: 0.0,
-//             bid_price_5: 0.0,
-//             ask_price_1: 0.0,
-//             ask_price_2: 0.0,
-//             ask_price_3: 0.0,
-//             ask_price_4: 0.0,
-//             ask_price_5: 0.0,
-//             bid_volume_1: 0.0,
-//             bid_volume_2: 0.0,
-//             bid_volume_3: 0.0,
-//             bid_volume_4: 0.0,
-//             bid_volume_5: 0.0,
-//             ask_volume_1: 0.0,
-//             ask_volume_2: 0.0,
-//             ask_volume_3: 0.0,
-//             ask_volume_4: 0.0,
-//             ask_volume_5: 0.0,
-//         }
-//     }
-// }
-
 impl Default for TickData {
     fn default() -> TickData {
         TickData {
@@ -130,7 +89,7 @@ impl Default for TickData {
 }
 
 /// Bar Data
-#[derive(Message, )]
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct BarData {
     pub symbol: String,
@@ -163,7 +122,7 @@ impl Default for BarData {
 }
 
 /// Order Data
-#[derive(Message, )]
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct OrderData {
     pub symbol: String,
@@ -198,7 +157,7 @@ impl Default for OrderData {
 }
 
 /// Trade Data
-#[derive(Message, )]
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct TradeData {
     pub symbol: String,
@@ -229,7 +188,7 @@ impl Default for TradeData {
 }
 
 /// Position Data
-#[derive(Message, )]
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct PositionData {
     pub symbol: String,
@@ -260,7 +219,7 @@ impl Default for PositionData {
 }
 
 /// Account Data
-#[derive(Message, )]
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct AccountData {
     pub accountid: String,
@@ -270,7 +229,7 @@ pub struct AccountData {
 }
 
 /// Contract Data
-#[derive(Message, )]
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct ContractData {
     pub symbol: String,

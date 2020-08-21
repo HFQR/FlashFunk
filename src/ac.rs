@@ -1,11 +1,19 @@
 #![allow(dead_code, unused_variables)]
 
 use crate::structs::{BarData, TickData, ContractData, PositionData, AccountData, TradeData, OrderData};
-use actix::{Handler, Context, Actor};
+use actix::{Handler, Context, Message, Actor, Addr};
+use crate::app::CtpbeeR;
+use crate::constants::{OrderType, Direction};
 
 pub trait Ac {
     fn on_bar(&mut self, bar: BarData);
+
     fn on_tick(&mut self, tick: TickData);
+
+    fn init(&mut self, runtime: Addr<CtpbeeR>);
+
+    fn get_addr(&mut self) -> &Addr<CtpbeeR>;
+
     fn on_contract(&mut self, contract: ContractData) {}
 
     fn on_position(&mut self, position: PositionData) {}
@@ -17,9 +25,40 @@ pub trait Ac {
     fn on_account(&mut self, account: AccountData) {}
 
     fn on_realtime(&mut self) {}
+
+
+    /// 获取当前的持仓信息
+    fn get_positions(&mut self, symbol: &str, direction: &Direction) -> Option<PositionData> {
+        unimplemented!()
+    }
+    /// 获取所有的活跃报单
+    fn get_active_orders(&mut self) -> Vec<OrderData> {
+        unimplemented!()
+    }
+    /// 多开
+    fn buy(&mut self, price: f64, volume: f64, price_type: OrderType) {
+        unimplemented!()
+    }
+    /// 空开
+    fn short(&mut self, price: f64, volume: f64, price_type: OrderType) {
+        unimplemented!()
+    }
+    /// 平多头
+    fn cover(&mut self, price: f64, volume: f64, price_type: OrderType) {
+        unimplemented!()
+    }
+    /// 平空头
+    fn sell(&mut self, price: f64, volume: f64, price_type: OrderType) {
+        unimplemented!()
+    }
+    /// 撤单
+    fn cancel(&mut self, order_id: &str) {
+        unimplemented!()
+    }
 }
 
-
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct BoxedAc(
     pub Box<dyn Ac + Send>,
 );
