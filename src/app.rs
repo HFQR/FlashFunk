@@ -1,14 +1,15 @@
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code, unused_imports, unused_variables)]
 
 use actix::prelude::*;
 use super::interface::Interface;
 use crate::constants::{OrderType, Direction};
-use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractData};
+use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractData, TickData, BarData};
 use crate::account::Account;
 use std::collections::HashMap;
 use crate::ac::{Ac, BoxedAc};
 use std::cell::RefCell;
 use std::rc::Rc;
+use futures::SinkExt;
 
 /// ctpbee核心运行器
 /// 作为该运行器
@@ -16,7 +17,7 @@ pub struct CtpbeeR {
     name: String,
     md: Option<Box<dyn Interface>>,
     td: Option<Box<dyn Interface>>,
-    acc:Rc<RefCell<Account>>,
+    acc: Rc<RefCell<Account>>,
     addr: Option<Addr<Self>>,
     login_info: HashMap<String, String>,
     strategies: Vec<Addr<BoxedAc>>,
@@ -29,7 +30,7 @@ impl Actor for CtpbeeR {
 
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        println!("Ctpbee started, Application: {:?}", self.name);
+        println!(">>> Ctpbee started, Application: {:?}", self.name);
         self.addr = Some(ctx.address());
     }
 
@@ -115,7 +116,9 @@ impl Handler<TradeData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: TradeData, ctx: &mut Context<Self>) -> Self::Result {
-        unimplemented!()
+        for x in &self.strategies {
+            x.do_send(msg.clone());
+        }
     }
 }
 
@@ -123,7 +126,31 @@ impl Handler<OrderData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: OrderData, ctx: &mut Context<Self>) -> Self::Result {
-        unimplemented!()
+        for x in &self.strategies {
+            x.do_send(msg.clone());
+        }
+    }
+}
+
+
+impl Handler<TickData> for CtpbeeR {
+    type Result = ();
+
+    fn handle(&mut self, msg: TickData, ctx: &mut Context<Self>) -> Self::Result {
+        for x in &self.strategies {
+            x.do_send(msg.clone());
+        }
+    }
+}
+
+
+impl Handler<BarData> for CtpbeeR {
+    type Result = ();
+
+    fn handle(&mut self, msg: BarData, ctx: &mut Context<Self>) -> Self::Result {
+        for x in &self.strategies {
+            x.do_send(msg.clone());
+        }
     }
 }
 
@@ -132,7 +159,9 @@ impl Handler<AccountData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: AccountData, ctx: &mut Context<Self>) -> Self::Result {
-        unimplemented!()
+        for x in &self.strategies {
+            x.do_send(msg.clone());
+        }
     }
 }
 
@@ -140,7 +169,9 @@ impl Handler<PositionData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: PositionData, ctx: &mut Context<Self>) -> Self::Result {
-        unimplemented!()
+        for x in &self.strategies {
+            x.do_send(msg.clone());
+        }
     }
 }
 
@@ -148,6 +179,8 @@ impl Handler<ContractData> for CtpbeeR {
     type Result = ();
 
     fn handle(&mut self, msg: ContractData, ctx: &mut Context<Self>) -> Self::Result {
-        unimplemented!()
+        for x in &self.strategies {
+            x.do_send(msg.clone());
+        }
     }
 }

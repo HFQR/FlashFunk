@@ -1,7 +1,9 @@
 //! # General Enum
 //! Author: Aaron Qiu
 #![allow(dead_code)]
+
 /// Direction of order/trade/position.
+#[derive(Clone)]
 pub enum Direction {
     /// 多
     LONG,
@@ -12,6 +14,7 @@ pub enum Direction {
 }
 
 /// 对冲
+#[derive(Clone)]
 pub enum Offset {
     /// 无
     NONE,
@@ -26,6 +29,7 @@ pub enum Offset {
 }
 
 /// 状态
+#[derive(Clone)]
 pub enum Status {
     /// 提交中
     SUBMITTING,
@@ -42,6 +46,7 @@ pub enum Status {
 }
 
 /// 产品
+#[derive(Clone)]
 pub enum Product {
     /// 股票
     EQUITY,
@@ -68,6 +73,7 @@ pub enum Product {
 }
 
 /// 订单类型
+#[derive(Clone)]
 pub enum OrderType {
     /// 限价
     LIMIT,
@@ -84,6 +90,7 @@ pub enum OrderType {
 }
 
 /// 期权类型
+#[derive(Clone)]
 pub enum OptionType {
     /// 看涨期权
     CALL,
@@ -92,6 +99,7 @@ pub enum OptionType {
 }
 
 /// 交易所
+#[derive(Clone)]
 pub enum Exchange {
     // Chinese
     CFETS,
@@ -151,6 +159,7 @@ pub enum Exchange {
 }
 
 /// 货币
+#[derive(Clone)]
 pub enum Currency {
     CNY,
     HKD,
@@ -158,6 +167,7 @@ pub enum Currency {
 }
 
 /// 时间周期
+#[derive(Clone)]
 pub enum Interval {
     MINUTE,
     HOUR,

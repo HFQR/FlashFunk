@@ -4,12 +4,8 @@ use crate::structs::{BarData, TickData, ContractData, PositionData, AccountData,
 use actix::{Handler, Context, Actor};
 
 pub trait Ac {
-    fn on_bar(&mut self, bar: BarData) {
-        unimplemented!()
-    }
-    fn on_tick(&mut self, tick: TickData) {
-        unimplemented!()
-    }
+    fn on_bar(&mut self, bar: BarData);
+    fn on_tick(&mut self, tick: TickData);
     fn on_contract(&mut self, contract: ContractData) {}
 
     fn on_position(&mut self, position: PositionData) {}
@@ -25,7 +21,7 @@ pub trait Ac {
 
 
 pub struct BoxedAc(
-    pub Box<dyn Ac+Send>,
+    pub Box<dyn Ac + Send>,
 );
 
 
