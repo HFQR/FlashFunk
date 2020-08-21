@@ -26,7 +26,6 @@ pub trait Ac {
 
     fn on_realtime(&mut self) {}
 
-
     /// 获取当前的持仓信息
     fn get_positions(&mut self, symbol: &str, direction: &Direction) -> Option<PositionData> {
         unimplemented!()

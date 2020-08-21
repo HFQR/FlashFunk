@@ -10,6 +10,7 @@ use crate::ac::{Ac, BoxedAc};
 use std::cell::RefCell;
 use std::rc::Rc;
 use futures::SinkExt;
+use std::mem::swap;
 
 /// ctpbee核心运行器
 /// 作为该运行器
@@ -77,9 +78,7 @@ impl CtpbeeR {
         let (tx, rx) = futures::channel::oneshot::channel::<()>();
         self.sender = Some(tx);
         let mut temp_acs = vec![];
-        for ac in self.str.pop() {
-            temp_acs.push(ac);
-        }
+        swap(&mut self.str, &mut temp_acs);
         let addr = self.start();
         for rc in temp_acs.pop() {
             addr.do_send(rc)
@@ -164,8 +163,9 @@ impl Handler<ContractData> for CtpbeeR {
 impl Handler<BoxedAc> for CtpbeeR {
     type Result = ();
 
-    fn handle(&mut self, msg: BoxedAc, ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, mut msg: BoxedAc, ctx: &mut Context<Self>) -> Self::Result {
         let arbiter = Arbiter::new();
+        msg.0.init(ctx.address().clone());
         let addr = BoxedAc::start_in_arbiter(&arbiter, |_| { msg });
         self.strategy_addrs.push(addr);
     }
