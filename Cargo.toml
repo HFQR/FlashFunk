@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 include = ["src/**/*", "Cargo.toml", "build.rs"]
-
+build = "build.rs"
 [dependencies]
 chrono = "0.4.13"
 libc = "0.2.0"
@@ -16,6 +16,10 @@ failure = "0.1"
 [[example]]
 name = "login"
 
+
+[lib]
+name = "ctpbee_rs"
+path = "src/lib.rs"
 
 [build-dependencies]
 bindgen = "0.52"

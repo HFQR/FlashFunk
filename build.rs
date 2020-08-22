@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports, unused_variables)]
+
 use std::env;
 use std::path::PathBuf;
 
@@ -5,15 +7,14 @@ use std::path::PathBuf;
 fn build(target: &str) {
     println!("Ready to compile interface for ctp");
     check_arch();
+    add_search_path();
+    add_llvm_path();
     cc::Build::new()
         .file("src/ctp/src/ctp.cpp")
         .cpp(true)
         .warnings(true)
         .flag("-std=c++11")
         .compile("bridge");
-    add_search_path();
-    add_llvm_path();
-
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
@@ -31,12 +32,15 @@ fn build(target: &str) {
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_path = PathBuf::from("./src/ctp");
+    println!("outpath : {:?}", out_path);
     bindings.write_to_file(out_path.join("bindings.rs")).expect("Couldn't write bindings!");
+    println!("Generate successful")
 }
 
 fn main() {
-    build("ctp");
+    println!("build");
+    // build("ctp");
 }
 
 

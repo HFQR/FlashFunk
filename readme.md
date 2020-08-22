@@ -88,16 +88,24 @@ Here are the explanation
 ```
 llvm-config does not exist in windows prebuilt binaries. You need to compile from the source code to get it.
 
-Grab CMAKE > 3.5 , install it and make sure you add it to PATH.
-Download Visual Studio 2019
-Donwload the source code (9.0.1 is the latest as I'm writing this)
-Extract the source code
-Cd into the root of the llvm source-code
-In cmd, type cmake . this will generate Visual Studio 2019 sln.
-open sln file(LLVM.sln), change the build type to Rlease, build the whole project
-navigate to your Rlease\bin, and there you have your llvm-config.exe
+1.Grab CMAKE > 3.5 , install it and make sure you add it to PATH.
+2.Download Visual Studio 2019
+3.Donwload the source code (9.0.1 is the latest as I'm writing this)
+4.Extract the source code
+5.Cd into the root of the llvm source-code
+6.In cmd, type cmake . this will generate Visual Studio 2019 sln.
+7.open sln file(LLVM.sln), change the build type to Rlease, build the whole project
+8.navigate to your Rlease\bin, and there you have your llvm-config.exe
 ```
 
+### 一些详细工作 
 - 如何进行编译 
-修改`build.rs`里面main函数 `build`函数参数支持以下 
-- ctp 
+修改`build.rs`里面main函数 `build`函数参数支持以下  
+
+`ctp`
+
+- 如何打印相信的编译输出 
+使用cargo --vv build 
+
+
+
