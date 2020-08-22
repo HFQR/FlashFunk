@@ -14,11 +14,11 @@ struct Strategy {
 
 impl Ac for Strategy {
     fn on_bar(&mut self, bar: BarData) {
-        println!("got bar")
+        println!("got bar {:?}", self.get_addr());
     }
 
     fn on_tick(&mut self, tick: TickData) {
-        println!("got tick")
+        println!("got tick {:?}", self.get_addr());
     }
 
     fn init(&mut self, runtime: Addr<CtpbeeR>) {
@@ -33,8 +33,6 @@ impl Ac for Strategy {
 #[actix_rt::main]
 async fn main() {
     let mut account = CtpbeeR::new("ctpbee".to_string());
-
-
     let str = Strategy { name: "hello".to_string(), addr: None };
     account.add_strategy(Box::new(str));
     let (addr, x) = account.run_forever();

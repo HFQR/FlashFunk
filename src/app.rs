@@ -11,6 +11,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use futures::SinkExt;
 use std::mem::swap;
+use std::fmt::Debug;
+use core::fmt;
 
 /// ctpbee核心运行器
 /// 作为该运行器
@@ -80,10 +82,14 @@ impl CtpbeeR {
         let mut temp_acs = vec![];
         swap(&mut self.str, &mut temp_acs);
         let addr = self.start();
-        for rc in temp_acs.pop() {
-            addr.do_send(rc)
-        }
+        temp_acs.into_iter().for_each(|x| addr.do_send(x));
         (addr, rx)
+    }
+}
+
+impl Debug for CtpbeeR {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Ctpbee >>> : {}", self.name)
     }
 }
 

@@ -2,6 +2,8 @@
 
 
 use super::interface::Interface;
+use std::ffi::{CStr, CString};
+use std::os::raw::{c_void, c_char, c_int};
 
 /// the implement of market api
 pub struct MdApi {
@@ -19,4 +21,8 @@ impl Interface for TraderApi {
     // 开肝了少年 !
 }
 
-impl Interface for MdApi {}
+impl Interface for MdApi {
+
+
+
+}
