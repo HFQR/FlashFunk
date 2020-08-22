@@ -3,7 +3,7 @@
 use actix::prelude::*;
 use super::interface::Interface;
 use crate::constants::{OrderType, Direction};
-use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractData, TickData, BarData};
+use crate::structs::{OrderData, PositionData, TradeData, AccountData, ContractData, TickData, BarData, OrderRequest, CancelRequest, SubscribeRequest};
 use crate::account::Account;
 use std::collections::HashMap;
 use crate::ac::{Ac, BoxedAc};
@@ -174,5 +174,29 @@ impl Handler<BoxedAc> for CtpbeeR {
         msg.0.init(ctx.address().clone());
         let addr = BoxedAc::start_in_arbiter(&arbiter, |_| { msg });
         self.strategy_addrs.push(addr);
+    }
+}
+
+impl Handler<OrderRequest> for CtpbeeR {
+    type Result = ();
+
+    fn handle(&mut self, msg: OrderRequest, ctx: &mut Context<Self>) -> Self::Result {
+        unimplemented!()
+    }
+}
+
+impl Handler<CancelRequest> for CtpbeeR {
+    type Result = ();
+
+    fn handle(&mut self, msg: CancelRequest, ctx: &mut Context<Self>) -> Self::Result {
+        unimplemented!()
+    }
+}
+
+impl Handler<SubscribeRequest> for CtpbeeR {
+    type Result = ();
+
+    fn handle(&mut self, msg: SubscribeRequest, ctx: &mut Context<Self>) -> Self::Result {
+        unimplemented!()
     }
 }

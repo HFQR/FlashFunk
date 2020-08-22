@@ -274,12 +274,15 @@ impl Default for ContractData {
 }
 
 /// Subscribe Request
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct SubscribeRequest {
     pub symbol: String,
-    pub exchange: Exchange,
 }
 
 /// Order Request
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct OrderRequest {
     pub symbol: String,
     pub exchange: Exchange,
@@ -292,13 +295,15 @@ pub struct OrderRequest {
 }
 
 /// Cancel Request
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct CancelRequest {
     pub orderid: String,
-    pub symbol: String,
-    pub exchange: Exchange,
 }
 
 /// History Request
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct HistoryRequest {
     pub symbol: String,
     pub exchange: Exchange,
@@ -307,13 +312,18 @@ pub struct HistoryRequest {
     pub interval: Interval,
 }
 
-
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct ConnectInfo {}
 
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct Params {
     pub connect_info: ConnectInfo
 }
 
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct DailyResult {
     pub available: f64,
     pub balance: f64,
@@ -322,6 +332,8 @@ pub struct DailyResult {
     pub date: String,
 }
 
+#[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct LoginForm {
     user_id: String,
     password: String,
