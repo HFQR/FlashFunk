@@ -2,20 +2,25 @@
 
 > 专为高频交易设计的程序化交易框架
 
-
-### 功能模块
-
-- `data_support` 
-
-数据支持器, 借助数据库，提供快速的历史数据提取
-
-- `position`
-
-根据`ctpbee`里面的仓位管理器，快速更新`ctpbee-rs`里面的仓位数据
-
-- `interface` 
-实现一个`Interface`的`Trait`，使得能够实现标准的报单撤单以及查询持仓和查询账户功能
+## 文档 
 
 
+## 前置声明
+此项目作为ctpbee前置闭源项目,代码所有权归`somewheve`所有，目前仅限 代码贡献成员所属公司内部使用, 
+不允许以任何方式私自出售源码或者泄露. 尊重劳动成果 ^_^. 
+未来可能进行商业化开源/开源 
 
-# 使用 
+###  项目任务分配 
+
+|  task   | contributor  |  status  |
+|  ----  | ----  | ----  |
+| 账户基类计算         | `somewheve` | `finished` |
+| 整体架构实现  | `somewheve `|  `finished`  |
+| 策略模板实现         |  `somewheve`  | `pending`   |  
+| ctp c++接口对接      | `somewheve`   |  `running`   |
+|  盛立 c++ 接口对接    |  `somewheve`  |    `not started`  |
+|  `clickhouse`数据获取 |   `somewheve` | `not started`  | 
+|  持仓管理    |  `qzm`          |    `not started`  |
+|  k线生成 |   `qzm`           |  `running`  |
+
+ 
