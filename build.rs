@@ -40,7 +40,7 @@ fn build(target: &str) {
 
 fn main() {
     println!("build");
-    // build("ctp");
+    build("ctp");
 }
 
 

@@ -14,11 +14,13 @@ struct Strategy {
 
 impl Ac for Strategy {
     fn on_bar(&mut self, bar: BarData) {
-        println!("got bar {:?}", self.get_addr());
+        let name = self.name.clone();
+        println!("{} got bar", name);
     }
 
     fn on_tick(&mut self, tick: TickData) {
-        println!("got tick {:?}", self.get_addr());
+        let name = self.name.clone();
+        println!("{} got tick {:?}", name, self.get_addr());
     }
 
     fn init(&mut self, runtime: Addr<CtpbeeR>) {
@@ -34,7 +36,9 @@ impl Ac for Strategy {
 async fn main() {
     let mut account = CtpbeeR::new("ctpbee".to_string());
     let str = Strategy { name: "hello".to_string(), addr: None };
+    let str2 = Strategy { name: "bug".to_string(), addr: None };
     account.add_strategy(Box::new(str));
+    account.add_strategy(Box::new(str2));
     let (addr, x) = account.run_forever();
     let copy = addr.clone();
     thread::spawn(move || {
