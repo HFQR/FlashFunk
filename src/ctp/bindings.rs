@@ -57,7 +57,7 @@ pub const THOST_FTDC_FC_BachSyncBrokerData: u8 = 65u8;
 pub const THOST_FTDC_FC_SuperQuery: u8 = 66u8;
 pub const THOST_FTDC_FC_ParkedOrderInsert: u8 = 67u8;
 pub const THOST_FTDC_FC_ParkedOrderAction: u8 = 68u8;
-pub const THOST_FTDC_FC_SyncOTP: u8 = 69u8;
+pub const THOST_FTDC_FC_SyncOTP: u8 = 69u8;fn
 pub const THOST_FTDC_FC_DeleteOrder: u8 = 70u8;
 pub const THOST_FTDC_BFC_ForceUserLogout: u8 = 49u8;
 pub const THOST_FTDC_BFC_UserPasswordUpdate: u8 = 50u8;
@@ -67295,6 +67295,16 @@ fn bindgen_test_layout_CThostFtdcMdApi() {
         concat!("Alignment of ", stringify!(CThostFtdcMdApi))
     );
 }
+extern "C" {
+    #[link_name = "\u{1}??_DCThostFtdcMdApi@@IEAAXXZ"]
+    pub fn CThostFtdcMdApi_CThostFtdcMdApi_destructor(this: *mut CThostFtdcMdApi);
+}
+impl CThostFtdcMdApi {
+    #[inline]
+    pub unsafe fn destruct(&mut self) {
+        CThostFtdcMdApi_CThostFtdcMdApi_destructor(self)
+    }
+}
 #[repr(C)]
 pub struct CThostFtdcTraderSpi__bindgen_vtable(::std::os::raw::c_void);
 #[repr(C)]
@@ -67334,4 +67344,14 @@ fn bindgen_test_layout_CThostFtdcTraderApi() {
         8usize,
         concat!("Alignment of ", stringify!(CThostFtdcTraderApi))
     );
+}
+extern "C" {
+    #[link_name = "\u{1}??_DCThostFtdcTraderApi@@IEAAXXZ"]
+    pub fn CThostFtdcTraderApi_CThostFtdcTraderApi_destructor(this: *mut CThostFtdcTraderApi);
+}
+impl CThostFtdcTraderApi {
+    #[inline]
+    pub unsafe fn destruct(&mut self) {
+        CThostFtdcTraderApi_CThostFtdcTraderApi_destructor(self)
+    }
 }

@@ -28,6 +28,7 @@ fn build(target: &str) {
             non_exhaustive: true,
         }) */
         // Finish the builder and generate the bindings.
+        .generate_inline_functions(true)
         .generate()
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
