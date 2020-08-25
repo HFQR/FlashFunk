@@ -18,6 +18,7 @@ fn build(target: &str) {
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
+        .header_contents("finput-charset", "GBK")
         .header("src/ctp/wrapper.hpp")
         /* // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
@@ -41,7 +42,7 @@ fn build(target: &str) {
 
 fn main() {
     println!("build");
-    build("ctp");
+    // build("ctp");
 }
 
 
