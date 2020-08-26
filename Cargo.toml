@@ -12,6 +12,9 @@ actix = "0.10.0-alpha.3"
 actix-rt = "1.1.1"
 futures = "0.3.5"
 failure = "0.1"
+encoding = "0.2.33"
+memchr = "2.3.3"
+simple-error = "0.2.1"
 
 [[example]]
 name = "login"
