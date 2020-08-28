@@ -364,13 +364,16 @@ static SPI_VTABLE: SpiVTable = SpiVTable {
 ///
 /// 实现行情API的一些主动基准调用方法
 impl MdApi {
-    fn new(id: CString, pwd: CString, path: CString) -> MdApi {
-        let flow_path_ptr = path.clone().into_raw();
+    pub fn new(id: String, pwd: String, path: String) -> MdApi {
+        let ids = CString::new(id).unwrap();
+        let pwds = CString::new(pwd).unwrap();
+        let paths = CString::new(path).unwrap();
+        let flow_path_ptr = paths.clone().into_raw();
         let api = unsafe { CThostFtdcMdApiCreateFtdcMdApi(flow_path_ptr, true, true) };
         MdApi {
-            user_id: id,
-            password: pwd,
-            path,
+            user_id: ids,
+            password: pwds,
+            path: paths,
             market_api: api,
             market_spi: None,
         }

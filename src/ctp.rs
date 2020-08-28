@@ -2,6 +2,6 @@
 
 use super::*;
 
-mod api;
-mod bindings;
-mod sys;
+pub mod api;
+pub mod bindings;
+pub mod sys;

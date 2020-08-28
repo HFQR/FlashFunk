@@ -9,6 +9,9 @@ fn build(target: &str) {
     check_arch();
     add_search_path();
     add_llvm_path();
+
+    // Tell cargo to invalidate the built crate whenever the wrapper changes
+
     cc::Build::new()
         .file("src/ctp/src/ctp.cpp")
         .cpp(true)
@@ -41,7 +44,10 @@ fn build(target: &str) {
 }
 
 fn main() {
-    println!("build");
+    // println!("cargo:rustc-link-lib=/sdk_sources/ctp/lib/thostmduserapi_se");
+    println!("cargo:rerun-if-changed=src/wrapper.hpp");
+    println!("cargo:rerun-if-changed=src/bridge/bridge.hpp");
+    println!("cargo:rerun-if-changed=src/bridge/bridge.cpp");
     // build("ctp");
 }
 
