@@ -2,6 +2,7 @@
 
 use std::env;
 use std::path::PathBuf;
+use std::io::Write;
 
 /// 遍历命令
 fn build(target: &str) {
@@ -21,25 +22,23 @@ fn build(target: &str) {
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
-        .header_contents("finput-charset", "GBK")
         .header("src/ctp/wrapper.hpp")
         /* // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks)) */
-        .ignore_methods()
-        .rustified_enum(".*")
         /* .default_enum_style(bindgen::EnumVariation::Rust {
             non_exhaustive: true,
         }) */
         // Finish the builder and generate the bindings.
-        .generate_inline_functions(true)
         .generate()
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = PathBuf::from("./src/ctp");
+    let out_path = PathBuf::from("./src/ctp").join("bindings.rs");
     println!("outpath : {:?}", out_path);
-    bindings.write_to_file(out_path.join("bindings.rs")).expect("Couldn't write bindings!");
+    let binding_output = bindings.to_string().replace("c_char", "c_uchar");
+    let mut output_file = std::fs::File::create(out_path.as_path()).map_err(|e| format!("cannot create struct file, {}", e)).unwrap();
+    output_file.write_all(binding_output.as_bytes()).map_err(|e| format!("cannot write struct file, {}", e));
     println!("Generate successful")
 }
 
@@ -47,13 +46,12 @@ fn main() {
     let current_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let out_dir = format!("{}/sdk_sources/ctp/lib", current_dir);
     println!("cargo:rustc-link-search=native={}", out_dir);
-    // println!("cargo:rustc-flags=-l thostmduserapi_se -L sdk_source/ctp/lib/thostmduserapi_se.dll");
+    println!("cargo:rustc-flags=-l thostmduserapi_se -L {}/thostmduserapi_se.dll", out_dir);
     println!("cargo:rerun-if-changed=src/wrapper.hpp");
     println!("cargo:rerun-if-changed=src/bridge/bridge.hpp");
     println!("cargo:rerun-if-changed=src/bridge/bridge.cpp");
     // build("ctp");
 }
-
 
 
 #[cfg(not(target_os = "windows"))]

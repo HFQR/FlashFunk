@@ -24,7 +24,7 @@ extern "C" {
     /// 行情API 初始化
     /// I do not know the rule of how to link c++ code
     ///
-    #[link_name = "_ZN15CThostFtdcMdApi15CreateFtdcMdApiEPKcbb"]
+    #[link_name = "\u{1}?CreateFtdcMdApi@CThostFtdcMdApi@@SAPEAV1@PEBD_N1@Z"]
     fn CThostFtdcMdApiCreateFtdcMdApi(pszFlowPath: *const c_char, bIsUsingUdp: c_bool, bIsMulticast: c_bool) -> *mut c_void;
     /// 获取API版本信息
     #[link_name = "_ZN15CThostFtdcMdApi13GetApiVersionEv"]
@@ -220,7 +220,7 @@ pub unsafe fn info_to_result(rsp_info: *const CThostFtdcRspInfoField) -> RspResu
 //     c_str.to_str().unwrap().to_string()
 // }
 /// todo: 下面有问题描述
-pub fn covert_cstr_to_str(v: &[i8]) -> Cow<str> {
+pub fn covert_cstr_to_str(v: &[u8]) -> Cow<str> {
     Cow::from("这里有严重的问题， 我不知道怎么把i8的c_char转换为 String")
 }
 
