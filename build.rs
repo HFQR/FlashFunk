@@ -44,12 +44,16 @@ fn build(target: &str) {
 }
 
 fn main() {
-    // println!("cargo:rustc-link-lib=/sdk_sources/ctp/lib/thostmduserapi_se");
+    let current_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let out_dir = format!("{}/sdk_sources/ctp/lib", current_dir);
+    println!("cargo:rustc-link-search=native={}", out_dir);
+    // println!("cargo:rustc-flags=-l thostmduserapi_se -L sdk_source/ctp/lib/thostmduserapi_se.dll");
     println!("cargo:rerun-if-changed=src/wrapper.hpp");
     println!("cargo:rerun-if-changed=src/bridge/bridge.hpp");
     println!("cargo:rerun-if-changed=src/bridge/bridge.cpp");
     // build("ctp");
 }
+
 
 
 #[cfg(not(target_os = "windows"))]

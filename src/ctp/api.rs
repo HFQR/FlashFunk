@@ -15,11 +15,17 @@ use encoding::{DecoderTrap, Encoding};
 use encoding::all::GB18030;
 use failure::_core::str::Utf8Error;
 
+#[allow(non_camel_case_types)]
+type c_bool = std::os::raw::c_uchar;
+
+
 #[link(name = "thostmduserapi_se")]
 extern "C" {
     /// 行情API 初始化
+    /// I do not know the rule of how to link c++ code
+    ///
     #[link_name = "_ZN15CThostFtdcMdApi15CreateFtdcMdApiEPKcbb"]
-    fn CThostFtdcMdApiCreateFtdcMdApi(pszFlowPath: *const c_char, bIsUsingUdp: bool, bIsMulticast: bool) -> *mut c_void;
+    fn CThostFtdcMdApiCreateFtdcMdApi(pszFlowPath: *const c_char, bIsUsingUdp: c_bool, bIsMulticast: c_bool) -> *mut c_void;
     /// 获取API版本信息
     #[link_name = "_ZN15CThostFtdcMdApi13GetApiVersionEv"]
     fn CThostFtdcMdApiGetApiVersion() -> *const c_char;
@@ -247,58 +253,58 @@ extern "C" fn spi_on_heart_beat_warning(spi: *mut CThostFtdcMdSpi, nTimeLapse: c
 }
 
 #[allow(non_snake_case)]
-extern "C" fn spi_on_rsp_user_login(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *const CThostFtdcRspUserLoginField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) {
+extern "C" fn spi_on_rsp_user_login(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *const CThostFtdcRspUserLoginField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_user_login(pRspUserLogin.as_ref(), rsp_info, nRequestID, bIsLast);
+        (*(*spi).spi).on_rsp_user_login(pRspUserLogin.as_ref(), rsp_info, nRequestID, bIsLast != 0);
     }
 }
 
 #[allow(non_snake_case)]
-extern "C" fn spi_on_rsp_user_logout(spi: *mut CThostFtdcMdSpi, pUserLogout: *const CThostFtdcUserLogoutField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) {
+extern "C" fn spi_on_rsp_user_logout(spi: *mut CThostFtdcMdSpi, pUserLogout: *const CThostFtdcUserLogoutField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_user_logout(pUserLogout.as_ref(), rsp_info, nRequestID, bIsLast);
+        (*(*spi).spi).on_rsp_user_logout(pUserLogout.as_ref(), rsp_info, nRequestID, bIsLast != 0);
     }
 }
 
 #[allow(non_snake_case)]
-extern "C" fn spi_on_rsp_error(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) {
+extern "C" fn spi_on_rsp_error(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_error(rsp_info, nRequestID, bIsLast);
+        (*(*spi).spi).on_rsp_error(rsp_info, nRequestID, bIsLast != 0);
     }
 }
 
 #[allow(non_snake_case)]
-extern "C" fn spi_on_rsp_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) {
+extern "C" fn spi_on_rsp_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_sub_market_data(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast);
+        (*(*spi).spi).on_rsp_sub_market_data(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
     }
 }
 
 #[allow(non_snake_case)]
-extern "C" fn spi_on_rsp_un_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) {
+extern "C" fn spi_on_rsp_un_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_un_sub_market_data(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast);
+        (*(*spi).spi).on_rsp_un_sub_market_data(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
     }
 }
 
 #[allow(non_snake_case)]
-extern "C" fn spi_on_rsp_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) {
+extern "C" fn spi_on_rsp_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_sub_for_quote_rsp(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast);
+        (*(*spi).spi).on_rsp_sub_for_quote_rsp(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
     }
 }
 
 #[allow(non_snake_case)]
-extern "C" fn spi_on_rsp_un_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) {
+extern "C" fn spi_on_rsp_un_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_un_sub_for_quote_rsp(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast);
+        (*(*spi).spi).on_rsp_un_sub_for_quote_rsp(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
     }
 }
 
@@ -325,19 +331,19 @@ struct SpiVTable {
     /// 心跳警告
     on_heart_beat_warning: extern "C" fn(spi: *mut CThostFtdcMdSpi, nTimeLapse: c_int),
     /// 用户登录回调
-    on_rsp_user_login: extern "C" fn(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *const CThostFtdcRspUserLoginField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool),
+    on_rsp_user_login: extern "C" fn(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *const CThostFtdcRspUserLoginField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
     /// 用户登出回调
-    on_rsp_user_logout: extern "C" fn(spi: *mut CThostFtdcMdSpi, pUserLogout: *const CThostFtdcUserLogoutField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool),
+    on_rsp_user_logout: extern "C" fn(spi: *mut CThostFtdcMdSpi, pUserLogout: *const CThostFtdcUserLogoutField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
     /// 错误回调
-    on_rsp_error: extern "C" fn(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool),
+    on_rsp_error: extern "C" fn(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
     /// 订阅深度行情回调
-    on_rsp_sub_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool),
+    on_rsp_sub_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
     /// 取消订阅深度行情回调
-    on_rsp_un_sub_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool),
+    on_rsp_un_sub_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
     ///
-    on_rsp_sub_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool),
+    on_rsp_sub_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
     /// 忘记了
-    on_rsp_un_sub_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool),
+    on_rsp_un_sub_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
     /// 深度行情回调
     on_rtn_depth_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pDepthMarketData: *const CThostFtdcDepthMarketDataField),
     on_rtn_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pForQuoteRsp: *const CThostFtdcForQuoteRspField),
@@ -369,7 +375,7 @@ impl MdApi {
         let pwds = CString::new(pwd).unwrap();
         let paths = CString::new(path).unwrap();
         let flow_path_ptr = paths.clone().into_raw();
-        let api = unsafe { CThostFtdcMdApiCreateFtdcMdApi(flow_path_ptr, true, true) };
+        let api = unsafe { CThostFtdcMdApiCreateFtdcMdApi(flow_path_ptr, true  as c_bool, true as c_bool) };
         MdApi {
             user_id: ids,
             password: pwds,
