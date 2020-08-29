@@ -1237,7 +1237,7 @@ pub const THOST_FTDC_OTC_MT_ParValue: u8 = 50u8;
 pub const THOST_TE_RESUME_TYPE_THOST_TERT_RESTART: THOST_TE_RESUME_TYPE = 0;
 pub const THOST_TE_RESUME_TYPE_THOST_TERT_RESUME: THOST_TE_RESUME_TYPE = 1;
 pub const THOST_TE_RESUME_TYPE_THOST_TERT_QUICK: THOST_TE_RESUME_TYPE = 2;
-pub type THOST_TE_RESUME_TYPE = u32;
+pub type THOST_TE_RESUME_TYPE = i32;
 #[doc = ""]
 #[doc = "TFtdcTraderIDType��һ������������Ա��������"]
 #[doc = ""]
@@ -67297,7 +67297,7 @@ extern "C" {
     #[doc = "@param pszFlowPath ����������Ϣ�ļ���Ŀ¼��Ĭ��Ϊ��ǰĿ¼"]
     #[doc = "@return ��������UserApi"]
     #[doc = "modify for udp marketdata"]
-    #[link_name = "\u{1}_ZN15CThostFtdcMdApi15CreateFtdcMdApiEPKcbb"]
+    #[link_name = "\u{1}?CreateFtdcMdApi@CThostFtdcMdApi@@SAPEAV1@PEBD_N1@Z"]
     pub fn CThostFtdcMdApi_CreateFtdcMdApi(
         pszFlowPath: *const ::std::os::raw::c_uchar,
         bIsUsingUdp: bool,
@@ -67307,7 +67307,7 @@ extern "C" {
 extern "C" {
     #[doc = "��ȡAPI�İ汾��Ϣ"]
     #[doc = "@retrun ��ȡ���İ汾��"]
-    #[link_name = "\u{1}_ZN15CThostFtdcMdApi13GetApiVersionEv"]
+    #[link_name = "\u{1}?GetApiVersion@CThostFtdcMdApi@@SAPEBDXZ"]
     pub fn CThostFtdcMdApi_GetApiVersion() -> *const ::std::os::raw::c_uchar;
 }
 impl CThostFtdcMdApi {
@@ -67368,7 +67368,7 @@ extern "C" {
     #[doc = "����TraderApi"]
     #[doc = "@param pszFlowPath ����������Ϣ�ļ���Ŀ¼��Ĭ��Ϊ��ǰĿ¼"]
     #[doc = "@return ��������UserApi"]
-    #[link_name = "\u{1}_ZN19CThostFtdcTraderApi19CreateFtdcTraderApiEPKc"]
+    #[link_name = "\u{1}?CreateFtdcTraderApi@CThostFtdcTraderApi@@SAPEAV1@PEBD@Z"]
     pub fn CThostFtdcTraderApi_CreateFtdcTraderApi(
         pszFlowPath: *const ::std::os::raw::c_uchar,
     ) -> *mut CThostFtdcTraderApi;
@@ -67376,7 +67376,7 @@ extern "C" {
 extern "C" {
     #[doc = "��ȡAPI�İ汾��Ϣ"]
     #[doc = "@retrun ��ȡ���İ汾��"]
-    #[link_name = "\u{1}_ZN19CThostFtdcTraderApi13GetApiVersionEv"]
+    #[link_name = "\u{1}?GetApiVersion@CThostFtdcTraderApi@@SAPEBDXZ"]
     pub fn CThostFtdcTraderApi_GetApiVersion() -> *const ::std::os::raw::c_uchar;
 }
 impl CThostFtdcTraderApi {

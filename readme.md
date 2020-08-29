@@ -113,7 +113,7 @@ cargo --vv build
 In order to run `call` example, for example in linux 
 
 you should export absolute path of `/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/`
-likes, maybe also works on windows 
+likes, do not work on windows =_=
 ```
 export LD_LIBRARY_PATH=/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/
 ```
