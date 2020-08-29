@@ -4,7 +4,7 @@
 use super::interface::Interface;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_void, c_char, c_int};
-use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField, CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField, CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType, TThostFtdcErrorIDType};
+use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcMdApi_CreateFtdcMdApi, CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField, CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField, CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType, TThostFtdcErrorIDType};
 use std::process::id;
 use actix::Addr;
 use crate::app::CtpbeeR;
@@ -24,26 +24,24 @@ extern "C" {
     /// 行情API 初始化
     /// I do not know the rule of how to link c++ code
     ///
-    #[link_name = "\u{1}?CreateFtdcMdApi@CThostFtdcMdApi@@SAPEAV1@PEBD_N1@Z"]
-    fn CThostFtdcMdApiCreateFtdcMdApi(pszFlowPath: *const c_char, bIsUsingUdp: c_bool, bIsMulticast: c_bool) -> *mut c_void;
     /// 获取API版本信息
     #[link_name = "_ZN15CThostFtdcMdApi13GetApiVersionEv"]
     fn CThostFtdcMdApiGetApiVersion() -> *const c_char;
     /// 释放API
     #[link_name = "_ZN14CFtdcMdApiImpl7ReleaseEv"]
-    fn CFtdcMdApiImplRelease(api: *mut c_void);
+    fn CFtdcMdApiImplRelease(api: *mut CThostFtdcMdApi);
     /// 行情API初始化
     #[link_name = "_ZN14CFtdcMdApiImpl4InitEv"]
-    fn CFtdcMdApiImplInit(api: *mut c_void);
+    fn CFtdcMdApiImplInit(api: *mut CThostFtdcMdApi);
     /// 阻塞等待结束
     #[link_name = "_ZN14CFtdcMdApiImpl4JoinEv"]
-    fn CFtdcMdApiImplJoin(api: *mut c_void) -> c_int;
+    fn CFtdcMdApiImplJoin(api: *mut CThostFtdcMdApi) -> c_int;
     /// 获取交易日
     #[link_name = "_ZN14CFtdcMdApiImpl13GetTradingDayEv"]
-    fn CFtdcMdApiImplGetTradingDay(api: *mut c_void) -> *const c_char;
+    fn CFtdcMdApiImplGetTradingDay(api: *mut CThostFtdcMdApi) -> *const c_char;
     /// 注册前置地址 接受api和前置地址
     #[link_name = "_ZN14CFtdcMdApiImpl13RegisterFrontEPc"]
-    fn CFtdcMdApiImplRegisterFront(api: *mut c_void, pszFrontAddress: *const c_char);
+    fn CFtdcMdApiImplRegisterFront(api: *mut CThostFtdcMdApi, pszFrontAddress: *const c_char);
     /// 注册到服务器
     #[link_name = "_ZN14CFtdcMdApiImpl18RegisterNameServerEPc"]
     fn CFtdcMdApiImplRegisterNameServer(api: *mut c_void, pszNsAddress: *const c_char);
@@ -52,7 +50,7 @@ extern "C" {
     fn CFtdcMdApiImplRegisterFensUserInfo(api: *mut c_void, pFensUserInfo: *const CThostFtdcFensUserInfoField);
     /// 注册回调信息
     #[link_name = "_ZN14CFtdcMdApiImpl11RegisterSpiEP15CThostFtdcMdSpi"]
-    fn CFtdcMdApiImplRegisterSpi(api: *mut c_void, pSpi: *mut c_void);
+    fn CFtdcMdApiImplRegisterSpi(api: *mut CThostFtdcMdApi, pSpi: *mut c_void);
     #[link_name = "_ZN14CFtdcMdApiImpl19SubscribeMarketDataEPPci"]
     /// 订阅深度行情API
     fn CFtdcMdApiImplSubscribeMarketData(api: *mut c_void, ppInstrumentID: *const *const c_char, nCount: c_int) -> c_int;
@@ -83,7 +81,7 @@ pub struct MdApi {
     user_id: CString,
     password: CString,
     path: CString,
-    market_api: *mut c_void,
+    market_api: *mut CThostFtdcMdApi,
     market_spi: Option<*mut CThostFtdcMdSpi>,
 }
 
@@ -374,8 +372,9 @@ impl MdApi {
         let ids = CString::new(id).unwrap();
         let pwds = CString::new(pwd).unwrap();
         let paths = CString::new(path).unwrap();
-        let flow_path_ptr = paths.clone().into_raw();
-        let api = unsafe { CThostFtdcMdApiCreateFtdcMdApi(flow_path_ptr, true  as c_bool, true as c_bool) };
+        let flow_path_ptr = unsafe { paths.as_ptr() as *const u8 };
+        let api = unsafe { CThostFtdcMdApi_CreateFtdcMdApi(flow_path_ptr, true, true) };
+        // drop(flow_path);
         MdApi {
             user_id: ids,
             password: pwds,
@@ -396,10 +395,10 @@ impl MdApi {
     }
 
     /// 注册前置地址
-    fn register_fronted_address(&mut self, register_addr: CString) {
-        let front_socket_address_ptr = register_addr.into_raw();
-        unsafe { CFtdcMdApiImplRegisterFront(self.market_api, front_socket_address_ptr) };
-    }
+    // fn register_fronted_address(&mut self, register_addr: CString) {
+    //     let front_socket_address_ptr = register_addr.into_raw();
+    //     unsafe { CFtdcMdApiImplRegisterFront(self.market_api, front_socket_address_ptr) };
+    // }
 
     /// 注册回调
     fn register_spi(&mut self, quo_api: Box<dyn QuoteApi>, addr: Addr<CtpbeeR>) {

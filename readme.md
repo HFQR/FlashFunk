@@ -1,9 +1,9 @@
 ## ctpbee-rs 
 
-> 专为高频交易设计的程序化交易框架
+> High Frequency Trading Framework
 
 
-### 快速开始 
+### Quick Start 
 ```rust
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
@@ -54,7 +54,7 @@ async fn main() {
 ```
 
 
-## 文档 
+## Document 
 
 
 ## 前置声明
@@ -62,7 +62,7 @@ async fn main() {
 不允许以任何方式私自出售源码或者泄露. 尊重劳动成果 ^_^. 
 未来可能进行商业化开源/开源 
 
-###  项目任务分配 
+###  Task 
 
 |  task   | contributor  |  status  |
 |  ----  | ----  | ----  |
@@ -76,7 +76,7 @@ async fn main() {
 |  k线生成 |   `qzm`           |  `running`  |
 
 
-### 接口编译 
+### Interface compile 
 本项目最终采用`bindgen` 作为`c++`接口封装 
 请安装llvm以支持RUST  C++ bindgen
 
@@ -100,12 +100,21 @@ llvm-config does not exist in windows prebuilt binaries. You need to compile fro
 
 ### 一些详细工作 
 - 如何进行编译 
+
 修改`build.rs`里面main函数 `build`函数参数支持以下  
 
 `ctp`
 
-- 如何打印相信的编译输出 
-使用cargo --vv build 
+- how to print detail output 
 
+cargo --vv build 
 
+### Environment setup
+In order to run `call` example, for example in linux 
 
+you should export absolute path of `/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/`
+likes, maybe also works on windows 
+```
+export LD_LIBRARY_PATH=/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/
+```
+`rusct-link-search-dylib` do not work , I don't know why
