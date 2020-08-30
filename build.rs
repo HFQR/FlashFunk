@@ -30,7 +30,6 @@ fn main() {
     let out_dir = format!("{}/sdk_sources/ctp/lib", current_dir);
     println!("cargo:rustc-link-search=native={}", out_dir);
     add_search_path(current_dir.clone());
-    println!("cargo:rustc-link-search=dylib={}", "thostmduserapi_se");
     println!("cargo:rerun-if-changed=src/wrapper.hpp");
     println!("cargo:rerun-if-changed=src/bridge/bridge.hpp");
     println!("cargo:rerun-if-changed=src/bridge/bridge.cpp");
@@ -40,6 +39,7 @@ fn main() {
 
 #[cfg(not(target_os = "windows"))]
 fn add_search_path(main_path: String) {
+    println!("cargo:rustc-flags=-L {}/sdk_sources/ctp/linux/", main_path);
     println!("cargo:rustc-link-search={}/sdk_sources/ctp/linux/", main_path);
 }
 
@@ -47,7 +47,6 @@ fn add_search_path(main_path: String) {
 fn add_search_path(main_path: String) {
     // println!("cargo:rustc -- -C link-args='-Wl,-rpath,{}", );
     println!("cargo:rustc-flags=-L {}/sdk_sources/ctp/win/", main_path);
-    println!("cargo:rustc-link-search=native={}/sdk_sources/ctp/win/", main_path);
     println!("cargo:rustc-link-search={}/sdk_sources/ctp/win/", main_path);
 }
 
