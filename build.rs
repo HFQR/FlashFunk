@@ -45,6 +45,9 @@ fn add_search_path(main_path: String) {
 
 #[cfg(target_os = "windows")]
 fn add_search_path(main_path: String) {
+    // println!("cargo:rustc -- -C link-args='-Wl,-rpath,{}", );
+    println!("cargo:rustc-flags=-L {}/sdk_sources/ctp/win/", main_path);
+    println!("cargo:rustc-link-search=native={}/sdk_sources/ctp/win/", main_path);
     println!("cargo:rustc-link-search={}/sdk_sources/ctp/win/", main_path);
 }
 

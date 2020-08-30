@@ -21,11 +21,16 @@ name = "login"
 [[example]]
 name = "call"
 
+[profile.dev]
+rpath = true
+
+
 
 [lib]
 name = "ctpbee_rs"
 path = "src/lib.rs"
 
 [build-dependencies]
+
 bindgen = "0.52"
 cc = "1.0"
