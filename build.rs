@@ -18,8 +18,10 @@ fn build(target: &str) {
         .generate()
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
-    let out_path = PathBuf::from("./src/ctp").join("bindings.rs");
-    let binding_output = bindings.to_string().replace("c_char", "c_uchar");
+
+    let env = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_path = env.join("bindings.rs");
+    let binding_output = bindings.to_string();
     let mut output_file = std::fs::File::create(out_path.as_path()).map_err(|e| format!("cannot create struct file, {}", e)).unwrap();
     output_file.write_all(binding_output.as_bytes()).map_err(|e| format!("cannot write struct file, {}", e));
     println!("Generate successful")

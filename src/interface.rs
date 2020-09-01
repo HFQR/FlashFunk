@@ -7,18 +7,18 @@ use actix::Addr;
 /// 用户登录接口,包含用户的\
 pub trait Interface {
     /// 发单
-    fn send_order(&mut self, order: OrderRequest) -> String { unimplemented!() }
+    fn send_order(&mut self, order: OrderRequest) -> String;
     /// 撤单
-    fn cancel_order(&mut self, req: CancelRequest) -> String { unimplemented!() }
+    fn cancel_order(&mut self, req: CancelRequest);
     /// 登录接口
-    fn connect(&mut self, req: LoginForm) -> bool { unimplemented!() }
+    fn connect(&mut self, req: LoginForm);
     /// 订阅行情
-    fn subscribe(&mut self, symbol: String) -> bool { unimplemented!() }
+    fn subscribe(&mut self, symbol: String);
+    /// 取消订阅行情
+    fn unsubscribe(&mut self, symbol: String);
     /// 释放退出接口
-    fn exit(&mut self) { unimplemented!() }
+    fn exit(&mut self);
     /// 获取到App
-    fn get_app(&mut self) -> Addr<CtpbeeR> {
-        unimplemented!()
-    }
+    fn get_app(&mut self) -> &Addr<CtpbeeR>;
 }
 

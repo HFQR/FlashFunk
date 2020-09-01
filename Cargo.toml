@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
+
 build = "build.rs"
+
 [dependencies]
 chrono = "0.4.13"
 libc = "0.2.0"
@@ -24,13 +26,10 @@ name = "call"
 [profile.dev]
 rpath = true
 
-
-
-[lib]
-name = "ctpbee_rs"
-path = "src/lib.rs"
+#[lib]
+#name = "ctpbee_rs"
+#path = "src/lib.rs"
 
 [build-dependencies]
-
-bindgen = "0.52"
+bindgen = {git ="https://github.com/rust-lang/rust-bindgen"}
 cc = "1.0"

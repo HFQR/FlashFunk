@@ -143,7 +143,7 @@ impl Handler<TradeData> for BoxedAc {
 
     fn handle(&mut self, msg: TradeData, ctx: &mut Context<Self>) -> Self::Result {
         self.0.on_trade(msg)
-    }
+    } 
 }
 
 

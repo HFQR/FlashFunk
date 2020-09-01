@@ -3,5 +3,4 @@
 use super::*;
 
 pub mod api;
-pub mod bindings;
 pub mod sys;

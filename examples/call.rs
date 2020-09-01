@@ -45,7 +45,10 @@ async fn main() {
     let (addr, x) = account.run_forever();
     let copy = addr.clone();
     // here is the call c++ code
-    let md_api = MdApi::new("name".to_string(), "id".to_string(), "bug".to_string());
+    let mut md_api = MdApi::new("name".to_string(), "id".to_string(), "bug".to_string());
+    md_api.init();
+    let trading_day = md_api.get_trading_day();
+    println!("trading day:{} ", trading_day);
     // wait
     x.await;
 }
