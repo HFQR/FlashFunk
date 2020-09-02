@@ -18,7 +18,7 @@ extern "C" void CThostFtdcMdApi_RegisterFront(CThostFtdcMdApi *self, char *pszFr
     s->RegisterFront(pszFrontAddress);
 }
 
-extern "C" void CThostFtdcMdApi_RegisterSpi(CThostFtdcMdApi *self, CThostFtdcMdSpi *spi) {
+extern "C" void CThostFtdcMdApi_RegisterSpi(CThostFtdcMdApi *self, CThostFtdcMdSpi * spi) {
     auto s = static_cast<CThostFtdcMdApi *>(self);
     s->RegisterSpi(spi);
 }

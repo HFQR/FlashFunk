@@ -6,7 +6,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_void, c_char, c_int, c_uchar};
 use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcMdApi_Init,
                       CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_SubscribeMarketData,
-                      CThostFtdcMdApi_RegisterSpi,
+                      // CThostFtdcMdApi_RegisterSpi,
                       CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_CreateFtdcMdApi, CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField, CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField, CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType, TThostFtdcErrorIDType};
 use std::process::id;
 use actix::Addr;
@@ -22,58 +22,6 @@ use crate::structs::{OrderRequest, CancelRequest, LoginForm};
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
 
-
-#[link(name = "thostmduserapi_se")]
-extern "C" {
-    /// 行情API 初始化
-    /// I do not know the rule of how to link c++ code
-    ///
-    /// 获取API版本信息
-    #[link_name = "_ZN15CThostFtdcMdApi13GetApiVersionEv"]
-    fn CThostFtdcMdApiGetApiVersion() -> *const c_char;
-    /// 释放API
-    #[link_name = "_ZN14CFtdcMdApiImpl7ReleaseEv"]
-    fn CFtdcMdApiImplRelease(api: *mut CThostFtdcMdApi);
-    /// 行情API初始化
-    #[link_name = "_ZN14CFtdcMdApiImpl4InitEv"]
-    fn CFtdcMdApiImplInit(api: *mut CThostFtdcMdApi);
-    /// 阻塞等待结束
-    #[link_name = "_ZN14CFtdcMdApiImpl4JoinEv"]
-    fn CFtdcMdApiImplJoin(api: *mut CThostFtdcMdApi) -> c_int;
-    /// 获取交易日
-    #[link_name = "_ZN14CFtdcMdApiImpl13GetTradingDayEv"]
-    fn CFtdcMdApiImplGetTradingDay(api: *mut CThostFtdcMdApi) -> *const c_char;
-    /// 注册前置地址 接受api和前置地址
-    #[link_name = "_ZN14CFtdcMdApiImpl13RegisterFrontEPc"]
-    fn CFtdcMdApiImplRegisterFront(api: *mut CThostFtdcMdApi, pszFrontAddress: *const c_char);
-    /// 注册到服务器
-    #[link_name = "_ZN14CFtdcMdApiImpl18RegisterNameServerEPc"]
-    fn CFtdcMdApiImplRegisterNameServer(api: *mut c_void, pszNsAddress: *const c_char);
-    /// 注册用户信息
-    #[link_name = "_ZN14CFtdcMdApiImpl20RegisterFensUserInfoEP27CThostFtdcFensUserInfoField"]
-    fn CFtdcMdApiImplRegisterFensUserInfo(api: *mut c_void, pFensUserInfo: *const CThostFtdcFensUserInfoField);
-    /// 注册回调信息
-    #[link_name = "_ZN14CFtdcMdApiImpl11RegisterSpiEP15CThostFtdcMdSpi"]
-    fn CFtdcMdApiImplRegisterSpi(api: *mut CThostFtdcMdApi, pSpi: *mut c_void);
-    #[link_name = "_ZN14CFtdcMdApiImpl19SubscribeMarketDataEPPci"]
-    /// 订阅深度行情API
-    fn CFtdcMdApiImplSubscribeMarketData(api: *mut c_void, ppInstrumentID: *const *const c_char, nCount: c_int) -> c_int;
-    /// 去掉订阅深度行情API
-    #[link_name = "_ZN14CFtdcMdApiImpl21UnSubscribeMarketDataEPPci"]
-    fn CFtdcMdApiImplUnSubscribeMarketData(api: *mut c_void, ppInstrumentID: *const *const c_char, nCount: c_int) -> c_int;
-    #[link_name = "_ZN14CFtdcMdApiImpl20SubscribeForQuoteRspEPPci"]
-    /// 订阅行情回报
-    fn CFtdcMdApiImplSubscribeForQuoteRsp(api: *mut c_void, ppInstrumentID: *const *const c_char, nCount: c_int) -> c_int;
-    /// 取消订阅行情回报
-    #[link_name = "_ZN14CFtdcMdApiImpl22UnSubscribeForQuoteRspEPPci"]
-    fn CFtdcMdApiImplUnSubscribeForQuoteRsp(api: *mut c_void, ppInstrumentID: *const *const c_char, nCount: c_int) -> c_int;
-    /// 用户登录请求
-    #[link_name = "_ZN14CFtdcMdApiImpl12ReqUserLoginEP27CThostFtdcReqUserLoginFieldi"]
-    fn CFtdcMdApiImplReqUserLogin(api: *mut c_void, pReqUserLoginField: *const CThostFtdcReqUserLoginField, nRequestID: c_int) -> c_int;
-    /// 用户退出登录请求
-    #[link_name = "_ZN14CFtdcMdApiImpl13ReqUserLogoutEP25CThostFtdcUserLogoutFieldi"]
-    fn CFtdcMdApiImplReqUserLogout(api: *mut c_void, pUserLogoutField: *const CThostFtdcUserLogoutField, nRequestID: c_int) -> c_int;
-}
 
 /// the implement of market api
 /// user_id 用户名
@@ -234,27 +182,23 @@ pub struct CThostFtdcMdSpi {
 }
 
 fn create_spi(md_spi: *mut dyn QuoteApi, addr: Addr<CtpbeeR>) -> CThostFtdcMdSpi {
-    CThostFtdcMdSpi { vtable: &SPI_VTABLE, spi: md_spi, addr: addr }
+    CThostFtdcMdSpi { vtable: &SPI_VTABLE, spi: md_spi, addr }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_front_connected(spi: *mut CThostFtdcMdSpi) {
     unsafe { (*(*spi).spi).on_front_connected() };
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_front_disconnected(spi: *mut CThostFtdcMdSpi, nReason: c_int) {
     let reason = std::convert::From::from(nReason);
     unsafe { (*(*spi).spi).on_front_disconnected(reason) };
 }
 
-#[allow(non_snake_case, unused_variables)]
 extern "C" fn spi_on_heart_beat_warning(spi: *mut CThostFtdcMdSpi, nTimeLapse: c_int) {
     // CTP API specification shows this will never be called
     unreachable!();
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rsp_user_login(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *const CThostFtdcRspUserLoginField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
@@ -262,7 +206,6 @@ extern "C" fn spi_on_rsp_user_login(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *c
     }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rsp_user_logout(spi: *mut CThostFtdcMdSpi, pUserLogout: *const CThostFtdcUserLogoutField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
@@ -270,7 +213,6 @@ extern "C" fn spi_on_rsp_user_logout(spi: *mut CThostFtdcMdSpi, pUserLogout: *co
     }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rsp_error(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
@@ -278,7 +220,6 @@ extern "C" fn spi_on_rsp_error(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThos
     }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rsp_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
@@ -286,7 +227,6 @@ extern "C" fn spi_on_rsp_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificIns
     }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rsp_un_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
@@ -294,7 +234,6 @@ extern "C" fn spi_on_rsp_un_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecific
     }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rsp_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
@@ -302,7 +241,6 @@ extern "C" fn spi_on_rsp_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificI
     }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rsp_un_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
     unsafe {
         let rsp_info = info_to_result(pRspInfo);
@@ -310,12 +248,10 @@ extern "C" fn spi_on_rsp_un_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecif
     }
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rtn_depth_market_data(spi: *mut CThostFtdcMdSpi, pDepthMarketData: *const CThostFtdcDepthMarketDataField) {
     unsafe { (*(*spi).spi).on_rtn_depth_market_data(pDepthMarketData.as_ref()) };
 }
 
-#[allow(non_snake_case)]
 extern "C" fn spi_on_rtn_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pForQuoteRsp: *const CThostFtdcForQuoteRspField) {
     unsafe { (*(*spi).spi).on_rtn_for_quote_rsp(pForQuoteRsp.as_ref()) };
 }
@@ -411,8 +347,8 @@ impl MdApi {
         let md_spi_ptr = Box::into_raw(quo_api);
         // 创建我们需要的回调结构体
         let spi_ptr = Box::into_raw(Box::new(create_spi(md_spi_ptr, addr)));
-        // unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, spi_ptr) };
-        // // 更新到本地的结构体,注册0成功
+        // unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, spi_ptr.) };
+        // // // 更新到本地的结构体,注册0成功
         // self.market_spi = Some(spi_ptr);
         // 暂时不清楚作用 先注释
         // if let Some(last_registered_spi_ptr) = last_registered_spi_ptr {
