@@ -412,7 +412,7 @@ impl MdApi {
         // 创建我们需要的回调结构体
         let spi_ptr = Box::into_raw(Box::new(create_spi(md_spi_ptr, addr)));
         // unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, spi_ptr) };
-        // // 更新到本地的结构体,注册成功
+        // // 更新到本地的结构体,注册0成功
         // self.market_spi = Some(spi_ptr);
         // 暂时不清楚作用 先注释
         // if let Some(last_registered_spi_ptr) = last_registered_spi_ptr {
