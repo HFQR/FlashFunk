@@ -6,8 +6,11 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_void, c_char, c_int, c_uchar};
 use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcMdApi_Init,
                       CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_SubscribeMarketData,
-                      // CThostFtdcMdApi_RegisterSpi,
-                      CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_CreateFtdcMdApi, CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField, CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField, CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType, TThostFtdcErrorIDType};
+                      QuoteSpi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_CreateFtdcMdApi,
+                      CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField,
+                      CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField,
+                      CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType,
+                      TThostFtdcErrorIDType};
 use std::process::id;
 use actix::Addr;
 use crate::app::CtpbeeR;
@@ -18,6 +21,7 @@ use encoding::{DecoderTrap, Encoding};
 use encoding::all::GB18030;
 use failure::_core::str::Utf8Error;
 use crate::structs::{OrderRequest, CancelRequest, LoginForm};
+use crate::ctp::func::QuoteApi;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -34,7 +38,7 @@ pub struct MdApi {
     password: CString,
     path: CString,
     market_api: *mut CThostFtdcMdApi,
-    market_spi: Option<*mut CThostFtdcMdSpi>,
+    market_spi: Option<*mut QuoteSpi>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -77,69 +81,6 @@ impl fmt::Display for RspError {
     }
 }
 
-// unsafe fn unwrap_quote_spi<'a>(spi: *mut c_void) -> &'a mut dyn QuoteSpi {
-//     &mut **(spi as *mut *mut dyn QuoteSpi)
-// }
-/// 行情回调API 应该对API 实现下面所有办法， 然后将回调SPI 注入到MdApi里面去
-///
-pub trait QuoteApi: Send {
-    fn on_front_connected(&mut self) {
-        println!("on_front_connected");
-    }
-
-    fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
-        println!("on_front_disconnected: {:?}", reason);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rsp_user_login(&mut self, rsp_user_login: Option<&CThostFtdcRspUserLoginField>, result: RspResult, request_id: TThostFtdcRequestIDType, is_last: bool) {
-        println!("用户登录 回调 ")
-        // println!("on_rsp_user_login: {:?}, {}, {:?}, {:?}", rsp_user_login, result_to_string(&result), request_id, is_last);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rsp_user_logout(&mut self, rsp_user_logout: Option<&CThostFtdcUserLogoutField>, result: RspResult, request_id: TThostFtdcRequestIDType, is_last: bool) {
-        println!("用户登出 回调")
-        // println!("on_rsp_user_logout: {:?}, {}, {:?}, {:?}", rsp_user_logout, result_to_string(&result), request_id, is_last);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rsp_error(&mut self, result: RspResult, request_id: TThostFtdcRequestIDType, is_last: bool) {
-        println!("on_rsp_error: {}, {:?}, {:?}", result_to_string(&result), request_id, is_last);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rsp_sub_market_data(&mut self, specific_instrument: Option<&CThostFtdcSpecificInstrumentField>, result: RspResult, request_id: TThostFtdcRequestIDType, is_last: bool) {
-        println!("on_rsp_sub_market_data: {:?}, {}, {:?}, {:?}", specific_instrument, result_to_string(&result), request_id, is_last);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rsp_un_sub_market_data(&mut self, specific_instrument: Option<&CThostFtdcSpecificInstrumentField>, result: RspResult, request_id: TThostFtdcRequestIDType, is_last: bool) {
-        println!("on_rsp_un_sub_market_data: {:?}, {}, {:?}, {:?}", specific_instrument, result_to_string(&result), request_id, is_last);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rsp_sub_for_quote_rsp(&mut self, specific_instrument: Option<&CThostFtdcSpecificInstrumentField>, result: RspResult, request_id: TThostFtdcRequestIDType, is_last: bool) {
-        println!("on_rsp_sub_for_quote_rsp: {:?}, {}, {:?}, {:?}", specific_instrument, result_to_string(&result), request_id, is_last);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rsp_un_sub_for_quote_rsp(&mut self, specific_instrument: Option<&CThostFtdcSpecificInstrumentField>, result: RspResult, request_id: TThostFtdcRequestIDType, is_last: bool) {
-        println!("on_rsp_un_sub_for_quote_rsp: {:?}, {}, {:?}, {:?}", specific_instrument, result_to_string(&result), request_id, is_last);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rtn_depth_market_data(&mut self, depth_market_data: Option<&CThostFtdcDepthMarketDataField>) {
-        println!("on_rtn_depth_market_data: {:?}", depth_market_data);
-    }
-
-    #[allow(unused_variables)]
-    fn on_rtn_for_quote_rsp(&mut self, for_quote_rsp: Option<&CThostFtdcForQuoteRspField>) {
-        println!("on_rtn_for_quote_rsp: {:?}", for_quote_rsp);
-    }
-    fn get_addr(&self) -> &Addr<CtpbeeR>;
-}
-
 
 pub fn result_to_string(rsp_result: &RspResult) -> String {
     match rsp_result {
@@ -174,133 +115,10 @@ pub fn covert_cstr_to_str(v: &[i8]) -> Cow<str> {
     Cow::from("这里有严重的问题， 我不知道怎么把i8的c_char转换为 String")
 }
 
-#[repr(C)]
-pub struct CThostFtdcMdSpi {
-    vtable: *const SpiVTable,
-    pub spi: *mut dyn QuoteApi,
-    addr: Addr<CtpbeeR>,
-}
 
-fn create_spi(md_spi: *mut dyn QuoteApi, addr: Addr<CtpbeeR>) -> CThostFtdcMdSpi {
-    CThostFtdcMdSpi { vtable: &SPI_VTABLE, spi: md_spi, addr }
-}
-
-extern "C" fn spi_on_front_connected(spi: *mut CThostFtdcMdSpi) {
-    unsafe { (*(*spi).spi).on_front_connected() };
-}
-
-extern "C" fn spi_on_front_disconnected(spi: *mut CThostFtdcMdSpi, nReason: c_int) {
-    let reason = std::convert::From::from(nReason);
-    unsafe { (*(*spi).spi).on_front_disconnected(reason) };
-}
-
-extern "C" fn spi_on_heart_beat_warning(spi: *mut CThostFtdcMdSpi, nTimeLapse: c_int) {
-    // CTP API specification shows this will never be called
-    unreachable!();
-}
-
-extern "C" fn spi_on_rsp_user_login(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *const CThostFtdcRspUserLoginField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
-    unsafe {
-        let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_user_login(pRspUserLogin.as_ref(), rsp_info, nRequestID, bIsLast != 0);
-    }
-}
-
-extern "C" fn spi_on_rsp_user_logout(spi: *mut CThostFtdcMdSpi, pUserLogout: *const CThostFtdcUserLogoutField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
-    unsafe {
-        let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_user_logout(pUserLogout.as_ref(), rsp_info, nRequestID, bIsLast != 0);
-    }
-}
-
-extern "C" fn spi_on_rsp_error(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
-    unsafe {
-        let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_error(rsp_info, nRequestID, bIsLast != 0);
-    }
-}
-
-extern "C" fn spi_on_rsp_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
-    unsafe {
-        let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_sub_market_data(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
-    }
-}
-
-extern "C" fn spi_on_rsp_un_sub_market_data(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
-    unsafe {
-        let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_un_sub_market_data(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
-    }
-}
-
-extern "C" fn spi_on_rsp_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
-    unsafe {
-        let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_sub_for_quote_rsp(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
-    }
-}
-
-extern "C" fn spi_on_rsp_un_sub_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool) {
-    unsafe {
-        let rsp_info = info_to_result(pRspInfo);
-        (*(*spi).spi).on_rsp_un_sub_for_quote_rsp(pSpecificInstrument.as_ref(), rsp_info, nRequestID, bIsLast != 0);
-    }
-}
-
-extern "C" fn spi_on_rtn_depth_market_data(spi: *mut CThostFtdcMdSpi, pDepthMarketData: *const CThostFtdcDepthMarketDataField) {
-    unsafe { (*(*spi).spi).on_rtn_depth_market_data(pDepthMarketData.as_ref()) };
-}
-
-extern "C" fn spi_on_rtn_for_quote_rsp(spi: *mut CThostFtdcMdSpi, pForQuoteRsp: *const CThostFtdcForQuoteRspField) {
-    unsafe { (*(*spi).spi).on_rtn_for_quote_rsp(pForQuoteRsp.as_ref()) };
-}
-
-/// 这里是底层关系映射表
-/// 我个人猜测这里是ctp的Spi是一个流失关系表,所以在此我们需要把自己写的函数传进去，
-/// 此处类型声明我尚不清楚, 但是应该可以按照同样规则实现
-#[repr(C)]
-#[derive(Debug)]
-struct SpiVTable {
-    /// 前置连接回调
-    on_front_connected: extern "C" fn(spi: *mut CThostFtdcMdSpi),
-    /// 前置断开连接回调
-    on_front_disconnected: extern "C" fn(spi: *mut CThostFtdcMdSpi, nReason: c_int),
-    /// 心跳警告
-    on_heart_beat_warning: extern "C" fn(spi: *mut CThostFtdcMdSpi, nTimeLapse: c_int),
-    /// 用户登录回调
-    on_rsp_user_login: extern "C" fn(spi: *mut CThostFtdcMdSpi, pRspUserLogin: *const CThostFtdcRspUserLoginField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
-    /// 用户登出回调
-    on_rsp_user_logout: extern "C" fn(spi: *mut CThostFtdcMdSpi, pUserLogout: *const CThostFtdcUserLogoutField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
-    /// 错误回调
-    on_rsp_error: extern "C" fn(spi: *mut CThostFtdcMdSpi, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
-    /// 订阅深度行情回调
-    on_rsp_sub_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
-    /// 取消订阅深度行情回调
-    on_rsp_un_sub_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
-    ///
-    on_rsp_sub_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
-    /// 忘记了
-    on_rsp_un_sub_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pSpecificInstrument: *const CThostFtdcSpecificInstrumentField, pRspInfo: *const CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: c_bool),
-    /// 深度行情回调
-    on_rtn_depth_market_data: extern "C" fn(spi: *mut CThostFtdcMdSpi, pDepthMarketData: *const CThostFtdcDepthMarketDataField),
-    on_rtn_for_quote_rsp: extern "C" fn(spi: *mut CThostFtdcMdSpi, pForQuoteRsp: *const CThostFtdcForQuoteRspField),
-}
-
-static SPI_VTABLE: SpiVTable = SpiVTable {
-    on_front_connected: spi_on_front_connected,
-    on_front_disconnected: spi_on_front_disconnected,
-    on_heart_beat_warning: spi_on_heart_beat_warning,
-    on_rsp_user_login: spi_on_rsp_user_login,
-    on_rsp_user_logout: spi_on_rsp_user_logout,
-    on_rsp_error: spi_on_rsp_error,
-    on_rsp_sub_market_data: spi_on_rsp_sub_market_data,
-    on_rsp_un_sub_market_data: spi_on_rsp_un_sub_market_data,
-    on_rsp_sub_for_quote_rsp: spi_on_rsp_sub_for_quote_rsp,
-    on_rsp_un_sub_for_quote_rsp: spi_on_rsp_un_sub_for_quote_rsp,
-    on_rtn_depth_market_data: spi_on_rtn_depth_market_data,
-    on_rtn_for_quote_rsp: spi_on_rtn_for_quote_rsp,
-};
+// fn create_spi(md_spi: *mut dyn QuoteApi, addr: Addr<CtpbeeR>) -> CThostFtdcMdSpi {
+//     CThostFtdcMdSpi { vtable: &SPI_VTABLE, spi: md_spi, addr }
+// }
 
 
 /// Now we get a very useful spi, and we get use the most important things to let everything works well
@@ -345,20 +163,11 @@ impl MdApi {
         let last_registered_spi_ptr = self.market_spi.take();
         // 获取回调操作结构体
         let md_spi_ptr = Box::into_raw(quo_api);
-        // 创建我们需要的回调结构体
-        let spi_ptr = Box::into_raw(Box::new(create_spi(md_spi_ptr, addr)));
+        // // 创建我们需要的回调结构体
+        // let spi_ptr = Box::into_raw(Box::new(create_spi(md_spi_ptr, addr)));
         // unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, spi_ptr.) };
         // // // 更新到本地的结构体,注册0成功
         // self.market_spi = Some(spi_ptr);
-        // 暂时不清楚作用 先注释
-        // if let Some(last_registered_spi_ptr) = last_registered_spi_ptr {
-        //     unsafe {
-        //         let last_registered_spi = Box::from_raw(last_registered_spi_ptr);
-        //         let md_spi = Box::from_raw(last_registered_spi.md_spi_ptr);
-        //         drop(md_spi);
-        //         drop(last_registered_spi);
-        //     }
-        // };
     }
 }
 

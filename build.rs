@@ -21,6 +21,7 @@ fn build(target: &str) {
 
     let env = PathBuf::from(env::var("OUT_DIR").unwrap());
     let out_path = env.join("bindings.rs");
+    println!("{:?}", out_path);
     let binding_output = bindings.to_string();
     let mut output_file = std::fs::File::create(out_path.as_path()).map_err(|e| format!("cannot create struct file, {}", e)).unwrap();
     output_file.write_all(binding_output.as_bytes()).map_err(|e| format!("cannot write struct file, {}", e));

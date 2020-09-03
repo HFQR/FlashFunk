@@ -24,66 +24,78 @@ extern "C" void CThostFtdcMdApi_RegisterFensUserInfo(CThostFtdcMdApi *self, CTho
 
 //// 行情API回调
 
-//class QuoteSpi : CThostFtdcMdSpi {
-//public:
-//    void *rust_object;
-//
-//    void OnFrontConnected() {};
-//
-//    ///当客户端与交易后台通信连接断开时，该方法被调用。当发生这个情况后，API会自动重新连接，客户端可不做处理。
-//    ///@param nReason 错误原因
-//    ///        0x1001 网络读失败
-//    ///        0x1002 网络写失败
-//    ///        0x2001 接收心跳超时
-//    ///        0x2002 发送心跳失败
-//    ///        0x2003 收到错误报文
-//    void OnFrontDisconnected(int nReason) {
-//        this->rust_object.
-//    };
-//
-//    ///心跳超时警告。当长时间未收到报文时，该方法被调用。
-//    ///@param nTimeLapse 距离上次接收报文的时间
-//    void OnHeartBeatWarning(int nTimeLapse) {};
-//
-//
-//    ///登录请求响应
-//    void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-//                        bool bIsLast) {};
-//
-//    ///登出请求响应
-//    void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-//                         bool bIsLast);
-//
-//    ///请求查询组播合约响应
-//    void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
-//                                     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
-//
-//    ///错误应答
-//    void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
-//
-//    ///订阅行情应答
-//    void OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
-//                            int nRequestID, bool bIsLast) {};
-//
-//    ///取消订阅行情应答
-//    void OnRspUnSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
-//                              int nRequestID, bool bIsLast) {};
-//
-//    ///订阅询价应答
-//    void OnRspSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
-//                             int nRequestID, bool bIsLast) {};
-//
-//    ///取消订阅询价应答
-//    void OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
-//                               int nRequestID, bool bIsLast) {};
-//
-//    ///深度行情通知
-//    void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData) {};
-//
-//    ///询价通知
-//    void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp) {};
-//
-//};
+class QuoteSpi : CThostFtdcMdSpi {
+public:
+    void *rust_object;
 
+    QuoteSpi(void *rust_object);
+
+    void OnFrontConnected();
+
+    void OnFrontDisconnected(int nReason);
+
+    void OnHeartBeatWarning(int nTimeLapse);
+
+    void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                        bool bIsLast);
+
+    void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                         bool bIsLast);
+
+    void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
+                                     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+
+    void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+
+    void OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+                            int nRequestID, bool bIsLast);
+
+    void OnRspUnSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+                              int nRequestID, bool bIsLast);
+
+    void OnRspSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+                             int nRequestID, bool bIsLast);
+
+    void OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo,
+                               int nRequestID, bool bIsLast);
+
+    void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData);
+
+    void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp);
+
+    ~QuoteSpi();
+};
+
+extern "C" void QuoteSpi_Destructor(QuoteSpi *stub) { delete stub; };
+extern "C" void QuoteSpi_OnFrontConnected(void *rust_object);
+extern "C" void QuoteSpi_OnFrontDisconnected(void *rust_object, int reason);
+extern "C" void QuoteSpi_OnHeartBeatWarning(void *rust_object, int nTimeLapse);
+extern "C" void QuoteSpi_OnRspUserLogin(void *rust_object, CThostFtdcRspUserLoginField *pRspUserLogin,
+                                        CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                                        bool bIsLast);
+extern "C" void QuoteSpi_OnRspUserLogout(void *rust_object, CThostFtdcUserLogoutField *pUserLogout,
+                                         CThostFtdcRspInfoField *pRspInfo, int nRequestID,
+                                         bool bIsLast);
+extern "C" void QuoteSpi_OnRspQryMulticastInstrument(void *rust_object,
+                                                     CThostFtdcMulticastInstrumentField *pMulticastInstrument,
+                                                     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+extern "C" void QuoteSpi_OnRspError(void *rust_object, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+extern "C" void QuoteSpi_OnRspSubMarketData(void *rust_object, CThostFtdcSpecificInstrumentField *pSpecificInstrument,
+                                            CThostFtdcRspInfoField *pRspInfo,
+                                            int nRequestID, bool bIsLast);
+extern "C" void QuoteSpi_OnRspUnSubMarketData(void *rust_object, CThostFtdcSpecificInstrumentField *pSpecificInstrument,
+                                              CThostFtdcRspInfoField *pRspInfo,
+                                              int nRequestID, bool bIsLast);
+extern "C" void QuoteSpi_OnRspSubForQuoteRsp(void *rust_object, CThostFtdcSpecificInstrumentField *pSpecificInstrument,
+                                             CThostFtdcRspInfoField *pRspInfo,
+                                             int nRequestID, bool bIsLast);
+extern "C" void QuoteSpi_OnRspUnSubForQuoteRsp(void *rust_object,
+                                               CThostFtdcSpecificInstrumentField *pSpecificInstrument,
+                                               CThostFtdcRspInfoField *pRspInfo,
+                                               int nRequestID, bool bIsLast);
+extern "C" void QuoteSpi_OnRtnDepthMarketData(void *rust_object, CThostFtdcDepthMarketDataField *pDepthMarketData);
+extern "C" void QuoteSpi_OnRtnForQuoteRsp(void *rust_object, CThostFtdcForQuoteRspField *pForQuoteRsp);
+
+extern "C" void QuoteSpi_Rust_Destructor(void *rust_object);
 
 // 交易API
