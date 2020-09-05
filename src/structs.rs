@@ -337,6 +337,7 @@ pub struct DailyResult {
 pub struct LoginForm {
     pub user_id: String,
     pub password: String,
+    pub broke_id: String,
     pub app_id: String,
     pub md_address: String,
     pub td_address: String,

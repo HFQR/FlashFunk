@@ -11,7 +11,7 @@ pub trait Interface {
     /// 撤单
     fn cancel_order(&mut self, req: CancelRequest);
     /// 登录接口
-    fn connect(&mut self, req: LoginForm);
+    fn connect(&mut self, req: &LoginForm);
     /// 订阅行情
     fn subscribe(&mut self, symbol: String);
     /// 取消订阅行情

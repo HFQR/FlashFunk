@@ -6,8 +6,8 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_void, c_char, c_int, c_uchar};
 use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcMdApi_Init, QuoteSpi, CThostFtdcMdSpi,
                       CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_SubscribeMarketData,
-                      CThostFtdcMdApi_RegisterSpi,
-                      CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_CreateFtdcMdApi,
+                      CThostFtdcMdApi_RegisterSpi, QuoteSpi_Destructor,
+                      CThostFtdcMdApi_GetTradingDay,
                       CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField,
                       CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField,
                       CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType,
@@ -27,19 +27,16 @@ use crate::ctp::func::QuoteApi;
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
 
+#[link(name = "thostmduserapi_se")]
+extern "C" {}
 
-/// the implement of market api
-/// user_id 用户名
-/// password 密码
-/// path 流文件存放地址
-/// market_api 行情API 收
-/// market_spi 行情API 回调
 pub struct MdApi {
     user_id: CString,
     password: CString,
     path: CString,
     market_api: *mut CThostFtdcMdApi,
     market_spi: Option<*mut QuoteSpi>,
+    addr: Addr<CtpbeeR>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -149,18 +146,19 @@ impl QuoteApi for DataCollector {
 ///
 /// 实现行情API的一些主动基准调用方法
 impl MdApi {
-    pub fn new(id: String, pwd: String, path: String) -> MdApi {
+    pub fn new(id: String, pwd: String, path: String, addr: Addr<CtpbeeR>) -> MdApi {
         let ids = CString::new(id).unwrap();
         let pwds = CString::new(pwd).unwrap();
         let paths = CString::new(path).unwrap();
         let flow_path_ptr = paths.as_ptr();
-        let api = unsafe { CThostFtdcMdApi_CreateFtdcMdApi(flow_path_ptr, true, true) };
+        let api = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
         MdApi {
             user_id: ids,
             password: pwds,
             path: paths,
             market_api: api,
             market_spi: None,
+            addr,
         }
     }
     /// 初始化调用
@@ -182,14 +180,14 @@ impl MdApi {
 
     /// 用户登录
     fn request_user_login(&mut self, user_id: CString, password: CString, auth_code: CString, app_id: CString, production_info: CString) {
-        unsafe {
-            CThostFtdcMdApi_RegisterFensUserInfo(self.market_api)
-        }
+        // unsafe {
+        //     CThostFtdcMdApi_RegisterFensUserInfo(self.market_api)
+        // }
     }
 
     /// 注册回调
-    fn register_spi(&mut self, addr: Addr<CtpbeeR>, login_info: LoginForm) {
-        let collector = DataCollector { addr, login_info };
+    fn register_spi(&mut self, login_info: LoginForm) {
+        let collector = DataCollector { addr: self.addr.clone(), login_info };
         let trait_object_box: Box<Box<dyn QuoteApi>> = Box::new(Box::new(collector));
         let trait_object_pointer =
             Box::into_raw(trait_object_box) as *mut Box<dyn QuoteApi> as *mut c_void;
@@ -198,6 +196,10 @@ impl MdApi {
         self.market_spi = Some(ptr);
         unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, ptr as *mut CThostFtdcMdSpi) };
         // }
+    }
+
+    fn release(&mut self) {
+        println!("正在释放接口")
     }
 }
 
@@ -211,9 +213,10 @@ impl Interface for MdApi {
     }
 
     fn connect(&mut self, req: &LoginForm) {
-        let address = &req.md_address;
-        self.register_spi(self.get_app().clone(), req.clone());
-        self.register_fronted_address(CString::new(address).unwrap());
+        let address = (&req.md_address).to_string();
+        self.register_spi(req.clone());
+        let addr = CString::new(address).unwrap();
+        self.register_fronted_address(addr);
     }
 
     fn subscribe(&mut self, symbol: String) {
@@ -231,6 +234,16 @@ impl Interface for MdApi {
     }
 
     fn get_app(&mut self) -> &Addr<CtpbeeR> {
-        unimplemented!()
+        self.addr.borrow()
+    }
+}
+
+
+impl Drop for MdApi {
+    fn drop(&mut self) {
+        self.release();
+        if let Some(spi_stub) = self.market_spi {
+            unsafe { QuoteSpi_Destructor(spi_stub) };
+        }
     }
 }

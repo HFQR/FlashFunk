@@ -30,8 +30,9 @@ fn build(target: &str) {
 
 fn main() {
     let current_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let out_dir = format!("{}/sdk_sources/ctp/lib", current_dir);
-    println!("cargo:rustc-link-search=native={}", out_dir);
+    let lib_dir = format!("{}/sdk_sources/ctp/lib", current_dir);
+    println!("{}", lib_dir);
+    println!("cargo:rustc-link-search=native={}", lib_dir);
     add_search_path(current_dir.clone());
     println!("cargo:rerun-if-changed=src/wrapper.hpp");
     println!("cargo:rerun-if-changed=src/bridge/bridge.hpp");
@@ -48,7 +49,6 @@ fn add_search_path(main_path: String) {
 
 #[cfg(target_os = "windows")]
 fn add_search_path(main_path: String) {
-    // println!("cargo:rustc -- -C link-args='-Wl,-rpath,{}", );
     println!("cargo:rustc-flags=-L {}/sdk_sources/ctp/win/", main_path);
     println!("cargo:rustc-link-search={}/sdk_sources/ctp/win/", main_path);
 }

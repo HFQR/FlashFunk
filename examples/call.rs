@@ -2,11 +2,12 @@
 
 use ctpbee_rs::app::CtpbeeR;
 use ctpbee_rs::ac::Ac;
-use ctpbee_rs::structs::{BarData, TickData};
+use ctpbee_rs::structs::{BarData, TickData, LoginForm};
 use ctpbee_rs::ctp::api::MdApi;
 use std::thread;
 use actix::Addr;
 use std::borrow::Borrow;
+use ctpbee_rs::interface::Interface;
 
 struct Strategy {
     pub name: String,
@@ -45,10 +46,21 @@ async fn main() {
     let (addr, x) = account.run_forever();
     let copy = addr.clone();
     // here is the call c++ code
-    let mut md_api = MdApi::new("name".to_string(), "id".to_string(), "bug".to_string());
+    let mut md_api = MdApi::new("name".to_string(), "id".to_string(), "bug".to_string(), addr);
     md_api.init();
     let trading_day = md_api.get_trading_day();
     println!("trading day:{} ", trading_day);
+    let login_form = LoginForm {
+        user_id: "089131".to_string(),
+        password: "350888".to_string(),
+        broke_id: "9999".to_string(),
+        app_id: "simnow_client_test".to_string(),
+        md_address: "tcp://218.202.237.33:10112".to_string(),
+        td_address: "tcp://218.202.237.33:10102".to_string(),
+        auth_code: "0000000000000000".to_string(),
+        production_info: "".to_string(),
+    };
+    md_api.connect(&login_form);
     // wait
     x.await;
 }

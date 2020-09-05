@@ -69,34 +69,14 @@ unsafe fn get_quote_spi<'a>(spi: *mut c_void) -> &'a mut dyn QuoteApi {
     &mut **(spi as *mut *mut dyn QuoteApi)
 }
 
-// extern "C" {
-//     #[link_name = "\u{1}??0QuoteSpi@@QEAA@PEAX@Z"]
-//     pub fn QuoteSpi_QuoteSpi(this: *mut QuoteSpi, rust_object: *mut ::std::os::raw::c_void);
-// }
-//
-// extern "C" {
-//     #[link_name = "\u{1}??_DQuoteSpi@@QEAAXXZ"]
-//     pub fn QuoteSpi_QuoteSpi_destructor(this: *mut QuoteSpi);
-// }
 
-// impl QuoteSpi {
-//     #[inline]
-//     pub unsafe fn new(rust_object: *mut ::std::os::raw::c_void) -> Self {
-//         let mut __bindgen_tmp = ::std::mem::MaybeUninit::uninit();
-//         QuoteSpi_QuoteSpi(__bindgen_tmp.as_mut_ptr(), rust_object);
-//         __bindgen_tmp.assume_init()
-//     }
-//     #[inline]
-//     pub unsafe fn destruct(&mut self) {
-//         QuoteSpi_QuoteSpi_destructor(self)
-//     }
-// }
 
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnFrontConnected(this: *mut ::std::os::raw::c_void) {
     println!("{}", "前置连接成功! ");
 }
 
-
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnFrontDisconnected(
     this: *mut ::std::os::raw::c_void,
     nReason: ::std::os::raw::c_int,
@@ -105,8 +85,7 @@ pub unsafe extern "C" fn QuoteSpi_OnFrontDisconnected(
     x.on_front_disconnected(DisconnectionReason::from(nReason));
 }
 
-
-#[link_name = "\u{1}?OnHeartBeatWarning@QuoteSpi@@UEAAXH@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnHeartBeatWarning(
     this: *mut ::std::os::raw::c_void,
     nTimeLapse: ::std::os::raw::c_int,
@@ -114,8 +93,7 @@ pub unsafe extern "C" fn QuoteSpi_OnHeartBeatWarning(
     let x = get_quote_spi(this);
 }
 
-
-#[link_name = "\u{1}?OnRspUserLogin@QuoteSpi@@UEAAXPEAUCThostFtdcRspUserLoginField@@PEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUserLogin(
     this: *mut ::std::os::raw::c_void,
     pRspUserLogin: *mut CThostFtdcRspUserLoginField,
@@ -127,8 +105,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUserLogin(
     x.on_rsp_user_login(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
 }
 
-
-#[link_name = "\u{1}?OnRspUserLogout@QuoteSpi@@UEAAXPEAUCThostFtdcUserLogoutField@@PEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUserLogout(
     this: *mut ::std::os::raw::c_void,
     pUserLogout: *mut CThostFtdcUserLogoutField,
@@ -140,8 +117,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUserLogout(
     x.on_rsp_user_logout(pUserLogout, pRspInfo, nRequestID, bIsLast);
 }
 
-
-#[link_name = "\u{1}?OnRspQryMulticastInstrument@QuoteSpi@@UEAAXPEAUCThostFtdcMulticastInstrumentField@@PEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspQryMulticastInstrument(
     this: *mut ::std::os::raw::c_void,
     pMulticastInstrument: *mut CThostFtdcMulticastInstrumentField,
@@ -153,8 +129,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspQryMulticastInstrument(
     println!("查询多个合约的回报  此处还没实现方法噢")
 }
 
-
-#[link_name = "\u{1}?OnRspError@QuoteSpi@@UEAAXPEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspError(
     this: *mut ::std::os::raw::c_void,
     pRspInfo: *mut CThostFtdcRspInfoField,
@@ -165,8 +140,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspError(
     x.on_rsp_error(pRspInfo, nRequestID, bIsLast);
 }
 
-
-#[link_name = "\u{1}?OnRspSubMarketData@QuoteSpi@@UEAAXPEAUCThostFtdcSpecificInstrumentField@@PEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspSubMarketData(
     this: *mut ::std::os::raw::c_void,
     pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
@@ -178,8 +152,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspSubMarketData(
     x.on_rsp_sub_market_data(pSpecificInstrument, pRspInfo, nRequestID, bIsLast)
 }
 
-
-#[link_name = "\u{1}?OnRspUnSubMarketData@QuoteSpi@@UEAAXPEAUCThostFtdcSpecificInstrumentField@@PEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUnSubMarketData(
     this: *mut ::std::os::raw::c_void,
     pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
@@ -191,8 +164,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUnSubMarketData(
     x.on_rsp_un_sub_market_data(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
 }
 
-
-#[link_name = "\u{1}?OnRspSubForQuoteRsp@QuoteSpi@@UEAAXPEAUCThostFtdcSpecificInstrumentField@@PEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspSubForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
     pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
@@ -203,9 +175,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspSubForQuoteRsp(
     let x = get_quote_spi(this);
     x.on_rsp_sub_for_quote_rsp(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
 }
-
-
-#[link_name = "\u{1}?OnRspUnSubForQuoteRsp@QuoteSpi@@UEAAXPEAUCThostFtdcSpecificInstrumentField@@PEAUCThostFtdcRspInfoField@@H_N@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUnSubForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
     pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
@@ -217,8 +187,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUnSubForQuoteRsp(
     x.on_rsp_un_sub_for_quote_rsp(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
 }
 
-
-#[link_name = "\u{1}?OnRtnDepthMarketData@QuoteSpi@@UEAAXPEAUCThostFtdcDepthMarketDataField@@@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRtnDepthMarketData(
     this: *mut ::std::os::raw::c_void,
     pDepthMarketData: *mut CThostFtdcDepthMarketDataField,
@@ -227,8 +196,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRtnDepthMarketData(
     x.on_rtn_depth_market_data(pDepthMarketData);
 }
 
-
-#[link_name = "\u{1}?OnRtnForQuoteRsp@QuoteSpi@@UEAAXPEAUCThostFtdcForQuoteRspField@@@Z"]
+#[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRtnForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
     pForQuoteRsp: *mut CThostFtdcForQuoteRspField,
@@ -236,7 +204,8 @@ pub unsafe extern "C" fn QuoteSpi_OnRtnForQuoteRsp(
     let x = get_quote_spi(this);
     x.on_rtn_for_quote_rsp(pForQuoteRsp);
 }
-
-extern "C" {
-    pub fn QuoteSpi_Destructor(stub: *mut QuoteSpi);
+#[no_mangle]
+pub unsafe  extern "C" fn QuoteSpi_Rust_Destructor(spi: *mut c_void){
+    let spi = spi as *mut Box<dyn QuoteApi>;
+    let _: Box<Box<dyn QuoteApi>> = Box::from_raw(spi);
 }
