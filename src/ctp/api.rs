@@ -117,15 +117,27 @@ pub fn covert_cstr_to_str(v: &[i8]) -> Cow<str> {
 }
 
 
-// fn create_spi(md_spi: *mut dyn QuoteApi, addr: Addr<CtpbeeR>) -> CThostFtdcMdSpi {
-//     CThostFtdcMdSpi { vtable: &SPI_VTABLE, spi: md_spi, addr }
-// }
-
 struct DataCollector {
-    addr: Addr<CtpbeeR>
+    addr: Addr<CtpbeeR>,
+    login_info: LoginForm,
 }
 
+/// 此处我们实现种种方法来构建ctp的登录流程
 impl QuoteApi for DataCollector {
+    fn on_front_connected(&mut self) {
+        println!("on_front_connected");
+        println!("ready to login");
+        let user_id = CString::new(self.login_info.user_id.clone()).unwrap();
+        let pwd = CString::new(self.login_info.password.clone()).unwrap();
+        let auth_code = CString::new(self.login_info.auth_code.clone()).unwrap();
+        let app_id = CString::new(self.login_info.app_id.clone()).unwrap();
+        let production_info = CString::new(self.login_info.production_info.clone()).unwrap();
+    }
+
+    fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
+        println!("on_front_disconnected: {:?}", reason);
+    }
+
     fn get_addr(&self) -> &Addr<CtpbeeR> {
         self.addr.borrow()
     }
@@ -168,9 +180,16 @@ impl MdApi {
         unsafe { CThostFtdcMdApi_RegisterFront(self.market_api, front_socket_address_ptr) };
     }
 
+    /// 用户登录
+    fn request_user_login(&mut self, user_id: CString, password: CString, auth_code: CString, app_id: CString, production_info: CString) {
+        unsafe {
+            CThostFtdcMdApi_RegisterFensUserInfo(self.market_api)
+        }
+    }
+
     /// 注册回调
-    fn register_spi(&mut self, addr: Addr<CtpbeeR>) {
-        let collector = DataCollector {addr};
+    fn register_spi(&mut self, addr: Addr<CtpbeeR>, login_info: LoginForm) {
+        let collector = DataCollector { addr, login_info };
         let trait_object_box: Box<Box<dyn QuoteApi>> = Box::new(Box::new(collector));
         let trait_object_pointer =
             Box::into_raw(trait_object_box) as *mut Box<dyn QuoteApi> as *mut c_void;
@@ -191,10 +210,10 @@ impl Interface for MdApi {
         unimplemented!("行情接口无此功能")
     }
 
-    fn connect(&mut self, req: LoginForm) {
-        self.er
-
-
+    fn connect(&mut self, req: &LoginForm) {
+        let address = &req.md_address;
+        self.register_spi(self.get_app().clone(), req.clone());
+        self.register_fronted_address(CString::new(address).unwrap());
     }
 
     fn subscribe(&mut self, symbol: String) {

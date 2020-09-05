@@ -335,10 +335,11 @@ pub struct DailyResult {
 #[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct LoginForm {
-    user_id: String,
-    password: String,
-    app_id: String,
-    address: String,
-    auth_code: String,
-    production_info: String,
+    pub user_id: String,
+    pub password: String,
+    pub app_id: String,
+    pub md_address: String,
+    pub td_address: String,
+    pub auth_code: String,
+    pub production_info: String,
 }
