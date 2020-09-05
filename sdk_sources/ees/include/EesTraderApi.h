@@ -1,7 +1,7 @@
 /*! \file EesTraderApi.h
- *  \brief EES½»Ò×¿Í»§¶ËÍ·ÎÄ¼ş   
+ *  \brief EESäº¤æ˜“å®¢æˆ·ç«¯å¤´æ–‡ä»¶   
  *  
- *  ¸ÃÎÄµµÏêÏ¸ÃèÊöÁËEES½»Ò×¿Í»§¶ËµÄ½Ó¿Ú¶¨Òå¡£
+ *  è¯¥æ–‡æ¡£è¯¦ç»†æè¿°äº†EESäº¤æ˜“å®¢æˆ·ç«¯çš„æ¥å£å®šä¹‰ã€‚
 */
 #pragma  once 
 #include "EesTraderDefine.h"
@@ -17,9 +17,9 @@
 		#define SL_EES_TRADE_FUN		extern "C" __declspec(dllimport)
 	#endif
 
-	/// \brief EES½»Ò×¿Í»§¶Ë¶¯Ì¬¿âÃû
+	/// \brief EESäº¤æ˜“å®¢æˆ·ç«¯åŠ¨æ€åº“å
 	#define EES_TRADER_DLL_NAME    "EESTraderApi.dll"
-	/// \brief EES½»Ò×¿Í»§¶Ë¾²Ì¬¿âÃû
+	/// \brief EESäº¤æ˜“å®¢æˆ·ç«¯é™æ€åº“å
 	#define EES_TRADER_LIB_NAME    "EESTraderApi.lib"
 
 	#include <windows.h>
@@ -36,12 +36,12 @@
 		#define NULL 0
 	#endif
 
-	/// \brief EES½»Ò×¿Í»§¶Ë¶¯Ì¬¿âÃû
+	/// \brief EESäº¤æ˜“å®¢æˆ·ç«¯åŠ¨æ€åº“å
 	#define EES_TRADER_DLL_NAME    "libEESTraderApi.so"
 
 #endif
 
-/// \brief EES½»Ò×¿Í»§¶Ë»Øµ÷»ùÀà
+/// \brief EESäº¤æ˜“å®¢æˆ·ç«¯å›è°ƒåŸºç±»
 class  EESTraderEvent
 {
 public:	
@@ -49,241 +49,241 @@ public:
 	{
 
 	}
-	/// Á¬½ÓÏûÏ¢µÄ»Øµ÷
+	/// è¿æ¥æ¶ˆæ¯çš„å›è°ƒ
 	
-		///	\brief	·şÎñÆ÷Á¬½ÓÊÂ¼ş
-		///	\param  errNo                   Á¬½Ó³É¹¦ÄÜÓë·ñµÄÏûÏ¢
-		///	\param  pErrStr                 ´íÎóĞÅÏ¢
+		///	\brief	æœåŠ¡å™¨è¿æ¥äº‹ä»¶
+		///	\param  errNo                   è¿æ¥æˆåŠŸèƒ½ä¸å¦çš„æ¶ˆæ¯
+		///	\param  pErrStr                 é”™è¯¯ä¿¡æ¯
 		///	\return void  
 	
 	virtual void OnConnection(ERR_NO errNo, const char* pErrStr ){}
 
-	/// Á¬½Ó¶Ï¿ªÏûÏ¢µÄ»Øµ÷
+	/// è¿æ¥æ–­å¼€æ¶ˆæ¯çš„å›è°ƒ
 	
-		/// \brief	·şÎñÆ÷Ö÷¶¯¶Ï¿ª£¬»áÊÕµ½Õâ¸öÏûÏ¢
-		/// \param  ERR_NO errNo         Á¬½Ó³É¹¦ÄÜÓë·ñµÄÏûÏ¢
-		/// \param  const char* pErrStr  ´íÎóĞÅÏ¢
+		/// \brief	æœåŠ¡å™¨ä¸»åŠ¨æ–­å¼€ï¼Œä¼šæ”¶åˆ°è¿™ä¸ªæ¶ˆæ¯
+		/// \param  ERR_NO errNo         è¿æ¥æˆåŠŸèƒ½ä¸å¦çš„æ¶ˆæ¯
+		/// \param  const char* pErrStr  é”™è¯¯ä¿¡æ¯
 		/// \return void  
 	
 	virtual void OnDisConnection(ERR_NO errNo, const char* pErrStr ){}
 
-	/// µÇÂ¼ÏûÏ¢µÄ»Øµ÷
+	/// ç™»å½•æ¶ˆæ¯çš„å›è°ƒ
 	
-		/// \param  pLogon                  µÇÂ¼³É¹¦»òÊÇÊ§°ÜµÄ½á¹¹
+		/// \param  pLogon                  ç™»å½•æˆåŠŸæˆ–æ˜¯å¤±è´¥çš„ç»“æ„
 		/// \return void 
 	
 	virtual void OnUserLogon(EES_LogonResponse* pLogon){}
 
-	/// ĞŞ¸ÄÃÜÂëÏìÓ¦»Øµ÷
+	/// ä¿®æ”¹å¯†ç å“åº”å›è°ƒ
 
-	/// \param  nResult                  ·şÎñÆ÷ÏìÓ¦µÄ³É¹¦Óë·ñ·µ»ØÂë
+	/// \param  nResult                  æœåŠ¡å™¨å“åº”çš„æˆåŠŸä¸å¦è¿”å›ç 
 	/// \return void 
 
 	virtual void OnRspChangePassword(EES_ChangePasswordResult nResult){}
 
-	/// ²éÑ¯ÓÃ»§ÏÂÃæÕÊ»§µÄ·µ»ØÊÂ¼ş
+	/// æŸ¥è¯¢ç”¨æˆ·ä¸‹é¢å¸æˆ·çš„è¿”å›äº‹ä»¶
 	
-		/// \param  pAccountInfo	        ÕÊ»§µÄĞÅÏ¢
-		/// \param  bFinish	                Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇ false £¬Èç¹ûÍê³ÉÁË£¬ÄÇ¸öÕâ¸öÖµÎª true 
-		/// \remark Èç¹ûÅöµ½ bFinish == true£¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒ pAccountInfoÖµÎŞĞ§¡£
+		/// \param  pAccountInfo	        å¸æˆ·çš„ä¿¡æ¯
+		/// \param  bFinish	                å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯ false ï¼Œå¦‚æœå®Œæˆäº†ï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true 
+		/// \remark å¦‚æœç¢°åˆ° bFinish == trueï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸” pAccountInfoå€¼æ— æ•ˆã€‚
 		/// \return void 
 	
 	virtual void OnQueryUserAccount(EES_AccountInfo * pAccoutnInfo, bool bFinish){}
 
-	/// ²éÑ¯ÕÊ»§ÏÂÃæÆÚ»õ²ÖÎ»ĞÅÏ¢µÄ·µ»ØÊÂ¼ş	
-		/// \param  pAccount	                ÕÊ»§ID 	
-		/// \param  pAccoutnPosition	        ÕÊ»§µÄ²ÖÎ»ĞÅÏ¢					   
-		/// \param  nReqId		                ·¢ËÍÇëÇóÏûÏ¢Ê±ºòµÄIDºÅ¡£
-		/// \param  bFinish	                    Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇfalse£¬Èç¹ûÍê³ÉÁË£¬ÄÇ¸öÕâ¸öÖµÎª true 
-		/// \remark Èç¹ûÅöµ½ bFinish == true£¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒ pAccountInfoÖµÎŞĞ§¡£
+	/// æŸ¥è¯¢å¸æˆ·ä¸‹é¢æœŸè´§ä»“ä½ä¿¡æ¯çš„è¿”å›äº‹ä»¶	
+		/// \param  pAccount	                å¸æˆ·ID 	
+		/// \param  pAccoutnPosition	        å¸æˆ·çš„ä»“ä½ä¿¡æ¯					   
+		/// \param  nReqId		                å‘é€è¯·æ±‚æ¶ˆæ¯æ—¶å€™çš„IDå·ã€‚
+		/// \param  bFinish	                    å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯falseï¼Œå¦‚æœå®Œæˆäº†ï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true 
+		/// \remark å¦‚æœç¢°åˆ° bFinish == trueï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸” pAccountInfoå€¼æ— æ•ˆã€‚
 		/// \return void 	
 	virtual void OnQueryAccountPosition(const char* pAccount, EES_AccountPosition* pAccoutnPosition, int nReqId, bool bFinish){}	
 
-	/// ²éÑ¯ÕÊ»§ÏÂÃæÆÚÈ¨²ÖÎ»ĞÅÏ¢µÄ·µ»ØÊÂ¼ş, ×¢ÒâÕâ¸ö»Øµ÷, ºÍÉÏÒ»¸öOnQueryAccountPosition, »áÔÚÒ»´ÎQueryAccountPositionÇëÇóºó, ·Ö±ğ·µ»Ø, ÏÈ·µ»ØÆÚ»õ, ÔÙ·µ»ØÆÚÈ¨, ¼´Ê¹Ã»ÓĞÆÚÈ¨²ÖÎ», Ò²»á·µ»ØÒ»ÌõbFinish=trueµÄ¼ÇÂ¼
-	/// \param  pAccount	                ÕÊ»§ID 	
-	/// \param  pAccoutnPosition	        ÕÊ»§µÄ²ÖÎ»ĞÅÏ¢					   
-	/// \param  nReqId		                ·¢ËÍÇëÇóÏûÏ¢Ê±ºòµÄIDºÅ¡£
-	/// \param  bFinish	                    Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇfalse£¬Èç¹ûÍê³ÉÁË£¬ÄÇ¸öÕâ¸öÖµÎª true 
-	/// \remark Èç¹ûÅöµ½ bFinish == true£¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒ pAccountInfoÖµÎŞĞ§¡£
+	/// æŸ¥è¯¢å¸æˆ·ä¸‹é¢æœŸæƒä»“ä½ä¿¡æ¯çš„è¿”å›äº‹ä»¶, æ³¨æ„è¿™ä¸ªå›è°ƒ, å’Œä¸Šä¸€ä¸ªOnQueryAccountPosition, ä¼šåœ¨ä¸€æ¬¡QueryAccountPositionè¯·æ±‚å, åˆ†åˆ«è¿”å›, å…ˆè¿”å›æœŸè´§, å†è¿”å›æœŸæƒ, å³ä½¿æ²¡æœ‰æœŸæƒä»“ä½, ä¹Ÿä¼šè¿”å›ä¸€æ¡bFinish=trueçš„è®°å½•
+	/// \param  pAccount	                å¸æˆ·ID 	
+	/// \param  pAccoutnPosition	        å¸æˆ·çš„ä»“ä½ä¿¡æ¯					   
+	/// \param  nReqId		                å‘é€è¯·æ±‚æ¶ˆæ¯æ—¶å€™çš„IDå·ã€‚
+	/// \param  bFinish	                    å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯falseï¼Œå¦‚æœå®Œæˆäº†ï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true 
+	/// \remark å¦‚æœç¢°åˆ° bFinish == trueï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸” pAccountInfoå€¼æ— æ•ˆã€‚
 	/// \return void 	
 	virtual void OnQueryAccountOptionPosition(const char* pAccount, EES_AccountOptionPosition* pAccoutnOptionPosition, int nReqId, bool bFinish) {}
 
 
-	/// ²éÑ¯ÕÊ»§ÏÂÃæ×Ê½ğĞÅÏ¢µÄ·µ»ØÊÂ¼ş
+	/// æŸ¥è¯¢å¸æˆ·ä¸‹é¢èµ„é‡‘ä¿¡æ¯çš„è¿”å›äº‹ä»¶
 	
-		/// \param  pAccount	                ÕÊ»§ID 	
-		/// \param  pAccoutnPosition	        ÕÊ»§µÄ²ÖÎ»ĞÅÏ¢					   
-		/// \param  nReqId		                ·¢ËÍÇëÇóÏûÏ¢Ê±ºòµÄIDºÅ
+		/// \param  pAccount	                å¸æˆ·ID 	
+		/// \param  pAccoutnPosition	        å¸æˆ·çš„ä»“ä½ä¿¡æ¯					   
+		/// \param  nReqId		                å‘é€è¯·æ±‚æ¶ˆæ¯æ—¶å€™çš„IDå·
 		/// \return void 
 	
 	virtual void OnQueryAccountBP(const char* pAccount, EES_AccountBP* pAccoutnPosition, int nReqId ){}	
 
-	/// ²éÑ¯ºÏÔ¼ÁĞ±íµÄ·µ»ØÊÂ¼ş
+	/// æŸ¥è¯¢åˆçº¦åˆ—è¡¨çš„è¿”å›äº‹ä»¶
 	
-		/// \param  pSymbol	                    ºÏÔ¼ĞÅÏ¢   
-		/// \param  bFinish	                    Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇ false£¬Èç¹ûÍê³ÉÁË£¬ÄÇ¸öÕâ¸öÖµÎª true   
-		/// \remark Èç¹ûÅöµ½ bFinish == true£¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒ pSymbol ÖµÎŞĞ§¡£
+		/// \param  pSymbol	                    åˆçº¦ä¿¡æ¯   
+		/// \param  bFinish	                    å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯ falseï¼Œå¦‚æœå®Œæˆäº†ï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true   
+		/// \remark å¦‚æœç¢°åˆ° bFinish == trueï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸” pSymbol å€¼æ— æ•ˆã€‚
 		/// \return void 
 	
 	virtual void OnQuerySymbol(EES_SymbolField* pSymbol, bool bFinish){}
 
-	/// ²éÑ¯ÕÊ»§½»Ò×±£Ö¤½ğµÄ·µ»ØÊÂ¼ş
+	/// æŸ¥è¯¢å¸æˆ·äº¤æ˜“ä¿è¯é‡‘çš„è¿”å›äº‹ä»¶
 	
-	    /// \param  pAccount                    ÕÊ»§ID 
-		/// \param  pSymbolMargin               ÕÊ»§µÄ±£Ö¤½ğĞÅÏ¢ 
-		/// \param  bFinish	                    Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇ false£¬Èç¹ûÍê³É£¬ÄÇ¸öÕâ¸öÖµÎª true 
-		/// \remark Èç¹ûÅöµ½ bFinish == true£¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒ pSymbolMargin ÖµÎŞĞ§¡£
+	    /// \param  pAccount                    å¸æˆ·ID 
+		/// \param  pSymbolMargin               å¸æˆ·çš„ä¿è¯é‡‘ä¿¡æ¯ 
+		/// \param  bFinish	                    å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯ falseï¼Œå¦‚æœå®Œæˆï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true 
+		/// \remark å¦‚æœç¢°åˆ° bFinish == trueï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸” pSymbolMargin å€¼æ— æ•ˆã€‚
 		/// \return void 
 	
 	virtual void OnQueryAccountTradeMargin(const char* pAccount, EES_AccountMargin* pSymbolMargin, bool bFinish ){}
 
-	/// ²éÑ¯ÕÊ»§½»Ò×·ÑÓÃµÄ·µ»ØÊÂ¼ş
+	/// æŸ¥è¯¢å¸æˆ·äº¤æ˜“è´¹ç”¨çš„è¿”å›äº‹ä»¶
 	
-		/// \param  pAccount                    ÕÊ»§ID 
-		/// \param  pSymbolFee	                ÕÊ»§µÄ·ÑÂÊĞÅÏ¢	 
-		/// \param  bFinish	                    Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇ false£¬Èç¹ûÍê³ÉÁË£¬ÄÇ¸öÕâ¸öÖµÎª true    
-		/// \remark Èç¹ûÅöµ½ bFinish == true £¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒ pSymbolFee ÖµÎŞĞ§¡£
+		/// \param  pAccount                    å¸æˆ·ID 
+		/// \param  pSymbolFee	                å¸æˆ·çš„è´¹ç‡ä¿¡æ¯	 
+		/// \param  bFinish	                    å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯ falseï¼Œå¦‚æœå®Œæˆäº†ï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true    
+		/// \remark å¦‚æœç¢°åˆ° bFinish == true ï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸” pSymbolFee å€¼æ— æ•ˆã€‚
 		/// \return void 
 	
 	virtual void OnQueryAccountTradeFee(const char* pAccount, EES_AccountFee* pSymbolFee, bool bFinish ){}
 
-	/// ÏÂµ¥±»¹ñÌ¨ÏµÍ³½ÓÊÜµÄÊÂ¼ş
+	/// ä¸‹å•è¢«æŸœå°ç³»ç»Ÿæ¥å—çš„äº‹ä»¶
 	
-		/// \brief ±íÊ¾Õâ¸ö¶©µ¥ÒÑ¾­±»¹ñÌ¨ÏµÍ³ÕıÊ½µÄ½ÓÊÜ
-		/// \param  pAccept	                    ¶©µ¥±»½ÓÊÜÒÔºóµÄÏûÏ¢Ìå
+		/// \brief è¡¨ç¤ºè¿™ä¸ªè®¢å•å·²ç»è¢«æŸœå°ç³»ç»Ÿæ­£å¼çš„æ¥å—
+		/// \param  pAccept	                    è®¢å•è¢«æ¥å—ä»¥åçš„æ¶ˆæ¯ä½“
 		/// \return void 
 	
 	virtual void OnOrderAccept(EES_OrderAcceptField* pAccept ){}
 
 
-	/// ÏÂµ¥±»ÊĞ³¡½ÓÊÜµÄÊÂ¼ş
+	/// ä¸‹å•è¢«å¸‚åœºæ¥å—çš„äº‹ä»¶
 
-	    /// \brief ±íÊ¾Õâ¸ö¶©µ¥ÒÑ¾­±»½»Ò×ËùÕıÊ½µÄ½ÓÊÜ
-	    /// \param  pAccept	                    ¶©µ¥±»½ÓÊÜÒÔºóµÄÏûÏ¢Ìå£¬ÀïÃæ°üº¬ÁËÊĞ³¡¶©µ¥ID
+	    /// \brief è¡¨ç¤ºè¿™ä¸ªè®¢å•å·²ç»è¢«äº¤æ˜“æ‰€æ­£å¼çš„æ¥å—
+	    /// \param  pAccept	                    è®¢å•è¢«æ¥å—ä»¥åçš„æ¶ˆæ¯ä½“ï¼Œé‡Œé¢åŒ…å«äº†å¸‚åœºè®¢å•ID
 	    /// \return void 
 	virtual void OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept) {}
 
 
-	///	ÏÂµ¥±»¹ñÌ¨ÏµÍ³¾Ü¾øµÄÊÂ¼ş
+	///	ä¸‹å•è¢«æŸœå°ç³»ç»Ÿæ‹’ç»çš„äº‹ä»¶
 	
-		/// \brief	¶©µ¥±»¹ñÌ¨ÏµÍ³¾Ü¾ø£¬¿ÉÒÔ²é¿´Óï·¨¼ì²é»òÊÇ·ç¿Ø¼ì²é¡£ 
-		/// \param  pReject	                    ¶©µ¥±»½ÓÊÜÒÔºóµÄÏûÏ¢Ìå
+		/// \brief	è®¢å•è¢«æŸœå°ç³»ç»Ÿæ‹’ç»ï¼Œå¯ä»¥æŸ¥çœ‹è¯­æ³•æ£€æŸ¥æˆ–æ˜¯é£æ§æ£€æŸ¥ã€‚ 
+		/// \param  pReject	                    è®¢å•è¢«æ¥å—ä»¥åçš„æ¶ˆæ¯ä½“
 		/// \return void 
 	
 	virtual void OnOrderReject(EES_OrderRejectField* pReject ){}
 
 
-	///	ÏÂµ¥±»ÊĞ³¡¾Ü¾øµÄÊÂ¼ş
+	///	ä¸‹å•è¢«å¸‚åœºæ‹’ç»çš„äº‹ä»¶
 
-	/// \brief	¶©µ¥±»ÊĞ³¡¾Ü¾ø£¬¿ÉÒÔ²é¿´Óï·¨¼ì²é»òÊÇ·ç¿Ø¼ì²é¡£ 
-	/// \param  pReject	                    ¶©µ¥±»½ÓÊÜÒÔºóµÄÏûÏ¢Ìå£¬ÀïÃæ°üº¬ÁËÊĞ³¡¶©µ¥ID
+	/// \brief	è®¢å•è¢«å¸‚åœºæ‹’ç»ï¼Œå¯ä»¥æŸ¥çœ‹è¯­æ³•æ£€æŸ¥æˆ–æ˜¯é£æ§æ£€æŸ¥ã€‚ 
+	/// \param  pReject	                    è®¢å•è¢«æ¥å—ä»¥åçš„æ¶ˆæ¯ä½“ï¼Œé‡Œé¢åŒ…å«äº†å¸‚åœºè®¢å•ID
 	/// \return void 
 
 	virtual void OnOrderMarketReject(EES_OrderMarketRejectField* pReject) {}
 
 
-	///	¶©µ¥³É½»µÄÏûÏ¢ÊÂ¼ş
+	///	è®¢å•æˆäº¤çš„æ¶ˆæ¯äº‹ä»¶
 	
-		/// \brief	³É½»ÀïÃæ°üÀ¨ÁË¶©µ¥ÊĞ³¡ID£¬½¨ÒéÓÃÕâ¸öID²éÑ¯¶ÔÓ¦µÄ¶©µ¥
-		/// \param  pExec	                   ¶©µ¥±»½ÓÊÜÒÔºóµÄÏûÏ¢Ìå£¬ÀïÃæ°üº¬ÁËÊĞ³¡¶©µ¥ID
+		/// \brief	æˆäº¤é‡Œé¢åŒ…æ‹¬äº†è®¢å•å¸‚åœºIDï¼Œå»ºè®®ç”¨è¿™ä¸ªIDæŸ¥è¯¢å¯¹åº”çš„è®¢å•
+		/// \param  pExec	                   è®¢å•è¢«æ¥å—ä»¥åçš„æ¶ˆæ¯ä½“ï¼Œé‡Œé¢åŒ…å«äº†å¸‚åœºè®¢å•ID
 		/// \return void 
 	
 	virtual void OnOrderExecution(EES_OrderExecutionField* pExec ){}
 
-	///	¶©µ¥³É¹¦³·ÏúÊÂ¼ş
+	///	è®¢å•æˆåŠŸæ’¤é”€äº‹ä»¶
 	
-		/// \brief	³É½»ÀïÃæ°üÀ¨ÁË¶©µ¥ÊĞ³¡ID£¬½¨ÒéÓÃÕâ¸öID²éÑ¯¶ÔÓ¦µÄ¶©µ¥
-		/// \param  pCxled		               ¶©µ¥±»½ÓÊÜÒÔºóµÄÏûÏ¢Ìå£¬ÀïÃæ°üº¬ÁËÊĞ³¡¶©µ¥ID
+		/// \brief	æˆäº¤é‡Œé¢åŒ…æ‹¬äº†è®¢å•å¸‚åœºIDï¼Œå»ºè®®ç”¨è¿™ä¸ªIDæŸ¥è¯¢å¯¹åº”çš„è®¢å•
+		/// \param  pCxled		               è®¢å•è¢«æ¥å—ä»¥åçš„æ¶ˆæ¯ä½“ï¼Œé‡Œé¢åŒ…å«äº†å¸‚åœºè®¢å•ID
 		/// \return void 
 	
 	virtual void OnOrderCxled(EES_OrderCxled* pCxled ){}
 
-	///	³·µ¥±»¾Ü¾øµÄÏûÏ¢ÊÂ¼ş
+	///	æ’¤å•è¢«æ‹’ç»çš„æ¶ˆæ¯äº‹ä»¶
 	
-		/// \brief	Ò»°ã»áÔÚ·¢ËÍ³·µ¥ÒÔºó£¬ÊÕµ½Õâ¸öÏûÏ¢£¬±íÊ¾³·µ¥±»¾Ü¾ø
-		/// \param  pReject	                   ³·µ¥±»¾Ü¾øÏûÏ¢Ìå
+		/// \brief	ä¸€èˆ¬ä¼šåœ¨å‘é€æ’¤å•ä»¥åï¼Œæ”¶åˆ°è¿™ä¸ªæ¶ˆæ¯ï¼Œè¡¨ç¤ºæ’¤å•è¢«æ‹’ç»
+		/// \param  pReject	                   æ’¤å•è¢«æ‹’ç»æ¶ˆæ¯ä½“
 		/// \return void 
 	
 	virtual void OnCxlOrderReject(EES_CxlOrderRej* pReject ){}
 
-	///	²éÑ¯¶©µ¥µÄ·µ»ØÊÂ¼ş
+	///	æŸ¥è¯¢è®¢å•çš„è¿”å›äº‹ä»¶
 	
-		/// \brief	²éÑ¯¶©µ¥ĞÅÏ¢Ê±ºòµÄ»Øµ÷£¬ÕâÀïÃæÒ²¿ÉÄÜ°üº¬²»ÊÇµ±Ç°ÓÃ»§ÏÂµÄ¶©µ¥
-		/// \param  pAccount                 ÕÊ»§ID 
-		/// \param  pQueryOrder	             ²éÑ¯¶©µ¥µÄ½á¹¹
-		/// \param  bFinish	                 Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇ false£¬Èç¹ûÍê³ÉÁË£¬ÄÇ¸öÕâ¸öÖµÎª true    
-		/// \remark Èç¹ûÅöµ½ bFinish == true£¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒ pQueryOrderÖµÎŞĞ§¡£
+		/// \brief	æŸ¥è¯¢è®¢å•ä¿¡æ¯æ—¶å€™çš„å›è°ƒï¼Œè¿™é‡Œé¢ä¹Ÿå¯èƒ½åŒ…å«ä¸æ˜¯å½“å‰ç”¨æˆ·ä¸‹çš„è®¢å•
+		/// \param  pAccount                 å¸æˆ·ID 
+		/// \param  pQueryOrder	             æŸ¥è¯¢è®¢å•çš„ç»“æ„
+		/// \param  bFinish	                 å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯ falseï¼Œå¦‚æœå®Œæˆäº†ï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true    
+		/// \remark å¦‚æœç¢°åˆ° bFinish == trueï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸” pQueryOrderå€¼æ— æ•ˆã€‚
 		/// \return void 
 	
 	virtual void OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOrder* pQueryOrder, bool bFinish  ){} 
 
-	///	²éÑ¯¶©µ¥µÄ·µ»ØÊÂ¼ş
+	///	æŸ¥è¯¢è®¢å•çš„è¿”å›äº‹ä»¶
 	
-		/// \brief	²éÑ¯¶©µ¥ĞÅÏ¢Ê±ºòµÄ»Øµ÷£¬ÕâÀïÃæÒ²¿ÉÄÜ°üº¬²»ÊÇµ±Ç°ÓÃ»§ÏÂµÄ¶©µ¥³É½»
-		/// \param  pAccount                        ÕÊ»§ID 
-		/// \param  pQueryOrderExec	                ²éÑ¯¶©µ¥³É½»µÄ½á¹¹
-		/// \param  bFinish	                        Èç¹ûÃ»ÓĞ´«ÊäÍê³É£¬Õâ¸öÖµÊÇfalse£¬Èç¹ûÍê³ÉÁË£¬ÄÇ¸öÕâ¸öÖµÎª true    
-		/// \remark Èç¹ûÅöµ½ bFinish == true£¬ÄÇÃ´ÊÇ´«Êä½áÊø£¬²¢ÇÒpQueryOrderExecÖµÎŞĞ§¡£
+		/// \brief	æŸ¥è¯¢è®¢å•ä¿¡æ¯æ—¶å€™çš„å›è°ƒï¼Œè¿™é‡Œé¢ä¹Ÿå¯èƒ½åŒ…å«ä¸æ˜¯å½“å‰ç”¨æˆ·ä¸‹çš„è®¢å•æˆäº¤
+		/// \param  pAccount                        å¸æˆ·ID 
+		/// \param  pQueryOrderExec	                æŸ¥è¯¢è®¢å•æˆäº¤çš„ç»“æ„
+		/// \param  bFinish	                        å¦‚æœæ²¡æœ‰ä¼ è¾“å®Œæˆï¼Œè¿™ä¸ªå€¼æ˜¯falseï¼Œå¦‚æœå®Œæˆäº†ï¼Œé‚£ä¸ªè¿™ä¸ªå€¼ä¸º true    
+		/// \remark å¦‚æœç¢°åˆ° bFinish == trueï¼Œé‚£ä¹ˆæ˜¯ä¼ è¾“ç»“æŸï¼Œå¹¶ä¸”pQueryOrderExecå€¼æ— æ•ˆã€‚
 		/// \return void 
 	
 	virtual void OnQueryTradeOrderExec(const char* pAccount, EES_QueryOrderExecution* pQueryOrderExec, bool bFinish  ){}
 
-	///	½ÓÊÕÍâ²¿¶©µ¥µÄÏûÏ¢
+	///	æ¥æ”¶å¤–éƒ¨è®¢å•çš„æ¶ˆæ¯
 	
-		/// \brief	Ò»°ã»áÔÚÏµÍ³¶©µ¥³ö´í£¬½øĞĞÈË¹¤µ÷ÕûµÄÊ±ºòÓÃµ½¡£
-		/// \param  pPostOrder	                    ²éÑ¯¶©µ¥³É½»µÄ½á¹¹
+		/// \brief	ä¸€èˆ¬ä¼šåœ¨ç³»ç»Ÿè®¢å•å‡ºé”™ï¼Œè¿›è¡Œäººå·¥è°ƒæ•´çš„æ—¶å€™ç”¨åˆ°ã€‚
+		/// \param  pPostOrder	                    æŸ¥è¯¢è®¢å•æˆäº¤çš„ç»“æ„
 		/// \return void 
 	
 	virtual void OnPostOrder(EES_PostOrder* pPostOrder ){}	
 
-	///	½ÓÊÕÍâ²¿¶©µ¥³É½»µÄÏûÏ¢
+	///	æ¥æ”¶å¤–éƒ¨è®¢å•æˆäº¤çš„æ¶ˆæ¯
 	
-		/// \brief	Ò»°ã»áÔÚÏµÍ³¶©µ¥³ö´í£¬½øĞĞÈË¹¤µ÷ÕûµÄÊ±ºòÓÃµ½¡£
-		/// \param  pPostOrderExecution	             ²éÑ¯¶©µ¥³É½»µÄ½á¹¹
+		/// \brief	ä¸€èˆ¬ä¼šåœ¨ç³»ç»Ÿè®¢å•å‡ºé”™ï¼Œè¿›è¡Œäººå·¥è°ƒæ•´çš„æ—¶å€™ç”¨åˆ°ã€‚
+		/// \param  pPostOrderExecution	             æŸ¥è¯¢è®¢å•æˆäº¤çš„ç»“æ„
 		/// \return void 
 	
 	virtual void OnPostOrderExecution(EES_PostOrderExecution* pPostOrderExecution ){}
 
-	///	²éÑ¯½»Ò×Ëù¿ÉÓÃÁ¬½ÓµÄÏìÓ¦
+	///	æŸ¥è¯¢äº¤æ˜“æ‰€å¯ç”¨è¿æ¥çš„å“åº”
 
-	/// \brief	Ã¿¸öµ±Ç°ÏµÍ³Ö§³ÖµÄ»ã±¨Ò»´Î£¬µ±bFinish= trueÊ±£¬±íÊ¾ËùÓĞ½»Ò×ËùµÄÏìÓ¦¶¼ÒÑµ½´ï£¬µ«±¾ÌõÏûÏ¢±¾Éí²»°üº¬ÓĞÓÃµÄĞÅÏ¢¡£
-	/// \param  pPostOrderExecution	             ²éÑ¯¶©µ¥³É½»µÄ½á¹¹
+	/// \brief	æ¯ä¸ªå½“å‰ç³»ç»Ÿæ”¯æŒçš„æ±‡æŠ¥ä¸€æ¬¡ï¼Œå½“bFinish= trueæ—¶ï¼Œè¡¨ç¤ºæ‰€æœ‰äº¤æ˜“æ‰€çš„å“åº”éƒ½å·²åˆ°è¾¾ï¼Œä½†æœ¬æ¡æ¶ˆæ¯æœ¬èº«ä¸åŒ…å«æœ‰ç”¨çš„ä¿¡æ¯ã€‚
+	/// \param  pPostOrderExecution	             æŸ¥è¯¢è®¢å•æˆäº¤çš„ç»“æ„
 	/// \return void 
 	virtual void OnQueryMarketSession(EES_ExchangeMarketSession* pMarketSession, bool bFinish) {}
 
-	///	½»Ò×ËùÁ¬½Ó×´Ì¬±ä»¯±¨¸æ£¬
+	///	äº¤æ˜“æ‰€è¿æ¥çŠ¶æ€å˜åŒ–æŠ¥å‘Šï¼Œ
 
-	/// \brief	µ±½»Ò×ËùÁ¬½Ó·¢ÉúÁ¬½Ó/¶Ï¿ªÊ±±¨¸æ´Ë×´Ì¬
-	/// \param  MarketSessionId: ½»Ò×ËùÁ¬½Ó´úÂë
-	/// \param  ConnectionGood: true±íÊ¾½»Ò×ËùÁ¬½ÓÕı³££¬false±íÊ¾½»Ò×ËùÁ¬½Ó¶Ï¿ªÁË¡£
+	/// \brief	å½“äº¤æ˜“æ‰€è¿æ¥å‘ç”Ÿè¿æ¥/æ–­å¼€æ—¶æŠ¥å‘Šæ­¤çŠ¶æ€
+	/// \param  MarketSessionId: äº¤æ˜“æ‰€è¿æ¥ä»£ç 
+	/// \param  ConnectionGood: trueè¡¨ç¤ºäº¤æ˜“æ‰€è¿æ¥æ­£å¸¸ï¼Œfalseè¡¨ç¤ºäº¤æ˜“æ‰€è¿æ¥æ–­å¼€äº†ã€‚
 	/// \return void 
 	virtual void OnMarketSessionStatReport(EES_MarketSessionId MarketSessionId, bool ConnectionGood) {}
 
-	///	ºÏÔ¼×´Ì¬±ä»¯±¨¸æ
+	///	åˆçº¦çŠ¶æ€å˜åŒ–æŠ¥å‘Š
 
-	/// \brief	µ±ºÏÔ¼×´Ì¬·¢Éú±ä»¯Ê±±¨¸æ
-	/// \param  pSymbolStatus: ²Î¼ûEES_SymbolStatusºÏÔ¼×´Ì¬½á¹¹Ìå¶¨Òå
+	/// \brief	å½“åˆçº¦çŠ¶æ€å‘ç”Ÿå˜åŒ–æ—¶æŠ¥å‘Š
+	/// \param  pSymbolStatus: å‚è§EES_SymbolStatusåˆçº¦çŠ¶æ€ç»“æ„ä½“å®šä¹‰
 	/// \return void 
 	virtual void OnSymbolStatusReport(EES_SymbolStatus* pSymbolStatus) {}
 
 
-	///	ºÏÔ¼×´Ì¬²éÑ¯ÏìÓ¦
+	///	åˆçº¦çŠ¶æ€æŸ¥è¯¢å“åº”
 
-	/// \brief  ÏìÓ¦ºÏÔ¼×´Ì¬²éÑ¯ÇëÇó
-	/// \param  pSymbolStatus: ²Î¼ûEES_SymbolStatusºÏÔ¼×´Ì¬½á¹¹Ìå¶¨Òå
-	/// \param	bFinish: µ±ÎªtrueÊ±£¬±íÊ¾²éÑ¯ËùÓĞ½á¹û·µ»Ø¡£´ËÊ±pSymbolStatusÎª¿ÕÖ¸ÕëNULL
+	/// \brief  å“åº”åˆçº¦çŠ¶æ€æŸ¥è¯¢è¯·æ±‚
+	/// \param  pSymbolStatus: å‚è§EES_SymbolStatusåˆçº¦çŠ¶æ€ç»“æ„ä½“å®šä¹‰
+	/// \param	bFinish: å½“ä¸ºtrueæ—¶ï¼Œè¡¨ç¤ºæŸ¥è¯¢æ‰€æœ‰ç»“æœè¿”å›ã€‚æ­¤æ—¶pSymbolStatusä¸ºç©ºæŒ‡é’ˆNULL
 	/// \return void 
 	virtual void OnQuerySymbolStatus(EES_SymbolStatus* pSymbolStatus, bool bFinish) {}
 
-	/// Éî¶ÈĞĞÇé²éÑ¯ÏìÓ¦
-	/// \param	pMarketMBLData: ²Î¼ûEES_MarketMBLDataÉî¶ÈĞĞÇé½á¹¹Ìå¶¨Òå
-	/// \param	bFinish: µ±ÎªtrueÊ±£¬±íÊ¾²éÑ¯ËùÓĞ½á¹û·µ»Ø¡£´ËÊ±pMarketMBLDataÄÚÈİÖĞ,½öm_RequestIdÓĞĞ§
+	/// æ·±åº¦è¡Œæƒ…æŸ¥è¯¢å“åº”
+	/// \param	pMarketMBLData: å‚è§EES_MarketMBLDataæ·±åº¦è¡Œæƒ…ç»“æ„ä½“å®šä¹‰
+	/// \param	bFinish: å½“ä¸ºtrueæ—¶ï¼Œè¡¨ç¤ºæŸ¥è¯¢æ‰€æœ‰ç»“æœè¿”å›ã€‚æ­¤æ—¶pMarketMBLDataå†…å®¹ä¸­,ä»…m_RequestIdæœ‰æ•ˆ
 	/// \return void 
 	//virtual void OnQueryMarketMBLData(EES_MarketMBLData* pMarketMBLData, bool bFinish) {}
 
 };
 
-/// \brief EES½»Ò×¿Í»§¶Ë´¿Ğé»ùÀà
+/// \brief EESäº¤æ˜“å®¢æˆ·ç«¯çº¯è™šåŸºç±»
 class SL_EES_TRADE_CLASS EESTraderApi
 {
 public:
@@ -291,198 +291,198 @@ public:
 	{
 	}
 
-	/// Á¬½Ó·şÎñÆ÷
-	/// Ìá¹©2ÖÖ½Ó¿Ú£¬ĞÂÔöµÄĞÎÊ½£¬¼æÈİ¼«ÖÂ°æµÄ½Ó¿Ú£¬µÚÒ»ÖÖ½Ó¿Ú¼´Ê¹ÓÃTCPÄ£Ê½
+	/// è¿æ¥æœåŠ¡å™¨
+	/// æä¾›2ç§æ¥å£ï¼Œæ–°å¢çš„å½¢å¼ï¼Œå…¼å®¹æè‡´ç‰ˆçš„æ¥å£ï¼Œç¬¬ä¸€ç§æ¥å£å³ä½¿ç”¨TCPæ¨¡å¼
 	virtual RESULT	ConnServer(const char* svrAddr, int nPort, EESTraderEvent* pEvent, const char* qrySvrAddr, int nQrySvrPort) = 0;
 	virtual RESULT	ConnServer(const EES_TradeSvrInfo& param, EESTraderEvent* pEvent)  = 0 ;
 	
-	/// ¶Ï¿ª·şÎñÆ÷
+	/// æ–­å¼€æœåŠ¡å™¨
 	
-		/// \return RESULT						²Î¿¼ EesTraderErr.hÎÄ¼ş
+		/// \return RESULT						å‚è€ƒ EesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT	DisConnServer()  = 0 ;
 
-	/// ÓÃ»§µÇÂ¼
+	/// ç”¨æˆ·ç™»å½•
 	
-		/// \brief	ÕâÀïÊäÈëµÄ²»ÊÇÕÊ»§Ãû£¬ÊÇÓÃ»§Ãû
-		/// \param  const char* userId			ÓÃ»§Ãû
-		/// \param  const char* userPwd		    ÓÃ»§µÇÂ¼ÃÜÂë
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼ EesTraderErr.hÎÄ¼ş
+		/// \brief	è¿™é‡Œè¾“å…¥çš„ä¸æ˜¯å¸æˆ·åï¼Œæ˜¯ç”¨æˆ·å
+		/// \param  const char* userId			ç”¨æˆ·å
+		/// \param  const char* userPwd		    ç”¨æˆ·ç™»å½•å¯†ç 
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒ EesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT UserLogon(const char* user_id, const char* user_pwd, const char* prodInfo, const char* macAddr ) = 0 ;
 
-	/// ÓÃ»§ÃÜÂëĞŞ¸Ä
+	/// ç”¨æˆ·å¯†ç ä¿®æ”¹
 
-	/// \brief	µÇÂ¼³É¹¦ºó²ÅÄÜÊ¹ÓÃ
-	/// \param  const char* oldPwd			ÀÏÃÜÂë
-	/// \param  const char* newPwd		    ĞÂÃÜÂë
-	/// \return RESULT			·µ»ØÖµ£¬²Î¿¼ EesTraderErr.hÎÄ¼ş
+	/// \brief	ç™»å½•æˆåŠŸåæ‰èƒ½ä½¿ç”¨
+	/// \param  const char* oldPwd			è€å¯†ç 
+	/// \param  const char* newPwd		    æ–°å¯†ç 
+	/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒ EesTraderErr.hæ–‡ä»¶
 
 	virtual RESULT ChangePassword(const char* oldPwd, const char* newPwd )  = 0 ;
 
-	/// ²éÑ¯ºÏÔ¼ÁĞ±í
+	/// æŸ¥è¯¢åˆçº¦åˆ—è¡¨
 	
-		/// \brief	Ö»»á·µ»Øµ±ÌìÓĞĞ§µÄºÏÔ¼
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼ EesTraderErr.hÎÄ¼ş
+		/// \brief	åªä¼šè¿”å›å½“å¤©æœ‰æ•ˆçš„åˆçº¦
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒ EesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT QuerySymbolList( )  = 0 ;
 
 
-	/// ²éÑ¯ÓÃ»§°üº¬µÄÕÊ»§
+	/// æŸ¥è¯¢ç”¨æˆ·åŒ…å«çš„å¸æˆ·
 	
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼ EesTraderErr.hÎÄ¼ş
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒ EesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT QueryUserAccount()  = 0 ;
 
-	/// ²éÑ¯ÕÊ»§²ÖÎ»
+	/// æŸ¥è¯¢å¸æˆ·ä»“ä½
 	
 		/// \brief	
-		/// \param  const char* accountId		ÕÊ»§ID
-		/// \param  int   nReqId			    ÇëÇó²éÑ¯µÄIDºÅ
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \param  const char* accountId		å¸æˆ·ID
+		/// \param  int   nReqId			    è¯·æ±‚æŸ¥è¯¢çš„IDå·
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT QueryAccountPosition(const char* accountId, int nReqId)  = 0 ;
 
-	/// ²éÑ¯ÕÊ»§BP
+	/// æŸ¥è¯¢å¸æˆ·BP
 	
 		/// \brief	
-		/// \param  const char* accountId		ÕÊ»§ID
-		/// \param  int   nReqId				ÇëÇó²éÑ¯µÄIDºÅ
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \param  const char* accountId		å¸æˆ·ID
+		/// \param  int   nReqId				è¯·æ±‚æŸ¥è¯¢çš„IDå·
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT QueryAccountBP(const char* accountId, int nReqId)  = 0 ;
 
-	/// ²éÑ¯ÕÊ»§±£Ö¤½ğÂÊ
+	/// æŸ¥è¯¢å¸æˆ·ä¿è¯é‡‘ç‡
 	
-		/// \param  const char* accountId		ÕÊ»§ID
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \param  const char* accountId		å¸æˆ·ID
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT QueryAccountTradeMargin(const char* accountId )  = 0 ;
 
-	/// ²éÑ¯ÕÊ»§ÊÖĞø·Ñ
+	/// æŸ¥è¯¢å¸æˆ·æ‰‹ç»­è´¹
 	
-		/// \brief	ÓÉÓÚ£¬Ã¿Ò»¸öÕÊ»§µÄ·ÑÂÊ²»Ò»Ñù£¬×îºÃÃ¿Ò»¸öÕÊ»§¶¼²éÑ¯Ò»ÏÂ¡£
-		/// \param  const char* accountId		ÕÊ»§ID
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \brief	ç”±äºï¼Œæ¯ä¸€ä¸ªå¸æˆ·çš„è´¹ç‡ä¸ä¸€æ ·ï¼Œæœ€å¥½æ¯ä¸€ä¸ªå¸æˆ·éƒ½æŸ¥è¯¢ä¸€ä¸‹ã€‚
+		/// \param  const char* accountId		å¸æˆ·ID
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT QueryAccountTradeFee(const char* accountId ) = 0  ;
 
 
-	/// »ñÈ¡¶©µ¥ ×î´ó  token Öµ
-	/// \brief	»ñÈ¡¶©µ¥ ×î´ó  token Öµ
-	/// \param  EES_ClientToken * orderToken	ÒªÊä³öµÄÖµ
-	/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+	/// è·å–è®¢å• æœ€å¤§  token å€¼
+	/// \brief	è·å–è®¢å• æœ€å¤§  token å€¼
+	/// \param  EES_ClientToken * orderToken	è¦è¾“å‡ºçš„å€¼
+	/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	virtual RESULT GetMaxToken(OUT EES_ClientToken* orderToken) = 0  ;
 
 
-	/// ÏÂµ¥
+	/// ä¸‹å•
 	
-		/// \param  EES_EnterOrderField* pOrder	×éÖ¯ºÃµÄ¶©µ¥½á¹¹Ìå
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \param  EES_EnterOrderField* pOrder	ç»„ç»‡å¥½çš„è®¢å•ç»“æ„ä½“
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT	EnterOrder(EES_EnterOrderField* pOrder ) = 0  ;
 
-	/// ³·Ïú¶©µ¥Ö¸Áî
+	/// æ’¤é”€è®¢å•æŒ‡ä»¤
 	
-		/// \param  EES_CancelOrder* pCxlOrder		³·µ¥½á¹¹Ìå
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \param  EES_CancelOrder* pCxlOrder		æ’¤å•ç»“æ„ä½“
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT	CancelOrder(EES_CancelOrder* pCxlOrder)  = 0 ;
 
-	/// ²éÑ¯ÕÊ»§¶©µ¥ĞÅÏ¢ 
+	/// æŸ¥è¯¢å¸æˆ·è®¢å•ä¿¡æ¯ 
 	
-		/// \param  const char* accountId		     ÕÊ»§ID
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \param  const char* accountId		     å¸æˆ·ID
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT	QueryAccountOrder(const char* accountId )  = 0 ;
 
-	/// ²éÑ¯ÕÊ»§³É½»ĞÅÏ¢
+	/// æŸ¥è¯¢å¸æˆ·æˆäº¤ä¿¡æ¯
 	
-		/// \param  const char* accountId		     ÕÊ»§ID
-		/// \return RESULT			·µ»ØÖµ£¬²Î¿¼EesTraderErr.hÎÄ¼ş
+		/// \param  const char* accountId		     å¸æˆ·ID
+		/// \return RESULT			è¿”å›å€¼ï¼Œå‚è€ƒEesTraderErr.hæ–‡ä»¶
 	
 	virtual RESULT	QueryAccountOrderExecution(const char* accountId ) = 0 ; 
 
-	/// ·¢ËÍ²éÑ¯½»Ò×Ëù¿ÉÓÃÏ¯Î»ÇëÇó	
-	/// \return Ã»ÓĞ·µ»ØÖµ£¬ÏìÓ¦ÔÚEESTraderEvent::OnQueryMarketSessionÖĞ·µ»Ø
+	/// å‘é€æŸ¥è¯¢äº¤æ˜“æ‰€å¯ç”¨å¸­ä½è¯·æ±‚	
+	/// \return æ²¡æœ‰è¿”å›å€¼ï¼Œå“åº”åœ¨EESTraderEvent::OnQueryMarketSessionä¸­è¿”å›
 	virtual RESULT QueryMarketSession() = 0;
 
-	/// Ê±¼ä´Á×ª»»º¯Êı£¬ÓÃÓÚ½«APIÖĞËùÓĞµÄEES_NanosecondÀàĞÍ£¬×ª»»³ÉCÓïÑÔ±ê×¼µÄstruct tm½á¹¹Ìå£¬ÒÔ¼°Õâ¸öÊ±¼äÔÚÒ»ÃëÄÚµÄÄÉÃëÊı
+	/// æ—¶é—´æˆ³è½¬æ¢å‡½æ•°ï¼Œç”¨äºå°†APIä¸­æ‰€æœ‰çš„EES_Nanosecondç±»å‹ï¼Œè½¬æ¢æˆCè¯­è¨€æ ‡å‡†çš„struct tmç»“æ„ä½“ï¼Œä»¥åŠè¿™ä¸ªæ—¶é—´åœ¨ä¸€ç§’å†…çš„çº³ç§’æ•°
 
-	/// \param  EES_Nanosecond timeStamp		API¶à¸ö½á¹¹ÌåÖĞµÄÊ±¼ä´ÁÖµ
-	/// \param  tm& tmResult					ÓÃÓÚ½ÓÊÕ½á¹ûµÄstruct tm½á¹¹Ìå
-	/// \param  unsigned int& nanoSsec 			ÓÃÓÚ½ÓÊÕ½á¹ûµÄÄÉÃëÊı
-	/// \return Ã»ÓĞ·µ»ØÖµ
+	/// \param  EES_Nanosecond timeStamp		APIå¤šä¸ªç»“æ„ä½“ä¸­çš„æ—¶é—´æˆ³å€¼
+	/// \param  tm& tmResult					ç”¨äºæ¥æ”¶ç»“æœçš„struct tmç»“æ„ä½“
+	/// \param  unsigned int& nanoSsec 			ç”¨äºæ¥æ”¶ç»“æœçš„çº³ç§’æ•°
+	/// \return æ²¡æœ‰è¿”å›å€¼
 	virtual void ConvertFromTimestamp(EES_Nanosecond timeStamp, tm& tmResult, unsigned int& nanoSsec) = 0;
 
 
 
-	/// ±¾µØÈÕÖ¾¿ª¹Ø£¬Ä¬ÈÏÎª¹Ø¡£
+	/// æœ¬åœ°æ—¥å¿—å¼€å…³ï¼Œé»˜è®¤ä¸ºå…³ã€‚
 
-	/// \param  bool bOn		true: ´ò¿ª±¾µØÈÕÖ¾; false: ¹Ø±Õ±¾µØÈÕÖ¾
-	/// \return Ã»ÓĞ·µ»ØÖµ
+	/// \param  bool bOn		true: æ‰“å¼€æœ¬åœ°æ—¥å¿—; false: å…³é—­æœ¬åœ°æ—¥å¿—
+	/// \return æ²¡æœ‰è¿”å›å€¼
 	virtual void SetLoggerSwitch(bool bOn) = 0;
 
-	/// ·¢ËÍ²éÑ¯ºÏÔ¼×´Ì¬ÇëÇó
-	/// \return Ã»ÓĞ·µ»ØÖµ£¬ÏìÓ¦ÔÚEESTraderEvent::OnQuerySymbolStatusÖĞ·µ»Ø
+	/// å‘é€æŸ¥è¯¢åˆçº¦çŠ¶æ€è¯·æ±‚
+	/// \return æ²¡æœ‰è¿”å›å€¼ï¼Œå“åº”åœ¨EESTraderEvent::OnQuerySymbolStatusä¸­è¿”å›
 	virtual RESULT QuerySymbolStatus() = 0;
 
-	/// Á¢¼´½«»º³åµÄÈÕÖ¾ĞÅÏ¢Ğ´ÈëÎÄ¼ş
-	/// \return Ã»ÓĞ·µ»ØÖµ
+	/// ç«‹å³å°†ç¼“å†²çš„æ—¥å¿—ä¿¡æ¯å†™å…¥æ–‡ä»¶
+	/// \return æ²¡æœ‰è¿”å›å€¼
 	virtual void LoggerFlush() = 0;
 
-	/// ½«¿Í»§¶ËÉèÖÃÎªÒì²½½ÓÊÕÊı¾İÄ£Ê½£¬±ØĞëÔÚConnectServerÖ®Ç°Ê¹ÓÃ£¬ÇÒÒ»µ©Ê¹ÓÃ£¬²»¿ÉÒÔÇĞ»»»ØÀ´
-	/// ±¾½Ó¿ÚÖ»¹©Í¼ĞÎ»¯ÊÖ¹¤ÏÂµ¥½çÃæÊ¹ÓÃ£¬³ÌĞò»¯½»Ò×Æ½Ì¨Ê¹ÓÃ¸Ã½Ó¿Ú»áÔì³É½ÓÊÕ¶ËÑÓ³Ù±ä´ó
-	/// \return Ã»ÓĞ·µ»ØÖµ
+	/// å°†å®¢æˆ·ç«¯è®¾ç½®ä¸ºå¼‚æ­¥æ¥æ”¶æ•°æ®æ¨¡å¼ï¼Œå¿…é¡»åœ¨ConnectServerä¹‹å‰ä½¿ç”¨ï¼Œä¸”ä¸€æ—¦ä½¿ç”¨ï¼Œä¸å¯ä»¥åˆ‡æ¢å›æ¥
+	/// æœ¬æ¥å£åªä¾›å›¾å½¢åŒ–æ‰‹å·¥ä¸‹å•ç•Œé¢ä½¿ç”¨ï¼Œç¨‹åºåŒ–äº¤æ˜“å¹³å°ä½¿ç”¨è¯¥æ¥å£ä¼šé€ æˆæ¥æ”¶ç«¯å»¶è¿Ÿå˜å¤§
+	/// \return æ²¡æœ‰è¿”å›å€¼
 	virtual void SetAsyncReceiveMode() = 0;
 
-	/// ÅúÁ¿ÏÂµ¥£¬×î¶àÒ»´ÎÏÂ8¸ö±¨µ¥£¬Ö»ÄÜÔÚTCPÄ£Ê½ÏÂÊ¹ÓÃ
-	/// ×¢ÒâÃ¿¸ö±¨µ¥µÄµÄOrderToken±ØĞë±£Ö¤ÔÚÍâ²¿¾ÍÉèÖÃºÃ²»ÖØ¸´£¬
-	/// pArrOrders: EES_EnterOrderField½á¹¹ÌåÊı×é£¬×î¶à4¸ö£¬nCount±ØĞë >=1£¬ÇÒ <=8
-	/// \return: ³É¹¦·µ»Ø0£¬ÈÎÒâÒ»¸ö±¨µ¥ÓĞ´í£¬Ôò·µ»Ø·Ç0Öµ£¬ÇÒËùÓĞ±¨µ¥¶¼²»»á±»·¢ËÍ
+	/// æ‰¹é‡ä¸‹å•ï¼Œæœ€å¤šä¸€æ¬¡ä¸‹8ä¸ªæŠ¥å•ï¼Œåªèƒ½åœ¨TCPæ¨¡å¼ä¸‹ä½¿ç”¨
+	/// æ³¨æ„æ¯ä¸ªæŠ¥å•çš„çš„OrderTokenå¿…é¡»ä¿è¯åœ¨å¤–éƒ¨å°±è®¾ç½®å¥½ä¸é‡å¤ï¼Œ
+	/// pArrOrders: EES_EnterOrderFieldç»“æ„ä½“æ•°ç»„ï¼Œæœ€å¤š4ä¸ªï¼ŒnCountå¿…é¡» >=1ï¼Œä¸” <=8
+	/// \return: æˆåŠŸè¿”å›0ï¼Œä»»æ„ä¸€ä¸ªæŠ¥å•æœ‰é”™ï¼Œåˆ™è¿”å›é0å€¼ï¼Œä¸”æ‰€æœ‰æŠ¥å•éƒ½ä¸ä¼šè¢«å‘é€
 	virtual RESULT EnterMultiOrders(EES_EnterOrderField* pArrOrders, int nCount) = 0;
 
-	/// °´ÕÕ½»Ò×ËùµÄÉî¶ÈĞĞÇé²éÑ¯ÇëÇó£¬×¢Òâ£ººóÌ¨ÏµÍ³±ØĞëÅäÖÃÖ§³ÖÉî¶ÈĞĞÇé£¬¸Ã¹¦ÄÜ²Å»á¹¤×÷	
-	/// nRequestId: ¿Í»§×ÔĞĞ±àºÅ£¬¶ÔÓ¦µÄ·µ»ØÊÂ¼şOnQueryMarketMBLDataÖĞ£¬»á·µ»ØÕâ¸öRequestId£¬¿Í»§¿ÉÓÃÓÚÆ¥Åä×Ô¼ºµÄ²éÑ¯ÇëÇó
-	/// exchangeID: ĞèÒªÌîÈëEES_ExchangeID_shfeµÈÊµ¼Ê½»Ò×Ëù´úÂë	
-	/// nSide: 0-Ë«±ß£» 1-Âò·½ÏòBid£» 2-Âô·½ÏòAsk
-	/// \return: ³É¹¦·µ»Ø0£¬Êı¾İÔÚOnQueryMarketMBLDataÖĞ·µ»Ø
+	/// æŒ‰ç…§äº¤æ˜“æ‰€çš„æ·±åº¦è¡Œæƒ…æŸ¥è¯¢è¯·æ±‚ï¼Œæ³¨æ„ï¼šåå°ç³»ç»Ÿå¿…é¡»é…ç½®æ”¯æŒæ·±åº¦è¡Œæƒ…ï¼Œè¯¥åŠŸèƒ½æ‰ä¼šå·¥ä½œ	
+	/// nRequestId: å®¢æˆ·è‡ªè¡Œç¼–å·ï¼Œå¯¹åº”çš„è¿”å›äº‹ä»¶OnQueryMarketMBLDataä¸­ï¼Œä¼šè¿”å›è¿™ä¸ªRequestIdï¼Œå®¢æˆ·å¯ç”¨äºåŒ¹é…è‡ªå·±çš„æŸ¥è¯¢è¯·æ±‚
+	/// exchangeID: éœ€è¦å¡«å…¥EES_ExchangeID_shfeç­‰å®é™…äº¤æ˜“æ‰€ä»£ç 	
+	/// nSide: 0-åŒè¾¹ï¼› 1-ä¹°æ–¹å‘Bidï¼› 2-å–æ–¹å‘Ask
+	/// \return: æˆåŠŸè¿”å›0ï¼Œæ•°æ®åœ¨OnQueryMarketMBLDataä¸­è¿”å›
 	//virtual RESULT QueryMarketMBLData(int nRequestId, EES_ExchangeID exchangeID, int nSide) = 0;
 
-	/// Ö¸¶¨ºÏÔ¼·¶Î§µÄÉî¶ÈĞĞÇé²éÑ¯ÇëÇó£¬×¢Òâ£ººóÌ¨ÏµÍ³±ØĞëÅäÖÃÖ§³ÖÉî¶ÈĞĞÇé£¬¸Ã¹¦ÄÜ²Å»á¹¤×÷	
-	/// nRequestId: ¿Í»§×ÔĞĞ±àºÅ£¬¶ÔÓ¦µÄ·µ»ØÊÂ¼şOnQueryMarketMBLDataÖĞ£¬»á·µ»ØÕâ¸öRequestId£¬¿Í»§¿ÉÓÃÓÚÆ¥Åä×Ô¼ºµÄ²éÑ¯ÇëÇó	
-	/// startSymbol , endSymbol: ÆğÊ¼²éÑ¯ºÏÔ¼ºÍÖÕÖ¹²éÑ¯ºÏÔ¼£¬±ØĞëÌîÈëºÏ·¨µÄºÏÔ¼
-	/// nSide: 0-Ë«±ß£» 1-Âò·½ÏòBid£» 2-Âô·½ÏòAsk
-	/// \return: ³É¹¦·µ»Ø0£¬Êı¾İÔÚOnQueryMarketMBLDataÖĞ·µ»Ø
+	/// æŒ‡å®šåˆçº¦èŒƒå›´çš„æ·±åº¦è¡Œæƒ…æŸ¥è¯¢è¯·æ±‚ï¼Œæ³¨æ„ï¼šåå°ç³»ç»Ÿå¿…é¡»é…ç½®æ”¯æŒæ·±åº¦è¡Œæƒ…ï¼Œè¯¥åŠŸèƒ½æ‰ä¼šå·¥ä½œ	
+	/// nRequestId: å®¢æˆ·è‡ªè¡Œç¼–å·ï¼Œå¯¹åº”çš„è¿”å›äº‹ä»¶OnQueryMarketMBLDataä¸­ï¼Œä¼šè¿”å›è¿™ä¸ªRequestIdï¼Œå®¢æˆ·å¯ç”¨äºåŒ¹é…è‡ªå·±çš„æŸ¥è¯¢è¯·æ±‚	
+	/// startSymbol , endSymbol: èµ·å§‹æŸ¥è¯¢åˆçº¦å’Œç»ˆæ­¢æŸ¥è¯¢åˆçº¦ï¼Œå¿…é¡»å¡«å…¥åˆæ³•çš„åˆçº¦
+	/// nSide: 0-åŒè¾¹ï¼› 1-ä¹°æ–¹å‘Bidï¼› 2-å–æ–¹å‘Ask
+	/// \return: æˆåŠŸè¿”å›0ï¼Œæ•°æ®åœ¨OnQueryMarketMBLDataä¸­è¿”å›
 	//virtual RESULT QueryMarketMBLData(int nRequestId, const char* startSymbol, const char* endSymbol, int nSide) = 0;
 
-	/// µ÷Õû¿Í»§¶ËÁ÷¿Ø²ÎÊı
-	/// µÇÂ¼³É¹¦ºó£¬¿É´ÓµÇÂ¼·µ»ØÏûÏ¢½á¹¹EES_LogonResponseÖĞ£¬»ñÈ¡µ½µ±Ç°µÇÂ¼µÄÁ÷¿Ø²ÎÊı£¨µ¥Î»ÊÇÃ¿¶àÉÙºÁÃë£¬¶àÉÙ´ÎÏÂµ¥/³·µ¥£©
-	/// ÓÉÓÚ·şÎñ¶Ë¶ÔÓÚÏÂµ¥µÄ¿ØÖÆÊÇ¸ù¾İÕËºÅ£¬¶øÎÒÃÇÏµÍ³ÔÊĞíÒ»¸öÕËºÅ¶àµãµÇÂ¼Í¬Ê±ÏÂµ¥£¬Òò´ËÊµ¼ÊÁ÷¿Ø¿ÉÄÜ»á±È»ñµÃµÄ²ÎÊı¸ü¼ÓÑÏ¸ñ
-	/// Òò´ËÌá¹©¸Ã½Ó¿Ú£¬¿Í»§¿ÉÒÔ¸ù¾İ×Ô¼ºÊÇ·ñĞèÒª¶àµãµÇÂ¼ÏÂµ¥£¬¶ÔÁ÷¿Ø²ÎÊı½øĞĞ¸ü¼ÓÑÏ¸ñµÄµ÷Õû£¬·ÀÖ¹´¥·¢ÁË·şÎñÆ÷µÄÁ÷¿Ø´Ó¶ø±»¶ÏÁ¬ÇÒÈÛ¶ÏµÇÂ¼
-	/// ±¾½Ó¿ÚÖ»ÔÊĞíµ÷ÕûÏÂµ¥´ÎÊı£¬ÇÒÖ»ÄÜµ÷µÃ¸üÉÙ£¬ÇÒ²»ÄÜ½«´ÎÊıµ÷³É0
-	/// OrderCount£º¸üĞÂÏÂµ¥´ÎÊı¿ØÖÆ
-	/// CancelCount£º¸üĞÂ³·µ¥´ÎÊı¿ØÖÆ
-	/// ½Ó¿Ú²»»á·µ»ØÕıÈ·»¹ÊÇ´íÎó£¬Èç¹û´«ÈëÁË´íÎóµÄ²ÎÊı£¬ÔòÔ­²ÎÊı²»»á±ä»¯
+	/// è°ƒæ•´å®¢æˆ·ç«¯æµæ§å‚æ•°
+	/// ç™»å½•æˆåŠŸåï¼Œå¯ä»ç™»å½•è¿”å›æ¶ˆæ¯ç»“æ„EES_LogonResponseä¸­ï¼Œè·å–åˆ°å½“å‰ç™»å½•çš„æµæ§å‚æ•°ï¼ˆå•ä½æ˜¯æ¯å¤šå°‘æ¯«ç§’ï¼Œå¤šå°‘æ¬¡ä¸‹å•/æ’¤å•ï¼‰
+	/// ç”±äºæœåŠ¡ç«¯å¯¹äºä¸‹å•çš„æ§åˆ¶æ˜¯æ ¹æ®è´¦å·ï¼Œè€Œæˆ‘ä»¬ç³»ç»Ÿå…è®¸ä¸€ä¸ªè´¦å·å¤šç‚¹ç™»å½•åŒæ—¶ä¸‹å•ï¼Œå› æ­¤å®é™…æµæ§å¯èƒ½ä¼šæ¯”è·å¾—çš„å‚æ•°æ›´åŠ ä¸¥æ ¼
+	/// å› æ­¤æä¾›è¯¥æ¥å£ï¼Œå®¢æˆ·å¯ä»¥æ ¹æ®è‡ªå·±æ˜¯å¦éœ€è¦å¤šç‚¹ç™»å½•ä¸‹å•ï¼Œå¯¹æµæ§å‚æ•°è¿›è¡Œæ›´åŠ ä¸¥æ ¼çš„è°ƒæ•´ï¼Œé˜²æ­¢è§¦å‘äº†æœåŠ¡å™¨çš„æµæ§ä»è€Œè¢«æ–­è¿ä¸”ç†”æ–­ç™»å½•
+	/// æœ¬æ¥å£åªå…è®¸è°ƒæ•´ä¸‹å•æ¬¡æ•°ï¼Œä¸”åªèƒ½è°ƒå¾—æ›´å°‘ï¼Œä¸”ä¸èƒ½å°†æ¬¡æ•°è°ƒæˆ0
+	/// OrderCountï¼šæ›´æ–°ä¸‹å•æ¬¡æ•°æ§åˆ¶
+	/// CancelCountï¼šæ›´æ–°æ’¤å•æ¬¡æ•°æ§åˆ¶
+	/// æ¥å£ä¸ä¼šè¿”å›æ­£ç¡®è¿˜æ˜¯é”™è¯¯ï¼Œå¦‚æœä¼ å…¥äº†é”™è¯¯çš„å‚æ•°ï¼Œåˆ™åŸå‚æ•°ä¸ä¼šå˜åŒ–
 	virtual RESULT ChangeFCParam(unsigned int OrderCount, unsigned int CancelCount) = 0;
 
 };
 
-/// ´´½¨EES½»Ò×¿Í»§¶ËÊµÀıµÄº¯ÊıÃû
+/// åˆ›å»ºEESäº¤æ˜“å®¢æˆ·ç«¯å®ä¾‹çš„å‡½æ•°å
 #define CREATE_EES_TRADER_API_NAME ("CreateEESTraderApi")
 
-/// Ïú»ÙEES½»Ò×¿Í»§¶ËÊµÀıµÄº¯ÊıÃû
+/// é”€æ¯EESäº¤æ˜“å®¢æˆ·ç«¯å®ä¾‹çš„å‡½æ•°å
 #define DESTROY_EES_TRADER_API_NAME ("DestroyEESTraderApi")
 
-/// ´´½¨EES½»Ò×¿Í»§¶ËÊµÀıº¯ÊıÉùÃ÷
+/// åˆ›å»ºEESäº¤æ˜“å®¢æˆ·ç«¯å®ä¾‹å‡½æ•°å£°æ˜
 SL_EES_TRADE_FUN EESTraderApi* CreateEESTraderApi(void) ; 
 
-/// Ïú»ÙEES½»Ò×¿Í»§¶ËÊµÀıº¯ÊıÉùÃ÷
+/// é”€æ¯EESäº¤æ˜“å®¢æˆ·ç«¯å®ä¾‹å‡½æ•°å£°æ˜
 SL_EES_TRADE_FUN void DestroyEESTraderApi(EESTraderApi* pEESTraderApi) ; 
 
-/// ´´½¨EES½»Ò×¿Í»§¶ËÊµÀıº¯ÊıÖ¸ÕëÀàĞÍ
+/// åˆ›å»ºEESäº¤æ˜“å®¢æˆ·ç«¯å®ä¾‹å‡½æ•°æŒ‡é’ˆç±»å‹
 typedef EESTraderApi* (*funcCreateEESTraderApi)(void) ;
 
-/// Ïú»ÙEES½»Ò×¿Í»§¶ËÊµÀıº¯ÊıÖ¸ÕëÀàĞÍ
+/// é”€æ¯EESäº¤æ˜“å®¢æˆ·ç«¯å®ä¾‹å‡½æ•°æŒ‡é’ˆç±»å‹
 typedef void (*funcDestroyEESTraderApi)(EESTraderApi* pEESTraderApi) ;
 
