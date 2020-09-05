@@ -6,7 +6,7 @@ use actix::Addr;
 use failure::_core::ffi::c_void;
 
 
-pub trait QuoteApi: Send {
+pub trait QuoteApi {
     fn on_front_connected(&mut self) {
         println!("on_front_connected");
     }
@@ -15,12 +15,10 @@ pub trait QuoteApi: Send {
         println!("on_front_disconnected: {:?}", reason);
     }
 
-    #[allow(unused_variables)]
     fn on_rsp_user_login(&mut self, pRspUserLogin: *mut CThostFtdcRspUserLoginField, pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
         println!("用户登录 回调 ")
     }
 
-    #[allow(unused_variables)]
     fn on_rsp_user_logout(&mut self, pUserLogout: *mut CThostFtdcUserLogoutField,
                           pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
         println!("用户登出 回调")
@@ -70,10 +68,10 @@ unsafe fn get_quote_spi<'a>(spi: *mut c_void) -> &'a mut dyn QuoteApi {
 }
 
 
-
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnFrontConnected(this: *mut ::std::os::raw::c_void) {
-    println!("{}", "前置连接成功! ");
+    let x = get_quote_spi(this);
+    x.on_front_connected();
 }
 
 #[no_mangle]
@@ -117,17 +115,17 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUserLogout(
     x.on_rsp_user_logout(pUserLogout, pRspInfo, nRequestID, bIsLast);
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn QuoteSpi_OnRspQryMulticastInstrument(
-    this: *mut ::std::os::raw::c_void,
-    pMulticastInstrument: *mut CThostFtdcMulticastInstrumentField,
-    pRspInfo: *mut CThostFtdcRspInfoField,
-    nRequestID: ::std::os::raw::c_int,
-    bIsLast: bool,
-) {
-    let x = get_quote_spi(this);
-    println!("查询多个合约的回报  此处还没实现方法噢")
-}
+// #[no_mangle]
+// pub unsafe extern "C" fn QuoteSpi_OnRspQryMulticastInstrument(
+//     this: *mut ::std::os::raw::c_void,
+//     pMulticastInstrument: *mut CThostFtdcMulticastInstrumentField,
+//     pRspInfo: *mut CThostFtdcRspInfoField,
+//     nRequestID: ::std::os::raw::c_int,
+//     bIsLast: bool,
+// ) {
+//     let x = get_quote_spi(this);
+//     println!("查询多个合约的回报  此处还没实现方法噢")
+// }
 
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspError(
@@ -175,6 +173,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspSubForQuoteRsp(
     let x = get_quote_spi(this);
     x.on_rsp_sub_for_quote_rsp(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
 }
+
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUnSubForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
@@ -204,8 +203,9 @@ pub unsafe extern "C" fn QuoteSpi_OnRtnForQuoteRsp(
     let x = get_quote_spi(this);
     x.on_rtn_for_quote_rsp(pForQuoteRsp);
 }
+
 #[no_mangle]
-pub unsafe  extern "C" fn QuoteSpi_Rust_Destructor(spi: *mut c_void){
+pub unsafe extern "C" fn QuoteSpi_Rust_Destructor(spi: *mut c_void) {
     let spi = spi as *mut Box<dyn QuoteApi>;
     let _: Box<Box<dyn QuoteApi>> = Box::from_raw(spi);
 }

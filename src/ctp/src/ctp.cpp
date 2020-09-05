@@ -4,8 +4,7 @@
 #include "re.hpp"
 
 extern "C" void CThostFtdcMdApi_Init(CThostFtdcMdApi *self) {
-    auto s = static_cast<CThostFtdcMdApi *>(self);
-    return s->Init();
+    return self->Init();
 }
 
 extern "C" const char *CThostFtdcMdApi_GetTradingDay(CThostFtdcMdApi *self) {
@@ -83,10 +82,10 @@ void QuoteSpi::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtd
     QuoteSpi_OnRspUserLogout(this->rust_object, pUserLogout, pRspInfo, nRequestID, bIsLast);
 }
 
-void QuoteSpi::OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
-                                           CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
-    QuoteSpi_OnRspQryMulticastInstrument(this->rust_object, pMulticastInstrument, pRspInfo, nRequestID, bIsLast);
-}
+//void QuoteSpi::OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
+//                                           CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+//    QuoteSpi_OnRspQryMulticastInstrument(this->rust_object, pMulticastInstrument, pRspInfo, nRequestID, bIsLast);
+//}
 
 void QuoteSpi::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
     QuoteSpi_OnRspError(this->rust_object, pRspInfo, nRequestID, bIsLast);

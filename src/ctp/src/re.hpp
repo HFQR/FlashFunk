@@ -36,9 +36,9 @@ public:
 
     void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                          bool bIsLast);
-
-    void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
-                                     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+//
+//    void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument,
+//                                     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
     void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
@@ -71,9 +71,9 @@ extern "C" void QuoteSpi_OnRspUserLogin(void *rust_object, CThostFtdcRspUserLogi
 extern "C" void QuoteSpi_OnRspUserLogout(void *rust_object, CThostFtdcUserLogoutField *pUserLogout,
                                          CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                                          bool bIsLast);
-extern "C" void QuoteSpi_OnRspQryMulticastInstrument(void *rust_object,
-                                                     CThostFtdcMulticastInstrumentField *pMulticastInstrument,
-                                                     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+//extern "C" void QuoteSpi_OnRspQryMulticastInstrument(void *rust_object,
+//                                                     CThostFtdcMulticastInstrumentField *pMulticastInstrument,
+//                                                     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 extern "C" void QuoteSpi_OnRspError(void *rust_object, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 extern "C" void QuoteSpi_OnRspSubMarketData(void *rust_object, CThostFtdcSpecificInstrumentField *pSpecificInstrument,
                                             CThostFtdcRspInfoField *pRspInfo,

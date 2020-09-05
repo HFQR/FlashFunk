@@ -7,7 +7,7 @@ use std::os::raw::{c_void, c_char, c_int, c_uchar};
 use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcMdApi_Init, QuoteSpi, CThostFtdcMdSpi,
                       CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_SubscribeMarketData,
                       CThostFtdcMdApi_RegisterSpi, QuoteSpi_Destructor,
-                      CThostFtdcMdApi_GetTradingDay,
+                      CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_ReqUserLogin,
                       CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField,
                       CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField,
                       CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType,
@@ -23,6 +23,9 @@ use encoding::all::GB18030;
 use failure::_core::str::Utf8Error;
 use crate::structs::{OrderRequest, CancelRequest, LoginForm};
 use crate::ctp::func::QuoteApi;
+use failure::_core::cell::RefCell;
+use std::rc::Rc;
+use core::mem;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -37,6 +40,9 @@ pub struct MdApi {
     market_api: *mut CThostFtdcMdApi,
     market_spi: Option<*mut QuoteSpi>,
     addr: Addr<CtpbeeR>,
+    login_info: Option<LoginForm>,
+    request_id: i32,
+    this: Option<Rc<RefCell<MdApi>>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -116,23 +122,33 @@ pub fn covert_cstr_to_str(v: &[i8]) -> Cow<str> {
 
 struct DataCollector {
     addr: Addr<CtpbeeR>,
-    login_info: LoginForm,
+    login_status: bool,
+    connect_status: bool,
+    api: Rc<RefCell<MdApi>>,
 }
 
 /// 此处我们实现种种方法来构建ctp的登录流程
 impl QuoteApi for DataCollector {
     fn on_front_connected(&mut self) {
-        println!("on_front_connected");
-        println!("ready to login");
-        let user_id = CString::new(self.login_info.user_id.clone()).unwrap();
-        let pwd = CString::new(self.login_info.password.clone()).unwrap();
-        let auth_code = CString::new(self.login_info.auth_code.clone()).unwrap();
-        let app_id = CString::new(self.login_info.app_id.clone()).unwrap();
-        let production_info = CString::new(self.login_info.production_info.clone()).unwrap();
+        println!("Fronted connect successful");
+        self.connect_status = true;
+        (*self.api).borrow_mut().login();
     }
 
     fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
+        self.login_status = false;
+        self.connect_status = false;
         println!("on_front_disconnected: {:?}", reason);
+    }
+
+    fn on_rsp_user_login(&mut self, pRspUserLogin: *mut CThostFtdcRspUserLoginField, pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+        println!("用户登录 回调 ");
+
+        (*self.api).borrow_mut().subscribe("rb2010".to_string());
+        self.login_status = true;
+    }
+    fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
+        unsafe { println!("行情到达  price: {:?}", (*pDepthMarketData).LastPrice) };
     }
 
     fn get_addr(&self) -> &Addr<CtpbeeR> {
@@ -140,26 +156,33 @@ impl QuoteApi for DataCollector {
     }
 }
 
+unsafe impl Send for MdApi {}
 
 /// Now we get a very useful spi, and we get use the most important things to let everything works well
 /// the code is from ctp-rs
 ///
 /// 实现行情API的一些主动基准调用方法
 impl MdApi {
-    pub fn new(id: String, pwd: String, path: String, addr: Addr<CtpbeeR>) -> MdApi {
+    pub fn new(id: String, pwd: String, path: String, addr: Addr<CtpbeeR>) -> Rc<RefCell<MdApi>> {
         let ids = CString::new(id).unwrap();
         let pwds = CString::new(pwd).unwrap();
         let paths = CString::new(path).unwrap();
         let flow_path_ptr = paths.as_ptr();
         let api = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
-        MdApi {
+        let x = MdApi {
             user_id: ids,
             password: pwds,
             path: paths,
             market_api: api,
             market_spi: None,
             addr,
-        }
+            login_info: None,
+            request_id: 0,
+            this: None,
+        };
+        let rc = Rc::new(RefCell::new(x));
+        (*rc).borrow_mut().this = Some(rc.clone());
+        rc
     }
     /// 初始化调用
     pub fn init(&mut self) -> bool {
@@ -172,22 +195,41 @@ impl MdApi {
         unsafe { CStr::from_ptr(trading_day_cstr as *const i8).to_str().unwrap() }
     }
 
+    fn login(&mut self) {
+        let login_form = self.login_info.take().unwrap();
+        let user_id = CString::new(login_form.user_id).unwrap();
+        let pwd = CString::new(login_form.password).unwrap();
+        let broker_id = CString::new(login_form.broke_id).unwrap();
+        let auth_code = CString::new(login_form.auth_code).unwrap();
+        let app_id = CString::new(login_form.app_id.clone()).unwrap();
+        let production_info = CString::new(login_form.production_info.clone()).unwrap();
+        // let user_info = CThostFtdcReqUserLoginField {
+        //     TradingDay: CString::new("").unwrap().into_raw(),
+        //     BrokerID: broker_id.into_raw(),
+        //     UserID: user_id.into_raw(),
+        //     Password: pwd.into_raw(),
+        //     UserProductInfo: CString::new("").unwrap().into_raw(),
+        //     InterfaceProductInfo: CString::new("").unwrap().into_raw(),
+        //     ProtocolInfo: CString::new("").unwrap().into_raw(),
+        //     MacAddress: CString::new("").unwrap().into_raw(),
+        //     OneTimePassword: CString::new("").unwrap().into_raw(),
+        //     ClientIPAddress: CString::new("").unwrap().into_raw(),
+        //     LoginRemark: CString::new("").unwrap().into_raw(),
+        //     ClientIPPort: c_int::from(0),
+        // };
+        unsafe { CThostFtdcMdApi_ReqUserLogin(self.market_api, CThostFtdcReqUserLoginField::default().borrow_mut(), self.request_id.clone()) };
+    }
+
     /// 注册前置地址
     fn register_fronted_address(&mut self, register_addr: CString) {
         let front_socket_address_ptr = register_addr.into_raw();
         unsafe { CThostFtdcMdApi_RegisterFront(self.market_api, front_socket_address_ptr) };
     }
 
-    /// 用户登录
-    fn request_user_login(&mut self, user_id: CString, password: CString, auth_code: CString, app_id: CString, production_info: CString) {
-        // unsafe {
-        //     CThostFtdcMdApi_RegisterFensUserInfo(self.market_api)
-        // }
-    }
-
     /// 注册回调
     fn register_spi(&mut self, login_info: LoginForm) {
-        let collector = DataCollector { addr: self.addr.clone(), login_info };
+        self.login_info = Some(login_info);
+        let collector = DataCollector { addr: self.addr.clone(), login_status: false, connect_status: false, api: self.this.take().unwrap().clone() };
         let trait_object_box: Box<Box<dyn QuoteApi>> = Box::new(Box::new(collector));
         let trait_object_pointer =
             Box::into_raw(trait_object_box) as *mut Box<dyn QuoteApi> as *mut c_void;
@@ -195,7 +237,6 @@ impl MdApi {
         let ptr = Box::into_raw(Box::new(quote_spi));
         self.market_spi = Some(ptr);
         unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, ptr as *mut CThostFtdcMdSpi) };
-        // }
     }
 
     fn release(&mut self) {
@@ -217,6 +258,8 @@ impl Interface for MdApi {
         self.register_spi(req.clone());
         let addr = CString::new(address).unwrap();
         self.register_fronted_address(addr);
+        self.init();
+        println!("初始化成功");
     }
 
     fn subscribe(&mut self, symbol: String) {

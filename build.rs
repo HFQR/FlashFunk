@@ -15,6 +15,8 @@ fn build(target: &str) {
         .compile("bridge");
     let bindings = bindgen::Builder::default()
         .header("src/ctp/wrapper.hpp")
+        .derive_debug(true)
+        .derive_default(true)
         .generate()
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
