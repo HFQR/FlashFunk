@@ -4,9 +4,10 @@
 use super::interface::Interface;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_void, c_char, c_int, c_uchar};
-use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcMdApi_Init,
+use crate::ctp::sys::{CThostFtdcMdApi, CThostFtdcTraderApi, CThostFtdcMdApi_Init, QuoteSpi, CThostFtdcMdSpi,
                       CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_SubscribeMarketData,
-                      QuoteSpi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_CreateFtdcMdApi,
+                      CThostFtdcMdApi_RegisterSpi,
+                      CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_CreateFtdcMdApi,
                       CThostFtdcReqUserLoginField, CThostFtdcUserLogoutField, CThostFtdcFensUserInfoField,
                       CThostFtdcSpecificInstrumentField, CThostFtdcRspInfoField, CThostFtdcDepthMarketDataField,
                       CThostFtdcForQuoteRspField, CThostFtdcRspUserLoginField, TThostFtdcRequestIDType,
@@ -15,7 +16,7 @@ use std::process::id;
 use actix::Addr;
 use crate::app::CtpbeeR;
 use std::fmt;
-use std::borrow::{Cow, BorrowMut};
+use std::borrow::{Cow, BorrowMut, Borrow};
 
 use encoding::{DecoderTrap, Encoding};
 use encoding::all::GB18030;
@@ -120,6 +121,16 @@ pub fn covert_cstr_to_str(v: &[i8]) -> Cow<str> {
 //     CThostFtdcMdSpi { vtable: &SPI_VTABLE, spi: md_spi, addr }
 // }
 
+struct DataCollector {
+    addr: Addr<CtpbeeR>
+}
+
+impl QuoteApi for DataCollector {
+    fn get_addr(&self) -> &Addr<CtpbeeR> {
+        self.addr.borrow()
+    }
+}
+
 
 /// Now we get a very useful spi, and we get use the most important things to let everything works well
 /// the code is from ctp-rs
@@ -158,16 +169,16 @@ impl MdApi {
     }
 
     /// 注册回调
-    fn register_spi(&mut self, quo_api: Box<dyn QuoteApi>, addr: Addr<CtpbeeR>) {
-        //解开引用
-        let last_registered_spi_ptr = self.market_spi.take();
-        // 获取回调操作结构体
-        let md_spi_ptr = Box::into_raw(quo_api);
-        // // 创建我们需要的回调结构体
-        // let spi_ptr = Box::into_raw(Box::new(create_spi(md_spi_ptr, addr)));
-        // unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, spi_ptr.) };
-        // // // 更新到本地的结构体,注册0成功
-        // self.market_spi = Some(spi_ptr);
+    fn register_spi(&mut self, addr: Addr<CtpbeeR>) {
+        let collector = DataCollector {addr};
+        let trait_object_box: Box<Box<dyn QuoteApi>> = Box::new(Box::new(collector));
+        let trait_object_pointer =
+            Box::into_raw(trait_object_box) as *mut Box<dyn QuoteApi> as *mut c_void;
+        let quote_spi = unsafe { QuoteSpi::new(trait_object_pointer) };
+        let ptr = Box::into_raw(Box::new(quote_spi));
+        self.market_spi = Some(ptr);
+        unsafe { CThostFtdcMdApi_RegisterSpi(self.market_api, ptr as *mut CThostFtdcMdSpi) };
+        // }
     }
 }
 
@@ -180,7 +191,11 @@ impl Interface for MdApi {
         unimplemented!("行情接口无此功能")
     }
 
-    fn connect(&mut self, req: LoginForm) {}
+    fn connect(&mut self, req: LoginForm) {
+        self.er
+
+
+    }
 
     fn subscribe(&mut self, symbol: String) {
         let code = CString::new(symbol).unwrap();
