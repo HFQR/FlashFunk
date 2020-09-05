@@ -4,6 +4,9 @@ use std::env;
 use std::path::PathBuf;
 use std::io::Write;
 
+
+// 衔接层  Rust ->  C -> C++
+
 /// 遍历命令
 fn build(target: &str) {
     println!("Ready to compile interface for ctp");
@@ -11,8 +14,8 @@ fn build(target: &str) {
         .file("src/ctp/src/ctp.cpp")
         .cpp(true)
         .warnings(true)
-        .flag("-std=c++11")
         .compile("bridge");
+
     let bindings = bindgen::Builder::default()
         .header("src/ctp/wrapper.hpp")
         .derive_debug(true)

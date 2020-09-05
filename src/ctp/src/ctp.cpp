@@ -54,12 +54,11 @@ CThostFtdcMdApi_RegisterFensUserInfo(CThostFtdcMdApi *self, CThostFtdcFensUserIn
 }
 
 
-
 /// 行情API回调处理函数
-
 QuoteSpi::QuoteSpi(void *rust_object) : rust_object(rust_object) {}
 
 void QuoteSpi::OnFrontConnected() {
+    // 前置连接到来的到时候会自动触发这个代码
     QuoteSpi_OnFrontConnected(this->rust_object);
 }
 

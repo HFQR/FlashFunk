@@ -33,7 +33,7 @@ impl Actor for CtpbeeR {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        println!(">>> Ctpbee started, Application: {:?}", self.name);
+        println!(">>> System started, Application: {:?}", self.name);
         self.addr = Some(ctx.address());
     }
 

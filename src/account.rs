@@ -3,8 +3,8 @@
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 
-use crate::structs::{ OrderData, Params, TickData, TradeData, DailyResult};
-use std::borrow::{Borrow};
+use crate::structs::{OrderData, Params, TickData, TradeData, DailyResult};
+use std::borrow::Borrow;
 use crate::constants::{Offset, Direction};
 
 use crate::structs::PositionData;
@@ -53,7 +53,7 @@ pub struct Account {
 impl Account {
     pub(crate) fn new() -> Rc<RefCell<Account>> {
         let account = Account {
-            name: "ctpbee".to_owned(),
+            name: "FlashFunk".to_owned(),
             pre_balance: 0.0,
             commission_ratio: Default::default(),
             margin_ratio: Default::default(),

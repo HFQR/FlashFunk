@@ -68,6 +68,13 @@ unsafe fn get_quote_spi<'a>(spi: *mut c_void) -> &'a mut dyn QuoteApi {
 }
 
 
+///  1.我们在rust里面新建 结构体
+///  2. 为他声明一系列简单的on_回调
+///  3. 把这个结构体塞给QuatoSpi
+///  4. 重写掉 c函数，
+///  5. 当行情到来时候，c++ 会直接调用c函数
+///  6.c函数这个时候已经被重写掉， 然后他会执行rust里面的代码
+///
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnFrontConnected(this: *mut ::std::os::raw::c_void) {
     let x = get_quote_spi(this);

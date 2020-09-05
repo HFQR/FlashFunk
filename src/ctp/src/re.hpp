@@ -4,6 +4,10 @@
 #include "../../../sdk_sources/ctp/include/ThostFtdcTraderApi.h"
 
 
+//MdApi {
+//    MdSpi
+//}
+
 extern "C" void CThostFtdcMdApi_Init(CThostFtdcMdApi *self);
 extern "C" const char *CThostFtdcMdApi_GetTradingDay(CThostFtdcMdApi *self);
 extern "C" void CThostFtdcMdApi_RegisterFront(CThostFtdcMdApi *self, char *pszFrontAddress);
@@ -19,6 +23,7 @@ extern "C" void CThostFtdcMdApi_RegisterNameServer(CThostFtdcMdApi *self, char *
 extern "C" void CThostFtdcMdApi_RegisterFensUserInfo(CThostFtdcMdApi *self, CThostFtdcFensUserInfoField *pFensUserInfo);
 //// 行情API回调
 
+// 我们自己写的rust的对象给他载入进去
 class QuoteSpi : CThostFtdcMdSpi {
 public:
     void *rust_object;

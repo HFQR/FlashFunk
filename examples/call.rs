@@ -8,6 +8,7 @@ use std::thread;
 use actix::Addr;
 use std::borrow::Borrow;
 use ctpbee_rs::interface::Interface;
+use failure::_core::time::Duration;
 
 struct Strategy {
     pub name: String,
@@ -21,8 +22,7 @@ impl Ac for Strategy {
     }
 
     fn on_tick(&mut self, tick: TickData) {
-        let name = self.name.clone();
-        println!("{} got tick {:?}", name, self.get_addr());
+        println!("tick:  {} {}", tick.last_price, tick.volume);
     }
 
     fn init(&mut self, runtime: Addr<CtpbeeR>) {
@@ -58,7 +58,7 @@ async fn main() {
         production_info: "".to_string(),
     };
     md_api.borrow_mut().connect(&login_form);
-    // md_api.subscribe("rb2010".to_string());
-    // wait
+    thread::sleep(Duration::from_secs(1));
+    md_api.borrow_mut().subscribe("rb2101".to_string());
     x.await;
 }
