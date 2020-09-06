@@ -26,6 +26,7 @@ use crate::ctp::func::QuoteApi;
 use failure::_core::cell::RefCell;
 use std::rc::Rc;
 use core::mem;
+use chrono::{DateTime, Local};
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -143,6 +144,8 @@ impl QuoteApi for DataCollector {
         self.login_status = true;
     }
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
+        let dt = Local::now();
+        println!("timstamp: {:?}", dt.timestamp_nanos());
         unsafe {
             self.addr.do_send(TickData {
                 symbol: "".to_string(),

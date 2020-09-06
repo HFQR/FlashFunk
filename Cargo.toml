@@ -23,12 +23,17 @@ name = "login"
 [[example]]
 name = "call"
 
+[profile.release]
+lto = "fat"
+opt-level = 3
+codegen-units = 1
+debug-assertions = false
+overflow-checks = false
+panic = "abort"
+
 [profile.dev]
 rpath = true
 
-#[lib]
-#name = "ctpbee_rs"
-#path = "src/lib.rs"
 
 [build-dependencies]
 bindgen = {git ="https://github.com/rust-lang/rust-bindgen"}

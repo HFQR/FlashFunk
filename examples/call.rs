@@ -9,6 +9,7 @@ use actix::Addr;
 use std::borrow::Borrow;
 use ctpbee_rs::interface::Interface;
 use failure::_core::time::Duration;
+use chrono::Local;
 
 struct Strategy {
     pub name: String,
@@ -22,7 +23,8 @@ impl Ac for Strategy {
     }
 
     fn on_tick(&mut self, tick: TickData) {
-        println!("tick:  {} {}", tick.last_price, tick.volume);
+        let dt = Local::now();
+        println!("at: {:?}", dt.timestamp_nanos());
     }
 
     fn init(&mut self, runtime: Addr<CtpbeeR>) {
@@ -40,12 +42,10 @@ async fn main() {
     let mut account = CtpbeeR::new("ctpbee".to_string());
     let str = Strategy { name: "hello".to_string(), addr: None };
     let str2 = Strategy { name: "bug".to_string(), addr: None };
-    // ADD strategy to main Actor
     account.add_strategy(Box::new(str));
-    account.add_strategy(Box::new(str2));
+    // account.add_strategy(Box::new(str2));
     let (addr, x) = account.run_forever();
     let copy = addr.clone();
-    // here is the call c++ code
     let mut md_api = MdApi::new("name".to_string(), "id".to_string(), "bug".to_string(), addr);
     let login_form = LoginForm {
         user_id: "089131".to_string(),
