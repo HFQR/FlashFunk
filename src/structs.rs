@@ -3,13 +3,12 @@
 #![allow(dead_code)]
 
 use crate::constants::*;
-use chrono::{DateTime, Utc, Date};
-use std::option::Option;
 use actix::Message;
+use chrono::{Date, DateTime, Utc};
+use std::option::Option;
 
 /// Tick Data
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
+#[derive(Clone)]
 pub struct TickData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -89,8 +88,6 @@ impl Default for TickData {
 }
 
 /// Bar Data
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct BarData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -122,8 +119,6 @@ impl Default for BarData {
 }
 
 /// Order Data
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct OrderData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -157,8 +152,6 @@ impl Default for OrderData {
 }
 
 /// Trade Data
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct TradeData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -188,8 +181,6 @@ impl Default for TradeData {
 }
 
 /// Position Data
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct PositionData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -219,8 +210,6 @@ impl Default for PositionData {
 }
 
 /// Account Data
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct AccountData {
     pub accountid: String,
     pub balance: f64,
@@ -229,8 +218,6 @@ pub struct AccountData {
 }
 
 /// Contract Data
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct ContractData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -274,15 +261,11 @@ impl Default for ContractData {
 }
 
 /// Subscribe Request
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct SubscribeRequest {
     pub symbol: String,
 }
 
 /// Order Request
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct OrderRequest {
     pub symbol: String,
     pub exchange: Exchange,
@@ -295,15 +278,11 @@ pub struct OrderRequest {
 }
 
 /// Cancel Request
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct CancelRequest {
     pub orderid: String,
 }
 
 /// History Request
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct HistoryRequest {
     pub symbol: String,
     pub exchange: Exchange,
@@ -312,18 +291,12 @@ pub struct HistoryRequest {
     pub interval: Interval,
 }
 
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct ConnectInfo {}
 
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct Params {
-    pub connect_info: ConnectInfo
+    pub connect_info: ConnectInfo,
 }
 
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
 pub struct DailyResult {
     pub available: f64,
     pub balance: f64,
@@ -332,8 +305,7 @@ pub struct DailyResult {
     pub date: String,
 }
 
-#[derive(Message, Clone)]
-#[rtype(result = "()")]
+#[derive(Clone)]
 pub struct LoginForm {
     pub user_id: String,
     pub password: String,

@@ -1,9 +1,8 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 
 use std::env;
-use std::path::PathBuf;
 use std::io::Write;
-
+use std::path::PathBuf;
 
 // 衔接层  Rust ->  C -> C++
 
@@ -13,7 +12,7 @@ fn build(target: &str) {
     cc::Build::new()
         .file("src/ctp/src/ctp.cpp")
         .cpp(true)
-        .warnings(true)
+        .warnings(false)
         .compile("bridge");
 
     let bindings = bindgen::Builder::default()
@@ -28,8 +27,12 @@ fn build(target: &str) {
     let out_path = env.join("bindings.rs");
     println!("{:?}", out_path);
     let binding_output = bindings.to_string();
-    let mut output_file = std::fs::File::create(out_path.as_path()).map_err(|e| format!("cannot create struct file, {}", e)).unwrap();
-    output_file.write_all(binding_output.as_bytes()).map_err(|e| format!("cannot write struct file, {}", e));
+    let mut output_file = std::fs::File::create(out_path.as_path())
+        .map_err(|e| format!("cannot create struct file, {}", e))
+        .unwrap();
+    output_file
+        .write_all(binding_output.as_bytes())
+        .map_err(|e| format!("cannot write struct file, {}", e));
     println!("Generate successful")
 }
 
@@ -45,11 +48,13 @@ fn main() {
     build("ctp");
 }
 
-
 #[cfg(not(target_os = "windows"))]
 fn add_search_path(main_path: String) {
     println!("cargo:rustc-flags=-L {}/sdk_sources/ctp/linux/", main_path);
-    println!("cargo:rustc-link-search={}/sdk_sources/ctp/linux/", main_path);
+    println!(
+        "cargo:rustc-link-search={}/sdk_sources/ctp/linux/",
+        main_path
+    );
 }
 
 #[cfg(target_os = "windows")]

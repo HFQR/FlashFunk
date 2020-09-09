@@ -56,7 +56,6 @@ struct Test;
 
 impl Ac for Test {}
 
-
 #[actix_rt::main]
 async fn main() {
     let ax = Test {};

@@ -1,10 +1,8 @@
+use crate::app::{CtpbeeR, CtpbeeRMessage, StrategyProducer};
+use crate::ctp::api::{result_to_string, DisconnectionReason, RspResult};
 /// This module implement all the c functions to be called in rust
 use crate::ctp::sys::*;
-use crate::ctp::api::{DisconnectionReason, RspResult, result_to_string};
-use crate::app::CtpbeeR;
-use actix::Addr;
 use failure::_core::ffi::c_void;
-
 
 pub trait QuoteApi {
     fn on_front_connected(&mut self) {
@@ -15,36 +13,72 @@ pub trait QuoteApi {
         println!("on_front_disconnected: {:?}", reason);
     }
 
-    fn on_rsp_user_login(&mut self, pRspUserLogin: *mut CThostFtdcRspUserLoginField, pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+    fn on_rsp_user_login(
+        &mut self,
+        pRspUserLogin: *mut CThostFtdcRspUserLoginField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        request_id: TThostFtdcRequestIDType,
+        is_last: bool,
+    ) {
         println!("用户登录 回调 ")
     }
 
-    fn on_rsp_user_logout(&mut self, pUserLogout: *mut CThostFtdcUserLogoutField,
-                          pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+    fn on_rsp_user_logout(
+        &mut self,
+        pUserLogout: *mut CThostFtdcUserLogoutField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        request_id: TThostFtdcRequestIDType,
+        is_last: bool,
+    ) {
         println!("用户登出 回调")
     }
 
-    fn on_rsp_error(&mut self, pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+    fn on_rsp_error(
+        &mut self,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        request_id: TThostFtdcRequestIDType,
+        is_last: bool,
+    ) {
         print!("错误回调信息");
     }
 
-    fn on_rsp_sub_market_data(&mut self, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
-                              pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+    fn on_rsp_sub_market_data(
+        &mut self,
+        pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        request_id: TThostFtdcRequestIDType,
+        is_last: bool,
+    ) {
         println!("订阅行情回调信息");
     }
 
-    fn on_rsp_un_sub_market_data(&mut self, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
-                                 pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+    fn on_rsp_un_sub_market_data(
+        &mut self,
+        pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        request_id: TThostFtdcRequestIDType,
+        is_last: bool,
+    ) {
         println!("取消订阅行情回报信息");
     }
 
-    fn on_rsp_sub_for_quote_rsp(&mut self, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
-                                pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+    fn on_rsp_sub_for_quote_rsp(
+        &mut self,
+        pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        request_id: TThostFtdcRequestIDType,
+        is_last: bool,
+    ) {
         println!("此处为询价应答");
     }
 
-    fn on_rsp_un_sub_for_quote_rsp(&mut self, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
-                                   pRspInfo: *mut CThostFtdcRspInfoField, request_id: TThostFtdcRequestIDType, is_last: bool) {
+    fn on_rsp_un_sub_for_quote_rsp(
+        &mut self,
+        pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        request_id: TThostFtdcRequestIDType,
+        is_last: bool,
+    ) {
         println!("此处为取消询价应答");
     }
 
@@ -59,14 +93,11 @@ pub trait QuoteApi {
     fn on_heart_beaten(&mut self) {
         println!("心跳警告");
     }
-    fn get_addr(&self) -> &Addr<CtpbeeR>;
 }
-
 
 unsafe fn get_quote_spi<'a>(spi: *mut c_void) -> &'a mut dyn QuoteApi {
     &mut **(spi as *mut *mut dyn QuoteApi)
 }
-
 
 ///  1.我们在rust里面新建 结构体
 ///  2. 为他声明一系列简单的on_回调

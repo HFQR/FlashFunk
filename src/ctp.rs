@@ -3,5 +3,5 @@
 use super::*;
 
 pub mod api;
-pub mod sys;
 pub mod func;
+pub mod sys;

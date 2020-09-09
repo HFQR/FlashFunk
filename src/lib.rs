@@ -1,8 +1,11 @@
-pub mod constants;
-pub mod structs;
-mod utility;
+#[macro_use]
+extern crate lazy_static;
+
+pub mod ac;
 pub mod account;
 pub mod app;
-pub mod interface;
+pub mod constants;
 pub mod ctp;
-pub mod ac;
+pub mod interface;
+pub mod structs;
+mod utility;

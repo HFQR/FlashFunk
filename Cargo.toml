@@ -17,6 +17,8 @@ failure = "0.1"
 encoding = "0.2.33"
 memchr = "2.3.3"
 simple-error = "0.2.1"
+lazy_static = ""
+crossbeam = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
 
 [[example]]
 name = "login"
