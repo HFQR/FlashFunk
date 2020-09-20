@@ -298,7 +298,8 @@ impl Interface for MdApi {
 
     fn connect(&mut self, req: LoginForm) {
         let address = (&req.md_address).to_string();
-        self.register_spi(req.clone());
+        let producer = self.producer.take().unwrap();
+        self.register_spi(req.clone(),  producer);
         let addr = CString::new(address).unwrap();
         self.register_fronted_address(addr);
         self.init();
