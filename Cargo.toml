@@ -29,7 +29,6 @@ panic = "abort"
 [profile.dev]
 rpath = true
 
-
 [build-dependencies]
 bindgen = { git ="https://github.com/rust-lang/rust-bindgen.git", branch = "master" }
 cc = "1.0"

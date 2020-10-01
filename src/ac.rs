@@ -1,20 +1,61 @@
-#![allow(dead_code, unused_variables)]
+use core::ops::{Deref, DerefMut};
 
-use crate::app::{ProducerTdApi, StrategyMessage};
+use crate::app::StrategyMessage;
 use crate::constants::{Direction, Exchange, Offset, OrderType};
 use crate::structs::{
-    AccountData, BarData, ContractData, OrderData, OrderRequest, PositionData, TickData, TradeData,
+    AccountData, BarData, ContractData, OrderData, PositionData, TickData, TradeData,
 };
 
+pub trait IntoStrategy: Sized + Send + Ac + 'static {
+    fn into_str(self) -> __Strategy {
+        __Strategy {
+            str: Box::new(self),
+            name: Self::name(),
+            price: Self::price(),
+            symbols: Self::local_symbol(),
+        }
+    }
+
+    fn name() -> &'static str;
+
+    fn price() -> Vec<f64>;
+
+    fn local_symbol() -> Vec<&'static str>;
+}
+
+pub struct __Strategy {
+    str: Box<dyn Ac + Send>,
+    name: &'static str,
+    price: Vec<f64>,
+    symbols: Vec<&'static str>,
+}
+
+impl __Strategy {
+    pub fn symbols(&self) -> &[&'static str] {
+        &self.symbols
+    }
+}
+
+impl Deref for __Strategy {
+    type Target = Box<dyn Ac + Send>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.str
+    }
+}
+
+impl DerefMut for __Strategy {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.str
+    }
+}
+
+#[allow(unused_variables)]
 pub trait Ac {
-    type Symbol;
-
     /// 订阅行情
-    fn local_symbol(&self) -> Self::Symbol;
-
     fn on_bar(&mut self, bar: &BarData);
 
-    fn on_tick(&mut self, tick: &TickData) -> Vec<Option<StrategyMessage>>;
+    fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage>;
 
     fn on_contract(&mut self, contract: &ContractData) {}
 
@@ -58,9 +99,7 @@ pub trait Ac {
     }
     /// 撤单
     fn cancel(&mut self, order_id: &str) {
-        // let req = CancelRequest {
-        //     orderid: "".to_string(),
-        // };
+        unimplemented!();
     }
     /// 发送底层报单
     fn send_order(
@@ -73,15 +112,6 @@ pub trait Ac {
         offset: Offset,
         direction: Direction,
     ) {
-        let order = OrderRequest {
-            symbol: symbol.to_string(),
-            exchange,
-            direction,
-            order_type: price_type,
-            volume,
-            price,
-            offset,
-            reference: None,
-        };
+        unimplemented!();
     }
 }

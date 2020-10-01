@@ -68,6 +68,7 @@ impl QuoteApi for DataCollector<'_> {
     }
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
+        // 回调应该传回策略分组的index，然后用send_to来制定收取tick data的分组
         self.producer.send(unsafe {
             let datetime = format!(
                 "{} {}.{}",
@@ -229,6 +230,7 @@ impl Interface for MdApi {
         symbols.into_iter().enumerate().for_each(|(i, s)| {
             let code = CString::new(*s).unwrap();
             let mut c = code.into_raw();
+            // symbols的index对应策略的分组，应该传给回调
             unsafe { CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, i as i32) };
         });
     }

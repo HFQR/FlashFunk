@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
 use chrono::Local;
-use ctpbee_rs::ac::Ac;
+use ctpbee_rs::ac::{Ac, IntoStrategy};
 use ctpbee_rs::app::{CtpbeeR, LoginForm2, StrategyMessage};
 use ctpbee_rs::constants::{Direction, Exchange, Offset, OrderType};
 use ctpbee_rs::ctp::md_api::MdApi;
@@ -10,30 +10,38 @@ use ctpbee_rs::interface::Interface;
 use ctpbee_rs::structs::{BarData, LoginForm, OrderData, OrderRequest, TickData};
 use std::thread;
 
-struct Strategy {
-    pub name: String,
-    pub price: Vec<f64>,
+struct Strategy;
+
+impl IntoStrategy for Strategy {
+    fn name() -> &'static str {
+        "abc"
+    }
+
+    fn price() -> Vec<f64> {
+        vec![100.0]
+    }
+
+    fn local_symbol() -> Vec<&'static str> {
+        vec!["rb2101"]
+    }
 }
 
 impl Ac for Strategy {
-    type Symbol = Vec<&'static str>;
-
-    fn local_symbol(&self) -> Self::Symbol {
-        ["rb2010"].into()
-    }
-
     fn on_bar(&mut self, bar: &BarData) {}
 
-    fn on_tick(&mut self, tick: &TickData) -> Vec<Option<StrategyMessage>> {
+    fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
         println!(
-            "收到行情 symbol: {}, time: {:?} price: {}",
+            "策略1收到行情 symbol: {}, time: {:?} price: {}",
             tick.symbol,
             tick.datetime.unwrap(),
             tick.last_price
         );
-        let req = if tick.last_price > 3520.0 {
-            Some(StrategyMessage::OrderRequest(OrderRequest {
-                symbol: "rb2010".to_string(),
+
+        let mut res = Vec::new();
+
+        if tick.last_price > 3520.0 {
+            let req = OrderRequest {
+                symbol: "rb2101".to_string(),
                 exchange: Exchange::SHFE,
                 direction: Direction::SHORT,
                 order_type: OrderType::LIMIT,
@@ -41,38 +49,45 @@ impl Ac for Strategy {
                 price: tick.last_price,
                 offset: Offset::OPEN,
                 reference: None,
-            }))
-        } else {
-            None
-        };
+            };
 
-        vec![req]
+            res.push(req.into());
+        }
+
+        res
     }
 }
 
-struct Strategy2 {
-    pub name: String,
-    pub price: Vec<f64>,
+struct Strategy2;
+
+impl IntoStrategy for Strategy2 {
+    fn name() -> &'static str {
+        "abc2"
+    }
+
+    fn price() -> Vec<f64> {
+        vec![100.0]
+    }
+
+    fn local_symbol() -> Vec<&'static str> {
+        vec!["rb2105"]
+    }
 }
 
 impl Ac for Strategy2 {
-    type Symbol = Vec<&'static str>;
-
-    fn local_symbol(&self) -> Self::Symbol {
-        ["rb2105"].into()
-    }
-
     fn on_bar(&mut self, bar: &BarData) {}
 
-    fn on_tick(&mut self, tick: &TickData) -> Vec<Option<StrategyMessage>> {
+    fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
         println!(
-            "收到行情 symbol: {}, time: {:?} price: {}",
+            "策略2收到行情 symbol: {}, time: {:?} price: {}",
             tick.symbol,
             tick.datetime.unwrap(),
             tick.last_price
         );
-        let req = if tick.last_price > 3520.0 {
-            Some(StrategyMessage::OrderRequest(OrderRequest {
+
+        let mut res = Vec::new();
+        if tick.last_price > 3520.0 {
+            let req = OrderRequest {
                 symbol: "rb2105".to_string(),
                 exchange: Exchange::SHFE,
                 direction: Direction::SHORT,
@@ -81,25 +96,16 @@ impl Ac for Strategy2 {
                 price: tick.last_price,
                 offset: Offset::OPEN,
                 reference: None,
-            }))
-        } else {
-            None
+            };
+
+            res.push(req.into());
         };
 
-        vec![req]
+        res
     }
 }
 
 fn main() {
-    let str = Strategy {
-        name: "hello".to_string(),
-        price: vec![],
-    };
-    let str2 = Strategy2 {
-        name: "bug".to_string(),
-        price: vec![],
-    };
-
     let login_form = LoginForm2 {
         user_id: "170874",
         password: "wi1015..",
@@ -113,7 +119,7 @@ fn main() {
     };
 
     CtpbeeR::new("ctpbee")
-        .strategy(vec![Box::new(str), Box::new(str2)])
+        .strategies(vec![Strategy.into_str(), Strategy2.into_str()])
         .id("name")
         .pwd("id")
         .path("bug")

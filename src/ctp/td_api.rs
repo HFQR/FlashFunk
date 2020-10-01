@@ -2573,7 +2573,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
                 println!(">>> Td Auth successful");
@@ -2591,7 +2591,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
                 println!(">>> Td Login successful");
@@ -2620,7 +2620,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
@@ -2635,7 +2635,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
                 println!(">>> Td Confirmed Successful");
@@ -2669,9 +2669,11 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                 status: Some(Status::from((*pOrder).OrderStatus)),
             }
         };
+        // 这里控制接收order data的策略index
+        self.api.producer.send_to(order, 0);
     }
 
-    fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) -> () {
+    fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
         let trade = unsafe {
             let time_string = slice_to_string(&(*pTrade).TradeTime);
             let date_string = slice_to_string(&(*pTrade).TradeDate);
@@ -2690,13 +2692,15 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                 tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
             }
         };
+        // 这里控制接收order data的策略index
+        self.api.producer.send_to(trade, 0);
     }
 
     fn on_err_rtn_order_insert(
         &mut self,
         pInputOrder: *mut CThostFtdcInputOrderField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
@@ -2708,7 +2712,8 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) -> () {
+    ) {
+        unimplemented!()
     }
 }
 
@@ -2846,40 +2851,15 @@ impl TdApi {
 
     pub fn auth(&mut self) {
         self.request_id += 1;
-        let user_id = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .user_id
-            .clone()
-            .to_c_slice();
-        let auth_code = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .auth_code
-            .clone()
-            .to_c_slice();
-        let broke_id = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .broke_id
-            .clone()
-            .to_c_slice();
-        let app_id = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .app_id
-            .clone()
-            .to_c_slice();
+        let user_id = self.login_info.as_ref().unwrap().user_id.to_c_slice();
+        let auth_code = self.login_info.as_ref().unwrap().auth_code.to_c_slice();
+        let broke_id = self.login_info.as_ref().unwrap().broke_id.to_c_slice();
+        let app_id = self.login_info.as_ref().unwrap().app_id.to_c_slice();
         let production_info = self
             .login_info
             .as_ref()
             .unwrap()
             .production_info
-            .clone()
             .to_c_slice();
         let req = CThostFtdcReqAuthenticateField {
             UserID: user_id,
@@ -2892,40 +2872,17 @@ impl TdApi {
             RustCtpCallReqAuthenticate(
                 self.trader_api,
                 Box::into_raw(Box::new(req)) as *mut CThostFtdcReqAuthenticateField,
-                self.request_id.clone(),
+                self.request_id,
             )
         };
     }
     pub fn login(&mut self) {
         self.request_id += 1;
-        let user_id = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .user_id
-            .clone()
-            .to_c_slice();
-        let password = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .password
-            .clone()
-            .to_c_slice();
-        let broker_id = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .broke_id
-            .clone()
-            .to_c_slice();
-        let production_info = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .production_info
-            .clone()
-            .to_c_slice();
+        let form = self.login_info.as_ref().unwrap();
+        let user_id = form.user_id.to_c_slice();
+        let password = form.password.to_c_slice();
+        let broker_id = form.broke_id.to_c_slice();
+        let production_info = form.production_info.to_c_slice();
 
         let login_req = CThostFtdcReqUserLoginField {
             BrokerID: broker_id,
@@ -2938,7 +2895,7 @@ impl TdApi {
             RustCtpCallReqUserLogin(
                 self.trader_api,
                 Box::into_raw(Box::new(login_req)),
-                self.request_id.clone(),
+                self.request_id,
             )
         };
     }
@@ -2978,28 +2935,17 @@ impl TdApi {
 
     fn req_settle(&mut self) {
         self.request_id += 1;
+        let form = self.login_info.as_ref().unwrap();
         let req = CThostFtdcSettlementInfoConfirmField {
-            BrokerID: self
-                .login_info
-                .as_ref()
-                .unwrap()
-                .broke_id
-                .clone()
-                .to_c_slice(),
-            InvestorID: self
-                .login_info
-                .as_ref()
-                .unwrap()
-                .user_id
-                .clone()
-                .to_c_slice(),
+            BrokerID: form.broke_id.to_c_slice(),
+            InvestorID: form.user_id.to_c_slice(),
             ..CThostFtdcSettlementInfoConfirmField::default()
         };
         unsafe {
             RustCtpCallReqSettlementInfoConfirm(
                 self.trader_api,
                 Box::into_raw(Box::new(req)),
-                self.request_id.clone(),
+                self.request_id,
             );
         }
     }
@@ -3042,7 +2988,7 @@ impl Interface for TdApi {
             RustCtpCallReqOrderInsert(
                 self.trader_api,
                 Box::into_raw(Box::new(req)),
-                self.request_id.clone(),
+                self.request_id,
             )
         };
         "".to_string()
@@ -3053,8 +2999,8 @@ impl Interface for TdApi {
         let action = CThostFtdcInputOrderActionField {
             // InstrumentID: ,
             OrderRef: req.orderid.to_c_slice(),
-            FrontID: self.frontid.clone(),
-            SessionID: self.sessionid.clone(),
+            FrontID: self.frontid,
+            SessionID: self.sessionid,
             ActionFlag: THOST_FTDC_AF_Delete as i8,
             BrokerID: self.login_info.as_ref().unwrap().broke_id.to_c_slice(),
             InvestorID: self.login_info.as_ref().unwrap().user_id.to_c_slice(),
