@@ -1,31 +1,40 @@
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(
+    dead_code,
+    unused_must_use,
+    unused_variables,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    unused_imports
+)]
 
-use std::env;
+use std::env::var;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::{env, fs};
 
 // 衔接层  Rust ->  C -> C++
 
 /// 遍历命令
-fn build(target: &str) {
-    println!("Ready to compile interface for ctp");
+fn build(target: &str, out_path: PathBuf) {
+    let c = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     cc::Build::new()
         .file("src/ctp/src/ctp.cpp")
         .cpp(true)
         .warnings(false)
-        .compile("bridge");
+        .out_dir(get_interface_path(target))
+        .include("/usr/include/")
+        .flag(format!("-L {}/sdk_sources/ctp/linux", c.to_str().unwrap()).as_str())
+        .compile("ctp");
 
     let bindings = bindgen::Builder::default()
         .header("src/ctp/wrapper.hpp")
         .derive_debug(true)
         .derive_default(true)
+        .clang_arg("-I /usr/include/")
         .generate()
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
-
-    let env = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let out_path = env.join("bindings.rs");
-    println!("{:?}", out_path);
     let binding_output = bindings.to_string();
     let mut output_file = std::fs::File::create(out_path.as_path())
         .map_err(|e| format!("cannot create struct file, {}", e))
@@ -33,42 +42,65 @@ fn build(target: &str) {
     output_file
         .write_all(binding_output.as_bytes())
         .map_err(|e| format!("cannot write struct file, {}", e));
-    println!("Generate successful")
 }
 
 fn main() {
-    let current_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let lib_dir = format!("{}/sdk_sources/ctp/lib", current_dir);
-    println!("{}", lib_dir);
-    println!("cargo:rustc-link-search=native={}", lib_dir);
-    add_search_path(current_dir.clone());
-    println!("cargo:rerun-if-changed=src/wrapper.hpp");
-    println!("cargo:rerun-if-changed=src/bridge/bridge.hpp");
-    println!("cargo:rerun-if-changed=src/bridge/bridge.cpp");
-    build("ctp");
-}
+    mkdir_home_path(vec!["ctp"]);
 
-#[cfg(not(target_os = "windows"))]
-fn add_search_path(main_path: String) {
-    println!("cargo:rustc-flags=-L {}/sdk_sources/ctp/linux/", main_path);
+    let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+    // add c++ std library
+    println!("cargo:rustc-link-lib=dylib=stdc++");
+
+    // link to ctp.a for covert level
     println!(
-        "cargo:rustc-link-search={}/sdk_sources/ctp/linux/",
-        main_path
+        "cargo:rustc-link-search={}",
+        get_interface_path("ctp").to_str().unwrap()
     );
+    println!("cargo:rustc-link-lib=dylib=ctp");
+
+    // link to interface cpp
+    println!("cargo:rustc-link-lib=dylib=stdc++");
+    let lib_dir = format!("{}/sdk_sources/ctp/lib", current_dir.to_str().unwrap());
+    let dylib_lib = format!("{}/sdk_sources/ctp/linux", current_dir.to_str().unwrap());
+
+    // println!("cargo:rustc-flags=-C link-args=-Wl,-rpath,{}", dylib_lib);
+
+    println!("cargo:rustc-link-search={}", dylib_lib);
+    println!("cargo:rustc-link-search=native={}", lib_dir);
+    println!("cargo:rustc-link-lib=dylib=thostmduserapi_se");
+    println!("cargo:rustc-link-lib=dylib=thosttraderapi_se");
+
+    // println!("cargo:rerun-if-changed=src/wrapper.hpp");
+    // println!("cargo:rerun-if-changed=src/bridge/bridge.hpp");
+    // println!("cargo:rerun-if-changed=src/bridge/bridge.cpp");
+
+    // output the bindings.rs and ctp.o to the .HFQ/ctp dir
+    let out_path = get_interface_path("ctp").join("bindings.rs");
+    build("ctp", out_path);
 }
 
-#[cfg(target_os = "windows")]
-fn add_search_path(main_path: String) {
-    println!("cargo:rustc-flags=-L {}/sdk_sources/ctp/win/", main_path);
-    println!("cargo:rustc-link-search={}/sdk_sources/ctp/win/", main_path);
+fn get_interface_path(path: &str) -> PathBuf {
+    let px = format!("{}/.HFQ/{}", var("HOME").unwrap(), path).to_string();
+    let path_buffer = PathBuf::from(px);
+    if !path_buffer.exists() {
+        panic!("please mkdier interface dir fisrt");
+    }
+    path_buffer
 }
 
-#[cfg(target_arch = "x86_64")]
-fn check_arch() {}
-
-#[cfg(target_arch = "x86")]
-fn check_arch() {
-    unimplemented!("Not implemented for 32 bit system!");
+/// mkdir at home path
+fn mkdir_home_path(path: Vec<&str>) {
+    let px = format!("{}/.HFQ", var("HOME").unwrap()).to_string();
+    let home = Path::new(px.as_str());
+    if !home.exists() {
+        fs::create_dir(home);
+    }
+    for interface in path {
+        let pw = home.clone().join(interface);
+        if !pw.exists() {
+            fs::create_dir(pw);
+        }
+    }
 }
 
 fn add_llvm_path() {

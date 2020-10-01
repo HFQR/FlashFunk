@@ -1,7 +1,9 @@
 //
 // Created by somewheve' on 2020/8/22.
 //
-#include "re.hpp"
+#include "ctp_md.hpp"
+
+#include "ctp_td.hpp"
 
 extern "C" void CThostFtdcMdApi_Init(CThostFtdcMdApi *self) {
     return self->Init();
@@ -58,7 +60,6 @@ CThostFtdcMdApi_RegisterFensUserInfo(CThostFtdcMdApi *self, CThostFtdcFensUserIn
 QuoteSpi::QuoteSpi(void *rust_object) : rust_object(rust_object) {}
 
 void QuoteSpi::OnFrontConnected() {
-    // 前置连接到来的到时候会自动触发这个代码
     QuoteSpi_OnFrontConnected(this->rust_object);
 }
 
@@ -105,7 +106,7 @@ void QuoteSpi::OnRspUnSubMarketData(CThostFtdcSpecificInstrumentField *pSpecific
 void QuoteSpi::OnRspSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument,
                                    CThostFtdcRspInfoField *pRspInfo,
                                    int nRequestID, bool bIsLast) {
-    QuoteSpi_OnRspSubForQuoteRsp(this->rust_object, pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
+
 }
 
 void QuoteSpi::OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument,

@@ -1,8 +1,7 @@
-use crate::app::{CtpbeeR, CtpbeeRMessage, StrategyProducer};
-use crate::ctp::api::{result_to_string, DisconnectionReason, RspResult};
+use crate::app::CtpbeeR;
 /// This module implement all the c functions to be called in rust
 use crate::ctp::sys::*;
-use failure::_core::ffi::c_void;
+use core::ffi::c_void;
 
 pub trait QuoteApi {
     fn on_front_connected(&mut self) {

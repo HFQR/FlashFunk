@@ -3,8 +3,7 @@
 #![allow(dead_code)]
 
 use crate::constants::*;
-use actix::Message;
-use chrono::{Date, DateTime, Utc};
+use chrono::{Date, DateTime, NaiveDateTime, Utc};
 use std::option::Option;
 
 /// Tick Data
@@ -12,7 +11,7 @@ use std::option::Option;
 pub struct TickData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
-    pub datetime: Option<DateTime<Utc>>,
+    pub datetime: Option<NaiveDateTime>,
     pub name: Option<String>,
     pub volume: f64,
     pub open_interest: f64,
@@ -122,7 +121,7 @@ impl Default for BarData {
 pub struct OrderData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
-    pub datetime: Option<DateTime<Utc>>,
+    pub datetime: Option<NaiveDateTime>,
     pub orderid: Option<String>,
     pub order_type: OrderType,
     pub direction: Option<Direction>,
@@ -155,7 +154,7 @@ impl Default for OrderData {
 pub struct TradeData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
-    pub datetime: Option<DateTime<Utc>>,
+    pub datetime: Option<NaiveDateTime>,
     pub orderid: Option<String>,
     pub tradeid: Option<String>,
     pub direction: Option<Direction>,
@@ -280,6 +279,7 @@ pub struct OrderRequest {
 /// Cancel Request
 pub struct CancelRequest {
     pub orderid: String,
+    pub exchange: Exchange,
 }
 
 /// History Request

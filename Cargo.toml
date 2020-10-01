@@ -10,15 +10,8 @@ build = "build.rs"
 [dependencies]
 chrono = "0.4.13"
 libc = "0.2.0"
-actix = "0.10.0-alpha.3"
-actix-rt = "1.1.1"
-futures = "0.3.5"
-failure = "0.1"
 encoding = "0.2.33"
-memchr = "2.3.3"
-simple-error = "0.2.1"
-lazy_static = ""
-crossbeam = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
+crossbeam-queue = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
 
 [[example]]
 name = "login"
@@ -38,5 +31,5 @@ rpath = true
 
 
 [build-dependencies]
-bindgen = {git ="https://github.com/rust-lang/rust-bindgen"}
+bindgen = { git ="https://github.com/rust-lang/rust-bindgen.git", branch = "master" }
 cc = "1.0"

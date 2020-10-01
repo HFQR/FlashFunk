@@ -238,7 +238,7 @@ impl Account {
     }
     ///  get the margin of position for the account
     pub fn margin(&mut self) -> f64 {
-        let mut rs = 0.0;
+        let rs = 0.0;
 
         self.get_all_positions()
             .into_iter()

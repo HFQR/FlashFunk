@@ -1,35 +1,21 @@
-#![allow(dead_code, unused_imports, unused_variables)]
+use core::fmt::{Debug, Formatter, Result as FmtResult};
+use core::marker::PhantomData;
+use core::time::Duration;
+
+use std::borrow::Cow;
+use std::collections::HashMap;
+
+use crossbeam_queue::spsc::{self, Consumer, Producer};
 
 use super::interface::Interface;
 use crate::ac::Ac;
 use crate::account::Account;
-use crate::constants::{Direction, OrderType};
-use crate::structs::{AccountData, BarData, CancelRequest, ContractData, OrderData, OrderRequest, PositionData, SubscribeRequest, TickData, TradeData, LoginForm};
-use actix::prelude::*;
-use chrono::Local;
-use core::fmt;
-use futures::{AsyncReadExt, SinkExt, StreamExt};
-use std::cell::RefCell;
-use std::collections::{HashMap, VecDeque};
-use std::fmt::Debug;
-use std::mem::swap;
-use std::rc::Rc;
-use std::time::{Instant, Duration};
-
-use crossbeam::channel::Sender;
-use std::sync::{Arc, Condvar, Mutex};
-use std::thread::JoinHandle;
-
-use crossbeam::queue::spsc::{self, Consumer, Producer};
-use std::borrow::Cow;
-use failure::_core::marker::PhantomData;
-use crate::ctp::api::MdApi;
-use std::thread;
-use std::ffi::CString;
-
-lazy_static! {
-    pub static ref TIMER: Mutex<Instant> = Mutex::new(Instant::now());
-}
+use crate::ctp::md_api::MdApi;
+use crate::ctp::td_api::TdApi;
+use crate::structs::{
+    AccountData, BarData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest,
+    PositionData, SubscribeRequest, TickData, TradeData,
+};
 
 /// ctpbee核心运行器
 /// 作为该运行器
@@ -39,45 +25,164 @@ pub struct CtpbeeR {
     login_info: HashMap<String, String>,
 }
 
-pub struct StrategyProducer {
-    producers: Vec<Producer<CtpbeeRMessage>>,
-}
-
-impl StrategyProducer {
-    pub fn send(&self, msg: impl Into<CtpbeeRMessage> + Clone) {
-        self.producers.iter().for_each(|p| {
-            p.push(msg.clone().into());
-        })
+impl Debug for CtpbeeR {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "Ctpbee >>> : {}", self.name)
     }
 }
 
-pub struct OrderConsumer {
-    consumers: Vec<Consumer<u8>>,
-}
+pub struct ProducerMdApi(Vec<Producer<MdApiMessage>>, Vec<Vec<usize>>);
 
-impl OrderConsumer {
-    pub fn recv(&self) -> Vec<u8> {
-        self.consumers.iter().filter_map(|c| c.pop().ok()).collect()
+impl ProducerMdApi {
+    // 无视分组发送给所有策略
+    pub fn send(&self, msg: impl Into<MdApiMessage> + Clone) {
+        self.0.iter().for_each(|p| {
+            p.push(msg.clone().into()).unwrap();
+        });
+    }
+
+    // 根据订阅分组尝试发送，失败时返回消息
+    pub fn try_send_to(
+        &self,
+        msg: impl Into<MdApiMessage> + Clone,
+        index: usize,
+    ) -> Result<(), MdApiMessage> {
+        match self.1.get(index) {
+            Some(i) => {
+                i.iter().for_each(|i| self._send(msg.clone().into(), *i));
+                Ok(())
+            }
+            None => Err(msg.into()),
+        }
+    }
+
+    // 根据订阅分组发送，失败会panic
+    pub fn send_to(&self, msg: impl Into<MdApiMessage>, index: usize) {
+        self._send(msg.into(), index);
+    }
+
+    // 内部方法，发送给指定的索引策略
+    fn _send(&self, msg: MdApiMessage, index: usize) {
+        self.0
+            .get(index)
+            .expect("Strategy index overflow")
+            .push(msg)
+            .unwrap();
     }
 }
 
-pub struct CtpBuilder<'a, S, T>
+pub enum MdApiMessage {
+    TradeData(TradeData),
+    OrderData(OrderData),
+    TickData(TickData),
+    BarData(BarData),
+    AccountData(AccountData),
+    PositionData(PositionData),
+    ContractData(ContractData),
+    SubscribeRequest(SubscribeRequest),
+}
+
+impl From<SubscribeRequest> for MdApiMessage {
+    fn from(data: SubscribeRequest) -> Self {
+        Self::SubscribeRequest(data)
+    }
+}
+
+impl From<TickData> for MdApiMessage {
+    fn from(data: TickData) -> Self {
+        Self::TickData(data)
+    }
+}
+
+pub enum StrategyMessage {
+    OrderRequest(OrderRequest),
+    CancelRequest(CancelRequest),
+}
+
+impl From<OrderRequest> for StrategyMessage {
+    fn from(data: OrderRequest) -> Self {
+        Self::OrderRequest(data)
+    }
+}
+
+impl From<CancelRequest> for StrategyMessage {
+    fn from(data: CancelRequest) -> Self {
+        Self::CancelRequest(data)
+    }
+}
+
+pub enum TdApiMessage {}
+
+pub struct ProducerTdApi(Vec<Producer<TdApiMessage>>);
+
+impl ProducerTdApi {
+    pub fn send(&self, msg: impl Into<TdApiMessage> + Clone) {
+        self.0
+            .iter()
+            .for_each(|p| p.push(msg.clone().into()).unwrap())
+    }
+
+    pub fn try_send_to(
+        &self,
+        msg: impl Into<TdApiMessage>,
+        index: usize,
+    ) -> Result<(), TdApiMessage> {
+        let msg = msg.into();
+        match self.0.get(index) {
+            Some(p) => {
+                p.push(msg).unwrap();
+                Ok(())
+            }
+            None => Err(msg),
+        }
+    }
+
+    pub fn send_to(&self, msg: impl Into<TdApiMessage>, index: usize) {
+        self.0
+            .get(index)
+            .expect("Strategy index overflow")
+            .push(msg.into())
+            .unwrap();
+    }
+}
+
+pub struct ConsumerStrategy(Vec<Consumer<StrategyMessage>>);
+
+impl ConsumerStrategy {
+    pub fn block_handle(&self, td_api: &mut TdApi) {
+        loop {
+            self.0
+                .iter()
+                .filter_map(|c| c.pop().ok())
+                .for_each(|msg| match msg {
+                    StrategyMessage::OrderRequest(req) => {
+                        td_api.send_order(req);
+                    }
+                    StrategyMessage::CancelRequest(req) => {
+                        td_api.cancel_order(req);
+                    }
+                    _ => (),
+                });
+        }
+    }
+}
+
+pub struct CtpBuilder<'a, T>
 where
-    T: Into<Cow<'a, str>>  + Default
+    T: Into<Cow<'a, str>> + Default,
 {
     name: Cow<'a, str>,
     id: Cow<'a, str>,
     pwd: Cow<'a, str>,
     path: Cow<'a, str>,
-    strategy: Vec<S>,
+    strategy: Vec<Box<dyn Ac<Symbol = Vec<&'static str>> + Send>>,
     login_form: LoginForm2<'a, T>,
-    symbol: Cow<'a, str>,
 }
 
 #[derive(Default)]
 pub struct LoginForm2<'a, T>
 where
-    T: Into<Cow<'a, str>> + Default
+    T: Into<Cow<'a, str>> + Default,
 {
     pub user_id: T,
     pub password: T,
@@ -87,12 +192,12 @@ where
     pub td_address: T,
     pub auth_code: T,
     pub production_info: T,
-    pub _lifetime: PhantomData<&'a ()>
+    pub _lifetime: PhantomData<&'a ()>,
 }
 
 impl<'a, T> From<LoginForm2<'a, T>> for LoginForm
-    where
-        T: Into<Cow<'a, str>> + Default
+where
+    T: Into<Cow<'a, str>> + Default,
 {
     fn from(form: LoginForm2<'a, T>) -> Self {
         LoginForm {
@@ -108,10 +213,9 @@ impl<'a, T> From<LoginForm2<'a, T>> for LoginForm
     }
 }
 
-impl<'a, S, T> CtpBuilder<'a, S, T>
+impl<'a, T> CtpBuilder<'a, T>
 where
-    S: Send + Ac + 'static,
-    T: Into<Cow<'a, str>>  + Default
+    T: Into<Cow<'a, str>> + Default,
 {
     pub fn id(mut self, id: impl Into<Cow<'a, str>>) -> Self {
         self.id = id.into();
@@ -128,7 +232,10 @@ where
         self
     }
 
-    pub fn strategy(mut self, strategy: Vec<S>) -> Self {
+    pub fn strategy(
+        mut self,
+        strategy: Vec<Box<dyn Ac<Symbol = Vec<&'static str>> + Send>>,
+    ) -> Self {
         self.strategy = strategy;
         self
     }
@@ -138,45 +245,111 @@ where
         self
     }
 
-    pub fn subscribe(mut self, symbol: impl Into<Cow<'a, str>>) -> Self {
-        self.symbol = symbol.into();
-        self
+    pub fn start(mut self) {
+        // 启动所有策略线程，并返回对应的通道制造（消费）端 和订阅symbols集合
+        // * 策略已被此方法消费无法再次调用。
+        let (symbols, p_md, p_td, c_st) = self.start_sts();
+
+        let id = self.id.into();
+        let pwd = self.pwd.into();
+        let path = self.path.into();
+
+        let mut md_api = MdApi::new(id, pwd, path, p_md);
+        let mut td_api = TdApi::new("".parse().unwrap(), p_td);
+
+        let login_form = self.login_form.into();
+
+        md_api.connect(&login_form);
+        td_api.connect(&login_form);
+
+        std::thread::sleep(Duration::from_secs(1));
+
+        md_api.subscribe(&symbols);
+
+        // 此处策略消费端会阻塞线程并发送消息给td_api。
+        c_st.block_handle(&mut td_api);
     }
 
-    pub fn start(self) {
-        let cap = self.strategy.len();
+    fn start_sts(
+        &mut self,
+    ) -> (
+        Vec<&'static str>,
+        ProducerMdApi,
+        ProducerTdApi,
+        ConsumerStrategy,
+    ) {
+        let sts = std::mem::take(&mut self.strategy);
 
-        let mut producers = Vec::with_capacity(cap);
-        let mut consumers = Vec::with_capacity(cap);
+        let cap = sts.len();
+
+        // 单向spsc:
+        // MpApi -> Strategies.
+        let mut producer_md = Vec::with_capacity(cap);
+        // Strategies -> TdApi.
+        let mut producer_td = Vec::with_capacity(cap);
+        // TdApi -> Strategies.
+        let mut consumer_st = Vec::with_capacity(cap);
+
+        // 线程join把手，暂时无用
         let mut handles = Vec::with_capacity(cap);
 
-        let ctp = CtpbeeR {
-            name: self.name.into(),
-            acc: Account::new(),
-            login_info: HashMap::new(),
-        };
+        // symbols为订阅symbol &str的非重复vec集合
+        let mut symbols = Vec::new();
+        // groups为与symbols相对应(vec index)的策略们的发送端vec，该vec保存策略发送端在producer_md vec中的index
+        let mut groups: Vec<Vec<usize>> = Vec::new();
 
-        for mut strat in self.strategy.into_iter() {
-            // 第一组spsc用来发送信息至策略
-            let (tx, rx) = spsc::new(8);
+        for (st_index, mut strat) in sts.into_iter().enumerate() {
+            strat.local_symbol().into_iter().for_each(|symbol| {
+                symbols
+                    .iter()
+                    .enumerate()
+                    .find_map(|(index, s)| if *s == symbol { Some(index) } else { None })
+                    .map(|index| {
+                        groups.get_mut(index).unwrap().push(st_index);
+                    })
+                    .unwrap_or_else(|| {
+                        groups.push(vec![st_index]);
+                        symbols.push(symbol);
+                    });
+            });
 
-            // 第二组spsc用来发送策略的返回信息
-            let (tx2, rx2) = spsc::new::<u8>(8);
+            // 通道容量暂设为128.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
+            // 只影响内存占用。
+            // MpApi -> Strategies.
+            let (p_md, c_md) = spsc::new(128);
 
-            // 每个策略一个线程
-            // 第一组spsc的接收端和第二组的发送端移入线程
+            // Strategies -> TdApi.
+            let (p_st, c_st) = spsc::new(128);
+
+            // TdApi -> Strategies.
+            let (p_td, c_td) = spsc::new(128);
+
             let handle = std::thread::spawn({
-                let tx2 = tx2;
+                let p_st = p_st;
                 move || loop {
-                    match rx.pop() {
+                    // 接收md_api的消息并处理。
+                    match c_md.pop() {
                         Ok(msg) => match msg {
-                            CtpbeeRMessage::TickData(data) => strat.on_tick(&data),
-                            CtpbeeRMessage::TradeData(data) => strat.on_trade(&data),
-                            CtpbeeRMessage::OrderData(data) => strat.on_order(&data),
-                            CtpbeeRMessage::BarData(data) => strat.on_bar(&data),
-                            CtpbeeRMessage::AccountData(data) => strat.on_account(&data),
-                            CtpbeeRMessage::PositionData(data) => strat.on_position(&data),
-                            CtpbeeRMessage::ContractData(data) => strat.on_contract(&data),
+                            // tick会返回订单vec，我们转发至td api
+                            MdApiMessage::TickData(data) => strat
+                                .on_tick(&data)
+                                .iter_mut()
+                                .filter_map(Option::take)
+                                .for_each(|m| p_st.push(m).unwrap()),
+                            MdApiMessage::TradeData(data) => strat.on_trade(&data),
+                            MdApiMessage::OrderData(data) => strat.on_order(&data),
+                            MdApiMessage::BarData(data) => strat.on_bar(&data),
+                            MdApiMessage::AccountData(data) => strat.on_account(&data),
+                            MdApiMessage::PositionData(data) => strat.on_position(&data),
+                            MdApiMessage::ContractData(data) => strat.on_contract(&data),
+                            _ => {}
+                        },
+                        Err(_) => (),
+                    }
+                    // 接收td_api的消息并处理。
+                    match c_td.pop() {
+                        Ok(msg) => match msg {
+                            // TdApiMessage::OrderRequest(data) => strat.on_order(&data),
                             _ => {}
                         },
                         Err(_) => (),
@@ -184,37 +357,26 @@ where
                 }
             });
 
-            // 收集第一组发送端和第二组接收端。
-            producers.push(tx);
-            consumers.push(rx2);
+            producer_md.push(p_md);
+            producer_td.push(p_td);
+            consumer_st.push(c_st);
+
             handles.push(handle);
         }
 
-        let producer = StrategyProducer { producers };
-
-        let mut md_api = MdApi::new(
-            self.id.into(),
-            self.pwd.into(),
-            self.path.into(),
-            producer,
-        );
-
-        md_api.connect(self.login_form.into());
-
-        thread::sleep(Duration::from_secs(1));
-        md_api.subscribe(self.symbol.into());
-
-        // 第二组spsc接收端待定
-
-        handles.into_iter().for_each(|handle| handle.join().unwrap());
+        (
+            symbols,
+            ProducerMdApi(producer_md, groups),
+            ProducerTdApi(producer_td),
+            ConsumerStrategy(consumer_st),
+        )
     }
 }
 
 impl CtpbeeR {
-    pub fn new<'a, S, T>(name: T) -> CtpBuilder<'a, S, T>
+    pub fn new<'a, T>(name: T) -> CtpBuilder<'a, T>
     where
-        S: Send,
-        T: Into<Cow<'a, str>>  + Default
+        T: Into<Cow<'a, str>> + Default,
     {
         CtpBuilder {
             name: name.into(),
@@ -223,7 +385,6 @@ impl CtpbeeR {
             path: Default::default(),
             strategy: vec![],
             login_form: Default::default(),
-            symbol: Default::default()
         }
     }
 
@@ -238,49 +399,5 @@ impl CtpbeeR {
             dt.insert(key, value);
         }
         self.login_info = dt;
-    }
-}
-
-// 信息类型。使用enum包裹避免堆上分配
-pub enum CtpbeeRMessage {
-    TradeData(TradeData),
-    OrderData(OrderData),
-    TickData(TickData),
-    BarData(BarData),
-    AccountData(AccountData),
-    PositionData(PositionData),
-    ContractData(ContractData),
-    OrderRequest(OrderRequest),
-    CancelRequest(CancelRequest),
-    SubscribeRequest(SubscribeRequest),
-}
-
-impl From<OrderRequest> for CtpbeeRMessage {
-    fn from(data: OrderRequest) -> Self {
-        Self::OrderRequest(data)
-    }
-}
-
-impl From<CancelRequest> for CtpbeeRMessage {
-    fn from(data: CancelRequest) -> Self {
-        Self::CancelRequest(data)
-    }
-}
-
-impl From<SubscribeRequest> for CtpbeeRMessage {
-    fn from(data: SubscribeRequest) -> Self {
-        Self::SubscribeRequest(data)
-    }
-}
-
-impl From<TickData> for CtpbeeRMessage {
-    fn from(data: TickData) -> Self {
-        Self::TickData(data)
-    }
-}
-
-impl Debug for CtpbeeR {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Ctpbee >>> : {}", self.name)
     }
 }
