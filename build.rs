@@ -76,7 +76,7 @@ fn main() {
 
     // output the bindings.rs and ctp.o to the .HFQ/ctp dir
     let out_path = get_interface_path("ctp").join("bindings.rs");
-    build("ctp", out_path);
+    // build("ctp", out_path);
 }
 
 fn get_interface_path(path: &str) -> PathBuf {

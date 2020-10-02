@@ -11,7 +11,7 @@ pub trait Interface {
     /// 登录接口
     fn connect(&mut self, req: &LoginForm);
     /// 订阅行情
-    fn subscribe(&mut self, symbols: &[&str]);
+    fn subscribe(&mut self, symbols: Vec<&'static str>);
     /// 取消订阅行情
     fn unsubscribe(&mut self, symbol: String);
     /// 释放退出接口

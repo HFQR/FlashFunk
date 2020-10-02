@@ -242,7 +242,7 @@ impl<'a> CtpBuilder<'a> {
 
     pub fn start(mut self) {
         // 启动所有策略线程，并返回对应的通道制造（消费）端 和订阅symbols集合
-        // * 策略已被此方法消费无法再次调用。
+        // * 策略已被此函数消费无法再次调用。
         let (symbols, p_md, p_td, c_st) = start_sts(&mut self);
 
         let id = self.id.into();
@@ -262,7 +262,7 @@ impl<'a> CtpBuilder<'a> {
         std::thread::sleep(Duration::from_secs(1));
 
         // 订阅
-        md_api.subscribe(&symbols);
+        md_api.subscribe(symbols);
 
         // 此处策略消费端会阻塞线程并发送消息给td_api。
         c_st.block_handle(&mut td_api);
@@ -289,16 +289,13 @@ fn start_sts<'a>(
     // TdApi -> Strategies.
     let mut consumer_st = Vec::with_capacity(cap);
 
-    // 线程join把手，暂时无用
-    let mut handles = Vec::with_capacity(cap);
-
     // symbols为订阅symbol &str的非重复vec集合
     let mut symbols = Vec::new();
     // groups为与symbols相对应(vec index)的策略们的发送端vec，该vec保存策略发送端在producer_md vec中的index
     let mut groups: Vec<Vec<usize>> = Vec::new();
 
-    for (st_index, mut strat) in sts.into_iter().enumerate() {
-        strat.symbols().into_iter().for_each(|symbol| {
+    sts.into_iter().enumerate().for_each(|(st_index, st)| {
+        st.symbols().into_iter().for_each(|symbol| {
             symbols
                 .iter()
                 .enumerate()
@@ -323,42 +320,14 @@ fn start_sts<'a>(
         // TdApi -> Strategies.
         let (p_td, c_td) = spsc::new(128);
 
-        let handle = std::thread::spawn({
-            let p_st = p_st;
-            move || loop {
-                // 接收md_api的消息并处理。
-                match c_md.pop() {
-                    Ok(msg) => match msg {
-                        // tick会返回订单vec，我们转发至td api
-                        MdApiMessage::TickData(data) => strat
-                            .on_tick(&data)
-                            .into_iter()
-                            .for_each(|m| p_st.push(m).unwrap()),
-                        MdApiMessage::BarData(data) => strat.on_bar(&data),
-                        MdApiMessage::AccountData(data) => strat.on_account(&data),
-                        MdApiMessage::PositionData(data) => strat.on_position(&data),
-                        MdApiMessage::ContractData(data) => strat.on_contract(&data),
-                        _ => {}
-                    },
-                    Err(_) => (),
-                }
-                // 接收td_api的消息并处理。
-                match c_td.pop() {
-                    Ok(msg) => match msg {
-                        TdApiMessage::OrderData(data) => strat.on_order(&data),
-                        TdApiMessage::TradeData(data) => strat.on_trade(&data),
-                    },
-                    Err(_) => (),
-                }
-            }
-        });
+        let mut worker = StrategyWorker::new(st, c_md, c_td, p_st);
+
+        std::thread::spawn(move || worker.start());
 
         producer_md.push(p_md);
         producer_td.push(p_td);
         consumer_st.push(c_st);
-
-        handles.push(handle);
-    }
+    });
 
     (
         symbols,
@@ -366,4 +335,66 @@ fn start_sts<'a>(
         ProducerTdApi(producer_td),
         ConsumerStrategy(consumer_st),
     )
+}
+
+struct StrategyWorker {
+    st: __Strategy,
+    c_md: Consumer<MdApiMessage>,
+    c_td: Consumer<TdApiMessage>,
+    p_st: Producer<StrategyMessage>,
+}
+
+impl StrategyWorker {
+    fn new(
+        st: __Strategy,
+        c_md: Consumer<MdApiMessage>,
+        c_td: Consumer<TdApiMessage>,
+        p_st: Producer<StrategyMessage>,
+    ) -> Self {
+        Self {
+            st,
+            c_md,
+            c_td,
+            p_st,
+        }
+    }
+
+    fn start(&mut self) {
+        loop {
+            // 接收md_api的消息并处理。
+            match self.c_md.pop() {
+                Ok(msg) => match msg {
+                    // tick会返回订单vec，我们转发至td api
+                    MdApiMessage::TickData(data) => self
+                        .st
+                        .on_tick(&data)
+                        .into_iter()
+                        .for_each(|m| self.p_st.push(m).unwrap()),
+                    MdApiMessage::BarData(data) => self.st.on_bar(&data),
+                    MdApiMessage::AccountData(data) => self.st.on_account(&data),
+                    MdApiMessage::PositionData(data) => self.st.on_position(&data),
+                    MdApiMessage::ContractData(data) => self.st.on_contract(&data),
+                    _ => {}
+                },
+                Err(_) => (),
+            }
+            // 接收td_api的消息并处理。
+            match self.c_td.pop() {
+                Ok(msg) => match msg {
+                    TdApiMessage::OrderData(data) => self.st.on_order(&data),
+                    TdApiMessage::TradeData(data) => self.st.on_trade(&data),
+                },
+                Err(_) => (),
+            }
+        }
+    }
+}
+
+impl Drop for StrategyWorker {
+    fn drop(&mut self) {
+        // worker退出时如果线程panic则恢复运行
+        if std::thread::panicking() {
+            self.start();
+        }
+    }
 }

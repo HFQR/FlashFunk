@@ -36,6 +36,7 @@ pub struct MdApi {
     producer: Option<ProducerMdApi>,
     login_info: Option<LoginForm>,
     request_id: i32,
+    symbols: Vec<&'static str>,
 }
 
 struct DataCollector<'a> {
@@ -68,54 +69,71 @@ impl QuoteApi for DataCollector<'_> {
     }
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
-        // 回调应该传回策略分组的index，然后用try_send_to来确定收取tick data的分组
-        self.producer.send_all(unsafe {
-            let datetime = format!(
-                "{} {}.{}",
-                slice_to_string(&(*pDepthMarketData).ActionDay),
-                slice_to_string(&(*pDepthMarketData).UpdateTime),
-                (*pDepthMarketData).UpdateMillisec as i32 * 1000
-            );
-            let naive =
-                NaiveDateTime::parse_from_str(datetime.as_str(), "%Y%m%d %H:%M:%S.%f").unwrap();
-            println!("{:?}", naive);
-            TickData {
-                symbol: slice_to_string(&(*pDepthMarketData).InstrumentID),
-                exchange: None,
-                datetime: Option::from(naive),
-                name: None,
-                volume: (*pDepthMarketData).Volume as f64,
-                open_interest: (*pDepthMarketData).OpenInterest as f64,
-                last_price: (*pDepthMarketData).LastPrice as f64,
-                last_volume: 0.0,
-                limit_up: (*pDepthMarketData).UpperLimitPrice as f64,
-                limit_down: (*pDepthMarketData).LowerLimitPrice as f64,
-                open_price: (*pDepthMarketData).OpenPrice as f64,
-                high_price: (*pDepthMarketData).HighestPrice as f64,
-                low_price: (*pDepthMarketData).LowestPrice as f64,
-                pre_close: (*pDepthMarketData).PreClosePrice as f64,
-                bid_price_1: (*pDepthMarketData).BidPrice1 as f64,
-                bid_price_2: (*pDepthMarketData).BidPrice2 as f64,
-                bid_price_3: (*pDepthMarketData).BidPrice3 as f64,
-                bid_price_4: (*pDepthMarketData).BidPrice4 as f64,
-                bid_price_5: (*pDepthMarketData).BidPrice5 as f64,
-                ask_price_1: (*pDepthMarketData).AskPrice1 as f64,
-                ask_price_2: (*pDepthMarketData).AskPrice2 as f64,
-                ask_price_3: (*pDepthMarketData).AskPrice3 as f64,
-                ask_price_4: (*pDepthMarketData).AskPrice4 as f64,
-                ask_price_5: (*pDepthMarketData).AskPrice5 as f64,
-                bid_volume_1: (*pDepthMarketData).BidVolume1 as f64,
-                bid_volume_2: (*pDepthMarketData).BidVolume2 as f64,
-                bid_volume_3: (*pDepthMarketData).BidVolume3 as f64,
-                bid_volume_4: (*pDepthMarketData).BidVolume4 as f64,
-                bid_volume_5: (*pDepthMarketData).BidVolume5 as f64,
-                ask_volume_1: (*pDepthMarketData).AskVolume1 as f64,
-                ask_volume_2: (*pDepthMarketData).AskVolume2 as f64,
-                ask_volume_3: (*pDepthMarketData).AskVolume3 as f64,
-                ask_volume_4: (*pDepthMarketData).AskVolume4 as f64,
-                ask_volume_5: (*pDepthMarketData).AskVolume5 as f64,
+        unsafe {
+            let symbol = slice_to_string(&(*pDepthMarketData).InstrumentID);
+            let index = self.api.symbols.iter().enumerate().find_map(|(i, s)| {
+                if *s == symbol.as_str() {
+                    Some(i)
+                } else {
+                    None
+                }
+            });
+
+            if let Some(i) = index {
+                let msg = unsafe {
+                    let datetime = format!(
+                        "{} {}.{}",
+                        slice_to_string(&(*pDepthMarketData).ActionDay),
+                        slice_to_string(&(*pDepthMarketData).UpdateTime),
+                        (*pDepthMarketData).UpdateMillisec as i32 * 1000
+                    );
+                    let naive =
+                        NaiveDateTime::parse_from_str(datetime.as_str(), "%Y%m%d %H:%M:%S.%f")
+                            .unwrap();
+                    TickData {
+                        symbol,
+                        exchange: None,
+                        datetime: Option::from(naive),
+                        name: None,
+                        volume: (*pDepthMarketData).Volume as f64,
+                        open_interest: (*pDepthMarketData).OpenInterest as f64,
+                        last_price: (*pDepthMarketData).LastPrice as f64,
+                        last_volume: 0.0,
+                        limit_up: (*pDepthMarketData).UpperLimitPrice as f64,
+                        limit_down: (*pDepthMarketData).LowerLimitPrice as f64,
+                        open_price: (*pDepthMarketData).OpenPrice as f64,
+                        high_price: (*pDepthMarketData).HighestPrice as f64,
+                        low_price: (*pDepthMarketData).LowestPrice as f64,
+                        pre_close: (*pDepthMarketData).PreClosePrice as f64,
+                        bid_price_1: (*pDepthMarketData).BidPrice1 as f64,
+                        bid_price_2: (*pDepthMarketData).BidPrice2 as f64,
+                        bid_price_3: (*pDepthMarketData).BidPrice3 as f64,
+                        bid_price_4: (*pDepthMarketData).BidPrice4 as f64,
+                        bid_price_5: (*pDepthMarketData).BidPrice5 as f64,
+                        ask_price_1: (*pDepthMarketData).AskPrice1 as f64,
+                        ask_price_2: (*pDepthMarketData).AskPrice2 as f64,
+                        ask_price_3: (*pDepthMarketData).AskPrice3 as f64,
+                        ask_price_4: (*pDepthMarketData).AskPrice4 as f64,
+                        ask_price_5: (*pDepthMarketData).AskPrice5 as f64,
+                        bid_volume_1: (*pDepthMarketData).BidVolume1 as f64,
+                        bid_volume_2: (*pDepthMarketData).BidVolume2 as f64,
+                        bid_volume_3: (*pDepthMarketData).BidVolume3 as f64,
+                        bid_volume_4: (*pDepthMarketData).BidVolume4 as f64,
+                        bid_volume_5: (*pDepthMarketData).BidVolume5 as f64,
+                        ask_volume_1: (*pDepthMarketData).AskVolume1 as f64,
+                        ask_volume_2: (*pDepthMarketData).AskVolume2 as f64,
+                        ask_volume_3: (*pDepthMarketData).AskVolume3 as f64,
+                        ask_volume_4: (*pDepthMarketData).AskVolume4 as f64,
+                        ask_volume_5: (*pDepthMarketData).AskVolume5 as f64,
+                    }
+                };
+
+                // 如果需要错误处理请在这里取回消息
+
+
+                let _ = self.producer.try_send_group(msg, i);
             }
-        });
+        }
     }
 }
 
@@ -142,6 +160,7 @@ impl MdApi {
             producer: Some(producer),
             login_info: None,
             request_id: 0,
+            symbols: vec![],
         }
     }
 
@@ -227,12 +246,13 @@ impl Interface for MdApi {
         println!("初始化成功");
     }
 
-    fn subscribe(&mut self, symbols: &[&str]) {
-        symbols.into_iter().enumerate().for_each(|(index, symbol)| {
+    fn subscribe(&mut self, symbols: Vec<&'static str>) {
+        self.symbols = symbols;
+        self.request_id += 1;
+        self.symbols.iter().for_each(|symbol| {
             let code = CString::new(*symbol).unwrap();
             let mut c = code.into_raw();
-            // symbols的index对应策略的分组，应该传给回调
-            unsafe { CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, index as i32) };
+            unsafe { CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, self.request_id.clone()) };
         });
     }
 
