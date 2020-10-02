@@ -3021,7 +3021,7 @@ impl Interface for TdApi {
         self.init();
     }
 
-    fn subscribe(&mut self, _: &[&str]) {
+    fn subscribe(&mut self, _: Vec<&'static str>) {
         unimplemented!("This API is not allowed in Trade")
     }
 
