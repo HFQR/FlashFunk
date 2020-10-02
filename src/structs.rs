@@ -2,9 +2,11 @@
 //! Author: Aaron Qiu
 #![allow(dead_code)]
 
-use crate::constants::*;
+use std::borrow::Cow;
+
 use chrono::{Date, DateTime, NaiveDateTime, Utc};
-use std::option::Option;
+
+use crate::constants::*;
 
 /// Tick Data
 #[derive(Clone)]
@@ -305,14 +307,70 @@ pub struct DailyResult {
     pub date: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct LoginForm {
-    pub user_id: String,
-    pub password: String,
-    pub broke_id: String,
-    pub app_id: String,
-    pub md_address: String,
-    pub td_address: String,
-    pub auth_code: String,
-    pub production_info: String,
+    user_id: Cow<'static, str>,
+    password: Cow<'static, str>,
+    broke_id: Cow<'static, str>,
+    app_id: Cow<'static, str>,
+    md_address: Cow<'static, str>,
+    td_address: Cow<'static, str>,
+    auth_code: Cow<'static, str>,
+    production_info: Cow<'static, str>,
+}
+
+impl LoginForm {
+    pub fn new(
+        user_id: impl Into<Cow<'static, str>>,
+        password: impl Into<Cow<'static, str>>,
+        broke_id: impl Into<Cow<'static, str>>,
+        app_id: impl Into<Cow<'static, str>>,
+        md_address: impl Into<Cow<'static, str>>,
+        td_address: impl Into<Cow<'static, str>>,
+        auth_code: impl Into<Cow<'static, str>>,
+        production_info: impl Into<Cow<'static, str>>,
+    ) -> Self {
+        Self {
+            user_id: user_id.into(),
+            password: password.into(),
+            broke_id: broke_id.into(),
+            app_id: app_id.into(),
+            md_address: md_address.into(),
+            td_address: td_address.into(),
+            auth_code: auth_code.into(),
+            production_info: production_info.into(),
+        }
+    }
+
+    pub(super) fn user_id(&self) -> &str {
+        &self.user_id
+    }
+
+    pub(super) fn password(&self) -> &str {
+        &self.password
+    }
+
+    pub(super) fn broke_id(&self) -> &str {
+        &self.broke_id
+    }
+
+    pub(super) fn app_id(&self) -> &str {
+        &self.app_id
+    }
+
+    pub(super) fn md_address(&self) -> &str {
+        &self.md_address
+    }
+
+    pub(super) fn td_address(&self) -> &str {
+        &self.td_address
+    }
+
+    pub(super) fn auth_code(&self) -> &str {
+        &self.auth_code
+    }
+
+    pub(super) fn production_info(&self) -> &str {
+        &self.production_info
+    }
 }

@@ -1,5 +1,4 @@
 use core::fmt::{Debug, Formatter, Result as FmtResult};
-use core::marker::PhantomData;
 use core::time::Duration;
 
 use std::borrow::Cow;
@@ -26,10 +25,7 @@ pub struct CtpbeeR {
 }
 
 impl CtpbeeR {
-    pub fn new<'a, T>(name: T) -> CtpBuilder<'a, T>
-    where
-        T: Into<Cow<'a, str>> + Default,
-    {
+    pub fn new<'a>(name: impl Into<Cow<'a, str>>) -> CtpBuilder<'a> {
         CtpBuilder {
             name: name.into(),
             id: Default::default(),
@@ -182,7 +178,7 @@ impl From<CancelRequest> for StrategyMessage {
     }
 }
 
-pub struct ConsumerStrategy(Vec<Consumer<(usize, StrategyMessage)>>);
+pub struct ConsumerStrategy(Vec<Consumer<StrategyMessage>>);
 
 impl ConsumerStrategy {
     // 策略消息从此处进入td_api
@@ -190,7 +186,8 @@ impl ConsumerStrategy {
         loop {
             self.0
                 .iter()
-                .filter_map(|c| c.pop().ok())
+                .enumerate()
+                .filter_map(|(idx, c)| c.pop().map(|msg| (idx, msg)).ok())
                 // 此处idx为策略通道的index，可以交给回调用以确认回程消息的策略
                 .for_each(|(idx, msg)| match msg {
                     StrategyMessage::OrderRequest(req) => {
@@ -204,56 +201,16 @@ impl ConsumerStrategy {
     }
 }
 
-pub struct CtpBuilder<'a, T>
-where
-    T: Into<Cow<'a, str>> + Default,
-{
+pub struct CtpBuilder<'a> {
     name: Cow<'a, str>,
     id: Cow<'a, str>,
     pwd: Cow<'a, str>,
     path: Cow<'a, str>,
     strategy: Vec<__Strategy>,
-    login_form: LoginForm2<'a, T>,
+    login_form: LoginForm,
 }
 
-#[derive(Default)]
-pub struct LoginForm2<'a, T>
-where
-    T: Into<Cow<'a, str>> + Default,
-{
-    pub user_id: T,
-    pub password: T,
-    pub broke_id: T,
-    pub app_id: T,
-    pub md_address: T,
-    pub td_address: T,
-    pub auth_code: T,
-    pub production_info: T,
-    pub _lifetime: PhantomData<&'a ()>,
-}
-
-impl<'a, T> From<LoginForm2<'a, T>> for LoginForm
-where
-    T: Into<Cow<'a, str>> + Default,
-{
-    fn from(form: LoginForm2<'a, T>) -> Self {
-        LoginForm {
-            user_id: form.user_id.into().into(),
-            password: form.password.into().into(),
-            broke_id: form.broke_id.into().into(),
-            app_id: form.app_id.into().into(),
-            md_address: form.md_address.into().into(),
-            td_address: form.td_address.into().into(),
-            auth_code: form.auth_code.into().into(),
-            production_info: form.production_info.into().into(),
-        }
-    }
-}
-
-impl<'a, T> CtpBuilder<'a, T>
-where
-    T: Into<Cow<'a, str>> + Default,
-{
+impl<'a> CtpBuilder<'a> {
     pub fn id(mut self, id: impl Into<Cow<'a, str>>) -> Self {
         self.id = id.into();
         self
@@ -279,7 +236,7 @@ where
         self
     }
 
-    pub fn login_form(mut self, login_form: LoginForm2<'a, T>) -> Self {
+    pub fn login_form(mut self, login_form: LoginForm) -> Self {
         self.login_form = login_form;
         self
     }
@@ -313,17 +270,14 @@ where
     }
 }
 
-fn start_sts<'a, T>(
-    builder: &mut CtpBuilder<'a, T>,
+fn start_sts<'a>(
+    builder: &mut CtpBuilder<'a>,
 ) -> (
     Vec<&'static str>,
     ProducerMdApi,
     ProducerTdApi,
     ConsumerStrategy,
-)
-where
-    T: Into<Cow<'a, str>> + Default,
-{
+) {
     let sts = std::mem::take(&mut builder.strategy);
 
     let cap = sts.len();
@@ -380,7 +334,7 @@ where
                         MdApiMessage::TickData(data) => strat
                             .on_tick(&data)
                             .into_iter()
-                            .for_each(|m| p_st.push((st_index, m)).unwrap()),
+                            .for_each(|m| p_st.push(m).unwrap()),
                         MdApiMessage::BarData(data) => strat.on_bar(&data),
                         MdApiMessage::AccountData(data) => strat.on_account(&data),
                         MdApiMessage::PositionData(data) => strat.on_position(&data),

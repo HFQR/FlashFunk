@@ -1,3 +1,5 @@
+#![recursion_limit = "5120"]
+
 use std::env::var;
 use std::path::PathBuf;
 

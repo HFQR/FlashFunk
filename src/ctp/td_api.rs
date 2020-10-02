@@ -2556,6 +2556,12 @@ pub struct TdApi {
     sessionid: c_int,
 }
 
+impl TdApi {
+    fn login_info(&self) -> &LoginForm {
+        self.login_info.as_ref().unwrap()
+    }
+}
+
 pub struct CallDataCollector<'a> {
     login_status: bool,
     connect_status: bool,
@@ -2851,22 +2857,13 @@ impl TdApi {
 
     pub fn auth(&mut self) {
         self.request_id += 1;
-        let user_id = self.login_info.as_ref().unwrap().user_id.to_c_slice();
-        let auth_code = self.login_info.as_ref().unwrap().auth_code.to_c_slice();
-        let broke_id = self.login_info.as_ref().unwrap().broke_id.to_c_slice();
-        let app_id = self.login_info.as_ref().unwrap().app_id.to_c_slice();
-        let production_info = self
-            .login_info
-            .as_ref()
-            .unwrap()
-            .production_info
-            .to_c_slice();
+        let form = self.login_info();
         let req = CThostFtdcReqAuthenticateField {
-            UserID: user_id,
-            BrokerID: broke_id,
-            AuthCode: auth_code,
-            AppID: app_id,
-            UserProductInfo: production_info,
+            UserID: form.user_id().to_c_slice(),
+            BrokerID: form.broke_id().to_c_slice(),
+            AuthCode: form.auth_code().to_c_slice(),
+            AppID: form.app_id().to_c_slice(),
+            UserProductInfo: form.production_info().to_c_slice(),
         };
         unsafe {
             RustCtpCallReqAuthenticate(
@@ -2878,17 +2875,13 @@ impl TdApi {
     }
     pub fn login(&mut self) {
         self.request_id += 1;
-        let form = self.login_info.as_ref().unwrap();
-        let user_id = form.user_id.to_c_slice();
-        let password = form.password.to_c_slice();
-        let broker_id = form.broke_id.to_c_slice();
-        let production_info = form.production_info.to_c_slice();
+        let form = self.login_info();
 
         let login_req = CThostFtdcReqUserLoginField {
-            BrokerID: broker_id,
-            UserID: user_id,
-            Password: password,
-            UserProductInfo: production_info,
+            BrokerID: form.broke_id().to_c_slice(),
+            UserID: form.user_id().to_c_slice(),
+            Password: form.password().to_c_slice(),
+            UserProductInfo: form.production_info().to_c_slice(),
             ..CThostFtdcReqUserLoginField::default()
         };
         unsafe {
@@ -2935,10 +2928,10 @@ impl TdApi {
 
     fn req_settle(&mut self) {
         self.request_id += 1;
-        let form = self.login_info.as_ref().unwrap();
+        let form = self.login_info();
         let req = CThostFtdcSettlementInfoConfirmField {
-            BrokerID: form.broke_id.to_c_slice(),
-            InvestorID: form.user_id.to_c_slice(),
+            BrokerID: form.broke_id().to_c_slice(),
+            InvestorID: form.user_id().to_c_slice(),
             ..CThostFtdcSettlementInfoConfirmField::default()
         };
         unsafe {
@@ -2959,15 +2952,18 @@ impl Interface for TdApi {
     fn send_order(&mut self, order: OrderRequest) -> String {
         self.request_id += 1;
         self.order_ref += 1;
+
+        let form = self.login_info();
+
         let req = CThostFtdcInputOrderField {
-            InstrumentID: order.symbol.to_c_slice(),
+            InstrumentID: order.symbol.as_str().to_c_slice(),
             LimitPrice: order.price,
             VolumeTotalOriginal: order.volume as c_int,
             OrderPriceType: get_order_type(order.order_type),
             Direction: get_direction(order.direction),
-            UserID: self.login_info.as_ref().unwrap().user_id.to_c_slice(),
-            InvestorID: self.login_info.as_ref().unwrap().user_id.to_c_slice(),
-            BrokerID: self.login_info.as_ref().unwrap().broke_id.to_c_slice(),
+            UserID: form.user_id().to_c_slice(),
+            InvestorID: form.user_id().to_c_slice(),
+            BrokerID: form.broke_id().to_c_slice(),
             CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
                 .unwrap()
                 .to_c_slice(),
@@ -2996,14 +2992,17 @@ impl Interface for TdApi {
 
     fn cancel_order(&mut self, req: CancelRequest) {
         // frontid, sessionid, order_ref = req.order_id.split("_")
+
+        let form = self.login_info();
+
         let action = CThostFtdcInputOrderActionField {
             // InstrumentID: ,
             OrderRef: req.orderid.to_c_slice(),
             FrontID: self.frontid,
             SessionID: self.sessionid,
             ActionFlag: THOST_FTDC_AF_Delete as i8,
-            BrokerID: self.login_info.as_ref().unwrap().broke_id.to_c_slice(),
-            InvestorID: self.login_info.as_ref().unwrap().user_id.to_c_slice(),
+            BrokerID: form.broke_id().to_c_slice(),
+            InvestorID: form.user_id().to_c_slice(),
             ExchangeID: get_order_exchange(req.exchange).to_c_slice(),
             ..CThostFtdcInputOrderActionField::default()
         };
@@ -3017,9 +3016,8 @@ impl Interface for TdApi {
     }
 
     fn connect(&mut self, req: &LoginForm) {
-        let address = (&req.td_address).to_string();
         self.register_spi(req.clone());
-        let addr = CString::new(address).unwrap();
+        let addr = CString::new(req.td_address()).unwrap();
         self.register_fronted(addr);
         self.init();
     }

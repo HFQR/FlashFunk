@@ -68,7 +68,7 @@ impl QuoteApi for DataCollector<'_> {
     }
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
-        // 回调应该传回策略分组的index，然后用send_to来制定收取tick data的分组
+        // 回调应该传回策略分组的index，然后用try_send_to来确定收取tick data的分组
         self.producer.send(unsafe {
             let datetime = format!(
                 "{} {}.{}",
@@ -143,6 +143,7 @@ impl MdApi {
             request_id: 0,
         }
     }
+
     /// 初始化调用
     pub fn init(&mut self) -> bool {
         unsafe { CThostFtdcMdApi_Init(self.market_api) };
@@ -160,12 +161,12 @@ impl MdApi {
 
     fn login(&mut self) {
         let login_form = self.login_info.take().unwrap();
-        let user_id = CString::new(login_form.user_id).unwrap();
-        let pwd = CString::new(login_form.password).unwrap();
-        let broker_id = CString::new(login_form.broke_id).unwrap();
-        let auth_code = CString::new(login_form.auth_code).unwrap();
-        let app_id = CString::new(login_form.app_id.clone()).unwrap();
-        let production_info = CString::new(login_form.production_info.clone()).unwrap();
+        let user_id = CString::new(login_form.user_id()).unwrap();
+        let pwd = CString::new(login_form.password()).unwrap();
+        let broker_id = CString::new(login_form.broke_id()).unwrap();
+        let auth_code = CString::new(login_form.auth_code()).unwrap();
+        let app_id = CString::new(login_form.app_id()).unwrap();
+        let production_info = CString::new(login_form.production_info()).unwrap();
         unsafe {
             CThostFtdcMdApi_ReqUserLogin(
                 self.market_api,
@@ -217,21 +218,20 @@ impl Interface for MdApi {
     }
 
     fn connect(&mut self, req: &LoginForm) {
-        let address = (&req.md_address).to_string();
         let producer = self.producer.take().unwrap();
         self.register_spi(req.clone(), producer);
-        let addr = CString::new(address).unwrap();
+        let addr = CString::new(req.md_address()).unwrap();
         self.register_fronted_address(addr);
         self.init();
         println!("初始化成功");
     }
 
     fn subscribe(&mut self, symbols: &[&str]) {
-        symbols.into_iter().enumerate().for_each(|(i, s)| {
-            let code = CString::new(*s).unwrap();
+        symbols.into_iter().enumerate().for_each(|(index, symbol)| {
+            let code = CString::new(*symbol).unwrap();
             let mut c = code.into_raw();
             // symbols的index对应策略的分组，应该传给回调
-            unsafe { CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, i as i32) };
+            unsafe { CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, index as i32) };
         });
     }
 
