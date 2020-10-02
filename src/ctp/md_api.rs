@@ -78,6 +78,7 @@ impl QuoteApi for DataCollector<'_> {
             );
             let naive =
                 NaiveDateTime::parse_from_str(datetime.as_str(), "%Y%m%d %H:%M:%S.%f").unwrap();
+            println!("{:?}", naive);
             TickData {
                 symbol: slice_to_string(&(*pDepthMarketData).InstrumentID),
                 exchange: None,
