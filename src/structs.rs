@@ -320,57 +320,79 @@ pub struct LoginForm {
 }
 
 impl LoginForm {
-    pub fn new(
-        user_id: impl Into<Cow<'static, str>>,
-        password: impl Into<Cow<'static, str>>,
-        broke_id: impl Into<Cow<'static, str>>,
-        app_id: impl Into<Cow<'static, str>>,
-        md_address: impl Into<Cow<'static, str>>,
-        td_address: impl Into<Cow<'static, str>>,
-        auth_code: impl Into<Cow<'static, str>>,
-        production_info: impl Into<Cow<'static, str>>,
-    ) -> Self {
-        Self {
-            user_id: user_id.into(),
-            password: password.into(),
-            broke_id: broke_id.into(),
-            app_id: app_id.into(),
-            md_address: md_address.into(),
-            td_address: td_address.into(),
-            auth_code: auth_code.into(),
-            production_info: production_info.into(),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    pub(super) fn user_id(&self) -> &str {
+    pub fn user_id(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.user_id = value.into();
+        self
+    }
+
+    pub fn password(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.password = value.into();
+        self
+    }
+
+    pub fn broke_id(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.broke_id = value.into();
+        self
+    }
+
+    pub fn app_id(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.app_id = value.into();
+        self
+    }
+
+    pub fn md_address(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.md_address = value.into();
+        self
+    }
+
+    pub fn td_address(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.td_address = value.into();
+        self
+    }
+
+    pub fn auth_code(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.auth_code = value.into();
+        self
+    }
+
+    pub fn production_info(mut self, value: impl Into<Cow<'static, str>>) -> Self {
+        self.production_info = value.into();
+        self
+    }
+
+    pub(super) fn _user_id(&self) -> &str {
         &self.user_id
     }
 
-    pub(super) fn password(&self) -> &str {
+    pub(super) fn _password(&self) -> &str {
         &self.password
     }
 
-    pub(super) fn broke_id(&self) -> &str {
+    pub(super) fn _broke_id(&self) -> &str {
         &self.broke_id
     }
 
-    pub(super) fn app_id(&self) -> &str {
+    pub(super) fn _app_id(&self) -> &str {
         &self.app_id
     }
 
-    pub(super) fn md_address(&self) -> &str {
+    pub(super) fn _md_address(&self) -> &str {
         &self.md_address
     }
 
-    pub(super) fn td_address(&self) -> &str {
+    pub(super) fn _td_address(&self) -> &str {
         &self.td_address
     }
 
-    pub(super) fn auth_code(&self) -> &str {
+    pub(super) fn _auth_code(&self) -> &str {
         &self.auth_code
     }
 
-    pub(super) fn production_info(&self) -> &str {
+    pub(super) fn _production_info(&self) -> &str {
         &self.production_info
     }
 }

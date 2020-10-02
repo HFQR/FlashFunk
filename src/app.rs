@@ -62,24 +62,23 @@ const OVERFLOW_PANIC_MSG: &str = "Strategy index overflow";
 
 impl ProducerMdApi {
     // 无视分组发送给所有策略
-    pub fn send(&self, msg: impl Into<MdApiMessage> + Clone) {
+    pub fn send_all(&self, msg: impl Into<MdApiMessage> + Clone) {
         self.0.iter().for_each(|p| {
             p.push(msg.clone().into()).unwrap();
         });
     }
 
     // 根据订阅分组尝试发送，失败时返回消息
-    pub fn try_send_to(
-        &self,
-        msg: impl Into<MdApiMessage> + Clone,
-        index: usize,
-    ) -> Result<(), MdApiMessage> {
+    pub fn try_send_group<M>(&self, msg: M, index: usize) -> Result<(), M>
+    where
+        M: Into<MdApiMessage> + Clone,
+    {
         match self.1.get(index) {
             Some(i) => {
                 i.iter().for_each(|i| self._send(msg.clone().into(), *i));
                 Ok(())
             }
-            None => Err(msg.into()),
+            None => Err(msg),
         }
     }
 
@@ -140,7 +139,7 @@ pub struct ProducerTdApi(Vec<Producer<TdApiMessage>>);
 
 impl ProducerTdApi {
     // 无视分组发送给所有策略
-    pub fn send(&self, msg: impl Into<TdApiMessage> + Clone) {
+    pub fn send_all(&self, msg: impl Into<TdApiMessage> + Clone) {
         self.0.iter().for_each(|p| {
             p.push(msg.clone().into()).unwrap();
         });

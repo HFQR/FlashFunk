@@ -2,7 +2,7 @@
 
 use chrono::Local;
 use ctpbee_rs::ac::{Ac, IntoStrategy};
-use ctpbee_rs::app::{CtpbeeR, LoginForm2, StrategyMessage};
+use ctpbee_rs::app::{CtpbeeR, StrategyMessage};
 use ctpbee_rs::constants::{Direction, Exchange, Offset, OrderType};
 use ctpbee_rs::ctp::md_api::MdApi;
 use ctpbee_rs::ctp::td_api::TdApi;
@@ -106,17 +106,15 @@ impl Ac for Strategy2 {
 }
 
 fn main() {
-    let login_form = LoginForm2 {
-        user_id: "170874",
-        password: "wi1015..",
-        broke_id: "9999",
-        app_id: "simnow_client_test",
-        md_address: "tcp://180.168.146.187:10131",
-        td_address: "tcp://180.168.146.187:10130",
-        auth_code: "0000000000000000",
-        production_info: "",
-        _lifetime: Default::default(),
-    };
+    let login_form = LoginForm::new()
+        .user_id("170874")
+        .password("wi1015..")
+        .broke_id("9999")
+        .app_id("simnow_client_test")
+        .md_address("tcp://180.168.146.187:10131")
+        .td_address("tcp://180.168.146.187:10130")
+        .auth_code("0000000000000000")
+        .production_info("");
 
     CtpbeeR::new("ctpbee")
         .strategies(vec![Strategy.into_str(), Strategy2.into_str()])

@@ -2719,7 +2719,6 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
     ) {
-        unimplemented!()
     }
 }
 
@@ -2859,11 +2858,11 @@ impl TdApi {
         self.request_id += 1;
         let form = self.login_info();
         let req = CThostFtdcReqAuthenticateField {
-            UserID: form.user_id().to_c_slice(),
-            BrokerID: form.broke_id().to_c_slice(),
-            AuthCode: form.auth_code().to_c_slice(),
-            AppID: form.app_id().to_c_slice(),
-            UserProductInfo: form.production_info().to_c_slice(),
+            UserID: form._user_id().to_c_slice(),
+            BrokerID: form._broke_id().to_c_slice(),
+            AuthCode: form._auth_code().to_c_slice(),
+            AppID: form._app_id().to_c_slice(),
+            UserProductInfo: form._production_info().to_c_slice(),
         };
         unsafe {
             RustCtpCallReqAuthenticate(
@@ -2878,10 +2877,10 @@ impl TdApi {
         let form = self.login_info();
 
         let login_req = CThostFtdcReqUserLoginField {
-            BrokerID: form.broke_id().to_c_slice(),
-            UserID: form.user_id().to_c_slice(),
-            Password: form.password().to_c_slice(),
-            UserProductInfo: form.production_info().to_c_slice(),
+            BrokerID: form._broke_id().to_c_slice(),
+            UserID: form._user_id().to_c_slice(),
+            Password: form._password().to_c_slice(),
+            UserProductInfo: form._production_info().to_c_slice(),
             ..CThostFtdcReqUserLoginField::default()
         };
         unsafe {
@@ -2930,8 +2929,8 @@ impl TdApi {
         self.request_id += 1;
         let form = self.login_info();
         let req = CThostFtdcSettlementInfoConfirmField {
-            BrokerID: form.broke_id().to_c_slice(),
-            InvestorID: form.user_id().to_c_slice(),
+            BrokerID: form._broke_id().to_c_slice(),
+            InvestorID: form._user_id().to_c_slice(),
             ..CThostFtdcSettlementInfoConfirmField::default()
         };
         unsafe {
@@ -2961,9 +2960,9 @@ impl Interface for TdApi {
             VolumeTotalOriginal: order.volume as c_int,
             OrderPriceType: get_order_type(order.order_type),
             Direction: get_direction(order.direction),
-            UserID: form.user_id().to_c_slice(),
-            InvestorID: form.user_id().to_c_slice(),
-            BrokerID: form.broke_id().to_c_slice(),
+            UserID: form._user_id().to_c_slice(),
+            InvestorID: form._user_id().to_c_slice(),
+            BrokerID: form._broke_id().to_c_slice(),
             CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
                 .unwrap()
                 .to_c_slice(),
@@ -3001,8 +3000,8 @@ impl Interface for TdApi {
             FrontID: self.frontid,
             SessionID: self.sessionid,
             ActionFlag: THOST_FTDC_AF_Delete as i8,
-            BrokerID: form.broke_id().to_c_slice(),
-            InvestorID: form.user_id().to_c_slice(),
+            BrokerID: form._broke_id().to_c_slice(),
+            InvestorID: form._user_id().to_c_slice(),
             ExchangeID: get_order_exchange(req.exchange).to_c_slice(),
             ..CThostFtdcInputOrderActionField::default()
         };
@@ -3017,7 +3016,7 @@ impl Interface for TdApi {
 
     fn connect(&mut self, req: &LoginForm) {
         self.register_spi(req.clone());
-        let addr = CString::new(req.td_address()).unwrap();
+        let addr = CString::new(req._td_address()).unwrap();
         self.register_fronted(addr);
         self.init();
     }

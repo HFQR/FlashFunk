@@ -69,7 +69,7 @@ impl QuoteApi for DataCollector<'_> {
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
         // 回调应该传回策略分组的index，然后用try_send_to来确定收取tick data的分组
-        self.producer.send(unsafe {
+        self.producer.send_all(unsafe {
             let datetime = format!(
                 "{} {}.{}",
                 slice_to_string(&(*pDepthMarketData).ActionDay),
@@ -161,12 +161,12 @@ impl MdApi {
 
     fn login(&mut self) {
         let login_form = self.login_info.take().unwrap();
-        let user_id = CString::new(login_form.user_id()).unwrap();
-        let pwd = CString::new(login_form.password()).unwrap();
-        let broker_id = CString::new(login_form.broke_id()).unwrap();
-        let auth_code = CString::new(login_form.auth_code()).unwrap();
-        let app_id = CString::new(login_form.app_id()).unwrap();
-        let production_info = CString::new(login_form.production_info()).unwrap();
+        let user_id = CString::new(login_form._user_id()).unwrap();
+        let pwd = CString::new(login_form._password()).unwrap();
+        let broker_id = CString::new(login_form._broke_id()).unwrap();
+        let auth_code = CString::new(login_form._auth_code()).unwrap();
+        let app_id = CString::new(login_form._app_id()).unwrap();
+        let production_info = CString::new(login_form._production_info()).unwrap();
         unsafe {
             CThostFtdcMdApi_ReqUserLogin(
                 self.market_api,
@@ -220,7 +220,7 @@ impl Interface for MdApi {
     fn connect(&mut self, req: &LoginForm) {
         let producer = self.producer.take().unwrap();
         self.register_spi(req.clone(), producer);
-        let addr = CString::new(req.md_address()).unwrap();
+        let addr = CString::new(req._md_address()).unwrap();
         self.register_fronted_address(addr);
         self.init();
         println!("初始化成功");
