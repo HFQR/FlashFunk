@@ -43,10 +43,10 @@ impl Ac for Strategy {
             let req = OrderRequest {
                 symbol: "rb2101".to_string(),
                 exchange: Exchange::SHFE,
-                direction: Direction::SHORT,
+                direction: Direction::LONG,
                 order_type: OrderType::LIMIT,
                 volume: 1.0,
-                price: tick.last_price,
+                price: tick.last_price + 10.0,
                 offset: Offset::OPEN,
                 reference: None,
             };
@@ -100,8 +100,11 @@ impl Ac for Strategy2 {
 
             res.push(req.into());
         };
-
         res
+    }
+
+    fn on_order(&mut self, order: &OrderData) {
+        println!("{} - {}", order.symbol, order.price)
     }
 }
 

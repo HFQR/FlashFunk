@@ -190,7 +190,7 @@ impl ConsumerStrategy {
                 // 此处idx为策略通道的index，可以交给回调用以确认回程消息的策略
                 .for_each(|(idx, msg)| match msg {
                     StrategyMessage::OrderRequest(req) => {
-                        td_api.send_order(req);
+                        td_api.send_order(idx.clone(), req);
                     }
                     StrategyMessage::CancelRequest(req) => {
                         td_api.cancel_order(req);

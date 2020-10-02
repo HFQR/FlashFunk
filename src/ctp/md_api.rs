@@ -229,7 +229,7 @@ impl MdApi {
 }
 
 impl Interface for MdApi {
-    fn send_order(&mut self, order: OrderRequest) -> String {
+    fn send_order(&mut self, idx:usize, order: OrderRequest) -> String {
         unimplemented!("行情接口无此功能")
     }
 

@@ -2195,8 +2195,7 @@ pub trait TdCallApi {
     fn on_rtn_trading_notice(
         &mut self,
         pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {
-    }
+    ) -> () {}
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2652,20 +2651,28 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         }
     }
     fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) -> () {
-        let order = unsafe {
+        let (order, idx) = unsafe {
             // todo : we need a fast solution to parse datetime
+            let order_id = slice_to_string(&(*pOrder).OrderRef);
+            // fixme: maybe we need a char to  identify order from this system
+            let idx = if !order_id.contains("_") {
+                10000000 as usize
+            } else {
+                let r: Vec<&str> = order_id.split('_').collect();
+                r.get(0).unwrap().parse().unwrap()
+            };
+
             let time_string: String = slice_to_string(&(*pOrder).InsertTime);
             let date_string: String = slice_to_string(&(*pOrder).InsertDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
             let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                 .unwrap();
-
             self.api.order_ref += 1;
-            OrderData {
+            (OrderData {
                 symbol: slice_to_string(&(*pOrder).InstrumentID),
                 exchange: Some(Exchange::from((*pOrder).ExchangeID)),
                 datetime: Option::from(naive),
-                orderid: Option::from(slice_to_string(&(*pOrder).OrderRef)),
+                orderid: Option::from(order_id),
                 order_type: OrderType::from((*pOrder).OrderPriceType),
                 direction: Some(Direction::from((*pOrder).Direction)),
                 offset: Offset::from((*pOrder).CombOffsetFlag),
@@ -2673,33 +2680,60 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                 volume: (*pOrder).VolumeTotalOriginal as f64,
                 traded: (*pOrder).VolumeTraded as f64,
                 status: Some(Status::from((*pOrder).OrderStatus)),
-            }
+            }, idx)
         };
         // 这里控制接收order data的策略index
-        self.api.producer.send_to(order, 0);
+        match idx {
+            10000000usize => {
+                // Fixme: 如果不帶idx send_all or ignore it ?
+                // println!("broadcast message");
+                // self.api.producer.send_all(order)
+            }
+            _ => {
+                self.api.producer.send_to(order, idx);
+            }
+        }
     }
 
     fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
-        let trade = unsafe {
+        let (trade, idx) = unsafe {
             let time_string = slice_to_string(&(*pTrade).TradeTime);
             let date_string = slice_to_string(&(*pTrade).TradeDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
             let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                 .unwrap();
-            TradeData {
+            let order_id = slice_to_string(&(*pTrade).OrderRef);
+
+            let idx = if !order_id.contains("_") {
+                10000000 as usize
+            } else {
+                let r: Vec<&str> = order_id.split('_').collect();
+                r.get(0).unwrap().parse().unwrap()
+            };
+
+            (TradeData {
                 symbol: slice_to_string(&(*pTrade).InstrumentID),
                 exchange: Some(Exchange::from((*pTrade).ExchangeID)),
                 datetime: Option::from(naive),
-                orderid: Option::from(slice_to_string(&(*pTrade).OrderRef)),
+                orderid: Option::from(order_id),
                 direction: Some(Direction::from((*pTrade).Direction)),
                 offset: Some(Offset::from((*pTrade).OffsetFlag)),
                 price: (*pTrade).Price as f64,
                 volume: (*pTrade).Volume as f64,
                 tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
-            }
+            }, idx)
         };
         // 这里控制接收order data的策略index
-        self.api.producer.send_to(trade, 0);
+        match idx {
+            10000000usize => {
+                // Fixme: 如果不帶idx send_all or ignore it ?
+                // println!("broadcast message");
+                // self.api.producer.send_all(trade)
+            }
+            _ => {
+                self.api.producer.send_to(trade, idx);
+            }
+        }
     }
 
     fn on_err_rtn_order_insert(
@@ -2718,8 +2752,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {
-    }
+    ) {}
 }
 
 unsafe impl Send for TdApi {}
@@ -2948,7 +2981,7 @@ impl Drop for TdApi {
 }
 
 impl Interface for TdApi {
-    fn send_order(&mut self, order: OrderRequest) -> String {
+    fn send_order(&mut self, idx: usize, order: OrderRequest) -> String {
         self.request_id += 1;
         self.order_ref += 1;
 
@@ -2966,7 +2999,7 @@ impl Interface for TdApi {
             CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
                 .unwrap()
                 .to_c_slice(),
-            OrderRef: self.order_ref.to_string().to_c_slice(),
+            OrderRef: format!("{}_{}", idx, self.order_ref.to_string()).to_c_slice(),
             CombHedgeFlag: String::from_utf8(Vec::from([THOST_FTDC_HF_Speculation]))
                 .unwrap()
                 .to_c_slice(),

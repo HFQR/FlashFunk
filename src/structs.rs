@@ -120,6 +120,7 @@ impl Default for BarData {
 }
 
 /// Order Data
+#[derive(Clone)]
 pub struct OrderData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
