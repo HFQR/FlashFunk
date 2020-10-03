@@ -1,5 +1,5 @@
 [package]
-name = "ctpbee-rs"
+name = "flashfunk"
 version = "0.1.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
@@ -7,13 +7,18 @@ include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
 
 build = "build.rs"
 
+[workspace]
+members = ["flashfunk-codegen"]
+
 [dependencies]
-
 chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
-
-libc = "0.2.0"
-encoding = "0.2.33"
 crossbeam-queue = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
+encoding = "0.2.33"
+libc = "0.2.0"
+derive_more ="0.99.10"
+
+[dev-dependencies]
+flashfunk-codegen = { path = "./flashfunk-codegen" }
 
 [[example]]
 name = "login"

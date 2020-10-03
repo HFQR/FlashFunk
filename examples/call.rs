@@ -1,14 +1,15 @@
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
 use chrono::Local;
-use ctpbee_rs::ac::{Ac, IntoStrategy};
-use ctpbee_rs::app::{CtpbeeR, StrategyMessage};
-use ctpbee_rs::constants::{Direction, Exchange, Offset, OrderType};
-use ctpbee_rs::ctp::md_api::MdApi;
-use ctpbee_rs::ctp::td_api::TdApi;
-use ctpbee_rs::interface::Interface;
-use ctpbee_rs::structs::{BarData, LoginForm, OrderData, OrderRequest, TickData};
-use ctpbee_rs::ac::OrderManager;
+use flashfunk::ac::OrderManager;
+use flashfunk::app::{CtpbeeR, StrategyMessage};
+use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
+use flashfunk::ctp::md_api::MdApi;
+use flashfunk::ctp::td_api::TdApi;
+use flashfunk::interface::Interface;
+use flashfunk::structs::{LoginForm, OrderData, OrderRequest, TickData};
+use flashfunk::{Ac, IntoStrategy};
+use flashfunk_codegen::Strategy;
 use std::thread;
 use std::fmt::Pointer;
 
@@ -21,73 +22,53 @@ struct Quote {
     thread: f64,
 }
 
+#[derive(Strategy)]
+#[name("阿呆")]
+#[symbol("rb2101")]
 struct Strategy {
-    order_manager: OrderManager
-}
-
-impl IntoStrategy for Strategy {
-    fn name() -> &'static str {
-        "abc"
-    }
-
-    fn local_symbol() -> Vec<&'static str> {
-        vec!["rb2101"]
-    }
+    order_manager: OrderManager,
+    is_send: bool,
 }
 
 impl Ac for Strategy {
-    fn on_bar(&mut self, bar: &BarData) {}
-
     fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
-        println!(
-            "策略1收到行情 symbol: {}, time: {:?} price: {}",
-            tick.symbol,
-            tick.datetime.unwrap(),
-            tick.last_price
-        );
         let mut res = Vec::new();
-        if tick.last_price > 3520.0 {}
         let req = OrderRequest {
             symbol: "rb2101".to_string(),
             exchange: Exchange::SHFE,
             direction: Direction::LONG,
             order_type: OrderType::LIMIT,
             volume: 1.0,
-            price: tick.last_price + 10.0,
+            price: tick.last_price - 20.0,
             offset: Offset::OPEN,
             reference: None,
         };
-        // res.push(req.into());
+        res.push(req.into());
+        // println!("{:?}", self.order_manager.map);
+        println!("活躍報單: {:?}", self.order_manager.get_active_ids());
         res
     }
 
     fn on_order(&mut self, order: &OrderData) {
-        self.order_manager.add_order(*order.clone())
+        self.order_manager.add_order(order.clone());
+        println!("{:?}", order)
     }
 }
 
+#[derive(Strategy)]
+#[name("阿瓜")]
+#[symbol("rb2105")]
 struct Strategy2;
 
-impl IntoStrategy for Strategy2 {
-    fn name() -> &'static str {
-        "abc2"
-    }
-
-    fn local_symbol() -> Vec<&'static str> {
-        vec!["rb2105"]
-    }
-}
-
 impl Ac for Strategy2 {
-    fn on_bar(&mut self, bar: &BarData) {}
-
     fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
-        println!(
-            "策略2收到行情 symbol: {}, time: {:?} price: {}",
-            tick.symbol,
-            tick.datetime.unwrap(),
-            tick.last_price
-        );
+        // println!(
+        //     "策略{}收到行情 symbol: {}, time: {:?} price: {}",
+        //     Self::name(),
+        //     tick.symbol,
+        //     tick.datetime.unwrap(),
+        //     tick.last_price
+        // );
         let mut res = Vec::new();
         if tick.last_price > 3520.0 {
             let req = OrderRequest {
@@ -100,7 +81,7 @@ impl Ac for Strategy2 {
                 offset: Offset::OPEN,
                 reference: None,
             };
-            res.push(req.into());
+            // res.push(req.into());
         };
         res
     }
@@ -116,9 +97,9 @@ fn main() {
         .td_address("tcp://180.168.146.187:10130")
         .auth_code("0000000000000000")
         .production_info("");
-    let strategy_1 = Strategy { order_manager: Default::default() };
+    let strategy_1 = Strategy { order_manager: Default::default(), is_send: false };
     CtpbeeR::new("ctpbee")
-        .strategies(vec![strategy_1.into_str(), Strategy2.into_str()])
+        .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")
         .path("bug")

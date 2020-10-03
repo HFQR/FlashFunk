@@ -130,7 +130,6 @@ impl QuoteApi for DataCollector<'_> {
 
                 // 如果需要错误处理请在这里取回消息
 
-
                 let _ = self.producer.try_send_group(msg, i);
             }
         }
@@ -229,7 +228,7 @@ impl MdApi {
 }
 
 impl Interface for MdApi {
-    fn send_order(&mut self, idx:usize, order: OrderRequest) -> String {
+    fn send_order(&mut self, idx: usize, order: OrderRequest) -> String {
         unimplemented!("行情接口无此功能")
     }
 
@@ -252,7 +251,13 @@ impl Interface for MdApi {
         self.symbols.iter().for_each(|symbol| {
             let code = CString::new(*symbol).unwrap();
             let mut c = code.into_raw();
-            unsafe { CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, self.request_id.clone()) };
+            unsafe {
+                CThostFtdcMdApi_SubscribeMarketData(
+                    self.market_api,
+                    &mut c,
+                    self.request_id.clone(),
+                )
+            };
         });
     }
 

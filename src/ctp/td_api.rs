@@ -11,6 +11,7 @@ use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
 use crate::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TradeData};
+use std::cmp::max;
 
 /// et the api instance  for the TdCallApi
 unsafe fn get_trader_spi<'a>(spi: *mut c_void) -> &'a mut dyn TdCallApi {
@@ -2567,6 +2568,7 @@ pub struct CallDataCollector<'a> {
     api: &'a mut TdApi,
 }
 
+
 impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_front_connected(&mut self) {
         println!(">>> Td Front Connected");
@@ -2629,7 +2631,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
-                println!(">>> Order failed, id: {} msg: {}", e.id, e.msg);
+                // println!(">>> Order failed, id: {} msg: {}", e.id, e.msg);
             }
         }
     }
@@ -2655,32 +2657,28 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             // todo : we need a fast solution to parse datetime
             let order_id = slice_to_string(&(*pOrder).OrderRef);
             // fixme: maybe we need a char to  identify order from this system
-            let idx = if !order_id.contains("_") {
-                10000000 as usize
-            } else {
-                let r: Vec<&str> = order_id.split('_').collect();
-                r.get(0).unwrap().parse().unwrap()
-            };
-
+            let (idx, refs) = split_into_vec(order_id.as_str());
             let time_string: String = slice_to_string(&(*pOrder).InsertTime);
             let date_string: String = slice_to_string(&(*pOrder).InsertDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
             let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                 .unwrap();
-            self.api.order_ref += 1;
-            (OrderData {
-                symbol: slice_to_string(&(*pOrder).InstrumentID),
-                exchange: Some(Exchange::from((*pOrder).ExchangeID)),
-                datetime: Option::from(naive),
-                orderid: Option::from(order_id),
-                order_type: OrderType::from((*pOrder).OrderPriceType),
-                direction: Some(Direction::from((*pOrder).Direction)),
-                offset: Offset::from((*pOrder).CombOffsetFlag),
-                price: (*pOrder).LimitPrice as f64,
-                volume: (*pOrder).VolumeTotalOriginal as f64,
-                traded: (*pOrder).VolumeTraded as f64,
-                status: Some(Status::from((*pOrder).OrderStatus)),
-            }, idx)
+            (
+                OrderData {
+                    symbol: slice_to_string(&(*pOrder).InstrumentID),
+                    exchange: Some(Exchange::from((*pOrder).ExchangeID)),
+                    datetime: Option::from(naive),
+                    orderid: Option::from(order_id),
+                    order_type: OrderType::from((*pOrder).OrderPriceType),
+                    direction: Some(Direction::from((*pOrder).Direction)),
+                    offset: Offset::from((*pOrder).CombOffsetFlag),
+                    price: (*pOrder).LimitPrice as f64,
+                    volume: (*pOrder).VolumeTotalOriginal as f64,
+                    traded: (*pOrder).VolumeTraded as f64,
+                    status: Some(Status::from((*pOrder).OrderStatus)),
+                },
+                idx,
+            )
         };
         // 这里控制接收order data的策略index
         match idx {
@@ -2704,24 +2702,21 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                 .unwrap();
             let order_id = slice_to_string(&(*pTrade).OrderRef);
 
-            let idx = if !order_id.contains("_") {
-                10000000usize
-            } else {
-                let r: Vec<&str> = order_id.split('_').collect();
-                r.get(0).unwrap().parse().unwrap()
-            };
-
-            (TradeData {
-                symbol: slice_to_string(&(*pTrade).InstrumentID),
-                exchange: Some(Exchange::from((*pTrade).ExchangeID)),
-                datetime: Option::from(naive),
-                orderid: Option::from(order_id),
-                direction: Some(Direction::from((*pTrade).Direction)),
-                offset: Some(Offset::from((*pTrade).OffsetFlag)),
-                price: (*pTrade).Price as f64,
-                volume: (*pTrade).Volume as f64,
-                tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
-            }, idx)
+            let (idx, refs) = split_into_vec(order_id.as_str());
+            (
+                TradeData {
+                    symbol: slice_to_string(&(*pTrade).InstrumentID),
+                    exchange: Some(Exchange::from((*pTrade).ExchangeID)),
+                    datetime: Option::from(naive),
+                    orderid: Option::from(order_id),
+                    direction: Some(Direction::from((*pTrade).Direction)),
+                    offset: Some(Offset::from((*pTrade).OffsetFlag)),
+                    price: (*pTrade).Price as f64,
+                    volume: (*pTrade).Volume as f64,
+                    tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
+                },
+                idx,
+            )
         };
         // 这里控制接收order data的策略index
         match idx {
@@ -2741,11 +2736,17 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         pInputOrder: *mut CThostFtdcInputOrderField,
         pRspInfo: *mut CThostFtdcRspInfoField,
     ) {
+        unsafe {
+            let order_id = slice_to_string(&(*pInputOrder).OrderRef);
+            println!("insert order err id: {}", order_id);
+            let (idx, refs) = split_into_vec(order_id.as_str());
+            self.api.order_ref = max(refs, self.api.order_ref);
+        };
+
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
-            Err(e) => {
-                println!(">>> Order Insert failed, id: {} msg: {}", e.id, e.msg);
-            }
+            Err(e) =>
+                println!(">>> Order Insert failed, id: {} msg: {}", e.id, e.msg)
         }
     }
 
@@ -2986,7 +2987,6 @@ impl Interface for TdApi {
         self.order_ref += 1;
 
         let form = self.login_info();
-
         let req = CThostFtdcInputOrderField {
             InstrumentID: order.symbol.as_str().to_c_slice(),
             LimitPrice: order.price,
@@ -2999,7 +2999,7 @@ impl Interface for TdApi {
             CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
                 .unwrap()
                 .to_c_slice(),
-            OrderRef: format!("{}_{}", idx, self.order_ref.to_string()).to_c_slice(),
+            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.to_string(), idx).to_c_slice(),
             CombHedgeFlag: String::from_utf8(Vec::from([THOST_FTDC_HF_Speculation]))
                 .unwrap()
                 .to_c_slice(),

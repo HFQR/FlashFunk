@@ -12,7 +12,7 @@ use crate::account::Account;
 use crate::ctp::md_api::MdApi;
 use crate::ctp::td_api::TdApi;
 use crate::structs::{
-    AccountData, BarData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest,
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest,
     PositionData, SubscribeRequest, TickData, TradeData,
 };
 
@@ -99,7 +99,6 @@ impl ProducerMdApi {
 
 pub enum MdApiMessage {
     TickData(TickData),
-    BarData(BarData),
     AccountData(AccountData),
     PositionData(PositionData),
     ContractData(ContractData),
@@ -370,7 +369,6 @@ impl StrategyWorker {
                         .on_tick(&data)
                         .into_iter()
                         .for_each(|m| self.p_st.push(m).unwrap()),
-                    MdApiMessage::BarData(data) => self.st.on_bar(&data),
                     MdApiMessage::AccountData(data) => self.st.on_account(&data),
                     MdApiMessage::PositionData(data) => self.st.on_position(&data),
                     MdApiMessage::ContractData(data) => self.st.on_contract(&data),

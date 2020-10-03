@@ -156,8 +156,18 @@ macro_rules! impl_to_c_slice {
 }
 
 impl_to_c_slice!(
-  301, 11, 2561, 349, 100, 501, 129, 9, 31, 12, 17, 13,
-   51, 71, 25, 10, 513, 21, 256, 365, 36, 15, 16, 20,
-   23, 5, 41, 257, 3, 2, 33, 1001, 201, 273, 65, 401,
-    261, 24, 61, 4, 81, 161, 2049, 6, 22, 1025, 7, 101
+    301, 11, 2561, 349, 100, 501, 129, 9, 31, 12, 17, 13, 51, 71, 25, 10, 513, 21, 256, 365, 36,
+    15, 16, 20, 23, 5, 41, 257, 3, 2, 33, 1001, 201, 273, 65, 401, 261, 24, 61, 4, 81, 161, 2049,
+    6, 22, 1025, 7, 101
 );
+
+const orderid_length: usize = 12usize;
+
+pub fn split_into_vec(order_id: &str) -> (usize, i32) {
+    if order_id.len().eq(&orderid_length) {
+        (order_id[9..12].parse::<usize>().unwrap(), order_id[0..9].parse::<i32>().unwrap())
+    } else {
+        (10000000 as usize, order_id.parse::<i32>().unwrap_or(0))
+        //  (10000000 as usize, order_id.parse::<i32>().unwrap())
+    }
+}

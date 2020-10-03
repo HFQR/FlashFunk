@@ -88,39 +88,8 @@ impl Default for TickData {
     }
 }
 
-/// Bar Data
-pub struct BarData {
-    pub symbol: String,
-    pub exchange: Option<Exchange>,
-    pub datetime: Option<DateTime<Utc>>,
-    pub interval: Option<Interval>,
-    pub volume: f64,
-    pub open_interest: f64,
-    pub open_price: f64,
-    pub high_price: f64,
-    pub low_price: f64,
-    pub close_price: f64,
-}
-
-impl Default for BarData {
-    fn default() -> BarData {
-        BarData {
-            symbol: "".to_string(),
-            exchange: None,
-            datetime: None,
-            interval: None,
-            volume: 0.0,
-            open_interest: 0.0,
-            open_price: 0.0,
-            high_price: 0.0,
-            low_price: 0.0,
-            close_price: 0.0,
-        }
-    }
-}
-
 /// Order Data
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OrderData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -154,6 +123,7 @@ impl Default for OrderData {
 }
 
 /// Trade Data
+#[derive(Clone, Debug)]
 pub struct TradeData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -183,6 +153,7 @@ impl Default for TradeData {
 }
 
 /// Position Data
+#[derive(Clone, Debug)]
 pub struct PositionData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -212,6 +183,7 @@ impl Default for PositionData {
 }
 
 /// Account Data
+#[derive(Clone, Debug)]
 pub struct AccountData {
     pub accountid: String,
     pub balance: f64,
@@ -220,6 +192,7 @@ pub struct AccountData {
 }
 
 /// Contract Data
+#[derive(Clone, Debug)]
 pub struct ContractData {
     pub symbol: String,
     pub exchange: Option<Exchange>,
@@ -263,11 +236,13 @@ impl Default for ContractData {
 }
 
 /// Subscribe Request
+#[derive(Clone, Debug)]
 pub struct SubscribeRequest {
     pub symbol: String,
 }
 
 /// Order Request
+#[derive(Clone, Debug)]
 pub struct OrderRequest {
     pub symbol: String,
     pub exchange: Exchange,
@@ -280,26 +255,21 @@ pub struct OrderRequest {
 }
 
 /// Cancel Request
+#[derive(Clone, Debug)]
 pub struct CancelRequest {
     pub orderid: String,
     pub exchange: Exchange,
 }
 
-/// History Request
-pub struct HistoryRequest {
-    pub symbol: String,
-    pub exchange: Exchange,
-    pub start: DateTime<Utc>,
-    pub end: DateTime<Utc>,
-    pub interval: Interval,
-}
-
+#[derive(Clone, Debug)]
 pub struct ConnectInfo {}
 
+#[derive(Clone, Debug)]
 pub struct Params {
     pub connect_info: ConnectInfo,
 }
 
+#[derive(Clone, Debug)]
 pub struct DailyResult {
     pub available: f64,
     pub balance: f64,
