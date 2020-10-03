@@ -39,20 +39,33 @@ pub enum Offset {
 }
 
 /// 状态
-#[derive(Debug, PartialEq, Display, Clone)]
-pub enum Status {
-    #[display(fmt = "Submiting")]
-    SUBMITTING,
-    #[display(fmt = "NotTraded")]
-    NOTTRADED,
-    #[display(fmt = "PartTraded")]
-    PARTTRADED,
-    #[display(fmt = "AllTraded")]
-    ALLTRADED,
-    #[display(fmt = "Cancelled")]
-    CANCELLED,
-    #[display(fmt = "Rejected")]
-    REJECTED,
+// #[derive(Clone, Debug, Display, PartialEq)]
+// pub enum Status {
+//     #[display(fmt = "Submiting")]
+//     SUBMITTING,
+//     #[display(fmt = "NotTraded")]
+//     NOTTRADED,
+//     #[display(fmt = "PartTraded")]
+//     PARTTRADED,
+//     #[display(fmt = "AllTraded")]
+//     ALLTRADED,
+//     #[display(fmt = "Cancelled")]
+//     CANCELLED,
+//     #[display(fmt = "Rejected")]
+//     REJECTED,
+// }
+
+bitflags! {
+    pub struct Status: u8 {
+        const INIT =        0b00000001;
+        const SUBMITTING =  0b00000010;
+        const NOTTRADED =   0b00000100;
+        const PARTTRADED =  0b00001000;
+        const ALLTRADED =   0b00010000;
+        const CANCELLED =   0b00100000;
+        const REJECTED =    0b01000000;
+        const ACTIVE_IN = Self::NOTTRADED.bits | Self::SUBMITTING.bits | Self::PARTTRADED.bits;
+    }
 }
 
 /// 产品

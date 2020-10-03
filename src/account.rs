@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::constants::{Direction, Offset};
 use crate::structs::{DailyResult, OrderData, Params, TickData, TradeData};
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 
 use crate::structs::PositionData;
 
@@ -34,9 +34,9 @@ pub struct Account {
     // 冻结的手续费
     pub frozen_fee: HashMap<String, f64>,
     // 手续费
-    pub fee: HashMap<String, f64>,
+    pub fee: HashMap<Cow<'static, str>, f64>,
     // 平仓盈亏
-    pub close_profit: HashMap<String, f64>,
+    pub close_profit: HashMap<Cow<'static, str>, f64>,
     // 计数器
     pub count: f64,
     // 持仓冻结
@@ -100,7 +100,7 @@ impl Account {
     pub fn update_trade(&mut self, data: TradeData) {
         let symbol = data.symbol.clone();
         // calculate fee for trade_data
-        let commision = data.volume * data.price * self.get_commission_ratio(symbol.as_str());
+        let commision = data.volume * data.price * self.get_commission_ratio(symbol.as_ref());
 
         // Check the orderid if has been frozen
         if let Some(order_id) = &data.orderid {
@@ -109,7 +109,7 @@ impl Account {
             }
         }
         // insert fee to fact
-        if let Some(t) = self.fee.get(symbol.as_str()) {
+        if let Some(t) = self.fee.get(symbol.as_ref()) {
             let sum = commision + *t;
             self.fee.insert(symbol.clone(), sum);
         } else {

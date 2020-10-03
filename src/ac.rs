@@ -2,9 +2,7 @@ use core::ops::{Deref, DerefMut};
 
 use crate::app::StrategyMessage;
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
-use crate::structs::{
-    AccountData, ContractData, OrderData, PositionData, TickData, TradeData,
-};
+use crate::structs::{AccountData, ContractData, OrderData, PositionData, TickData, TradeData};
 use std::collections::HashMap;
 
 pub trait IntoStrategy: Sized + Send + Ac + 'static {
@@ -98,49 +96,40 @@ pub trait Ac {
 #[derive(Default)]
 pub struct OrderManager {
     pub map: HashMap<String, OrderData>,
-    active_in: Vec<Status>,
 }
 
 impl OrderManager {
     pub fn new() -> OrderManager {
         OrderManager {
             map: Default::default(),
-            active_in: vec![Status::NOTTRADED, Status::SUBMITTING, Status::PARTTRADED],
         }
     }
 
     pub fn add_order(&mut self, order: OrderData) {
         self.map.insert(order.orderid.clone().unwrap(), order);
     }
+
     /// 返回所有的活躍報單
     pub fn get_active_orders(&mut self) -> Vec<&OrderData> {
         self.map
             .iter()
-            .filter_map(|(id, v)| {
-                if self.active_in.contains(v.status.as_ref().unwrap()) {
-                    Some(v)
-                } else {
-                    None
-                }
-            })
+            .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
+            .map(|(_, v)| v)
             .collect()
     }
+
     pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
         self.map.get(order_id)
     }
+
     pub fn get_active_ids(&mut self) -> Vec<&str> {
-        //fixme:  not traded order should return
         self.map
             .iter()
-            .filter_map(|(id, v)| {
-                if self.active_in.contains(v.status.as_ref().unwrap()) {
-                    Some(id.as_str())
-                } else {
-                    None
-                }
-            })
+            .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
+            .map(|(id, _)| id.as_str())
             .collect()
     }
+
     pub fn get_ids(&mut self) -> Vec<&str> {
         self.map.iter().map(|x| x.0.as_str()).collect()
     }

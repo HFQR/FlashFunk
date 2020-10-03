@@ -11,6 +11,7 @@ build = "build.rs"
 members = ["flashfunk-codegen"]
 
 [dependencies]
+bitflags = ""
 chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
 crossbeam-queue = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
 encoding = "0.2.33"

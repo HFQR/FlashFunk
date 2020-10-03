@@ -12,8 +12,8 @@ use crate::account::Account;
 use crate::ctp::md_api::MdApi;
 use crate::ctp::td_api::TdApi;
 use crate::structs::{
-    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest,
-    PositionData, SubscribeRequest, TickData, TradeData,
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
+    SubscribeRequest, TickData, TradeData,
 };
 
 /// ctpbee核心运行器
@@ -189,7 +189,7 @@ impl ConsumerStrategy {
                 // 此处idx为策略通道的index，可以交给回调用以确认回程消息的策略
                 .for_each(|(idx, msg)| match msg {
                     StrategyMessage::OrderRequest(req) => {
-                        td_api.send_order(idx.clone(), req);
+                        td_api.send_order(idx, req);
                     }
                     StrategyMessage::CancelRequest(req) => {
                         td_api.cancel_order(req);

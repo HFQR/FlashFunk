@@ -11,7 +11,7 @@ use crate::constants::*;
 /// Tick Data
 #[derive(Clone)]
 pub struct TickData {
-    pub symbol: String,
+    pub symbol: Cow<'static, str>,
     pub exchange: Option<Exchange>,
     pub datetime: Option<NaiveDateTime>,
     pub name: Option<String>,
@@ -25,32 +25,16 @@ pub struct TickData {
     pub high_price: f64,
     pub low_price: f64,
     pub pre_close: f64,
-    pub bid_price_1: f64,
-    pub bid_price_2: f64,
-    pub bid_price_3: f64,
-    pub bid_price_4: f64,
-    pub bid_price_5: f64,
-    pub ask_price_1: f64,
-    pub ask_price_2: f64,
-    pub ask_price_3: f64,
-    pub ask_price_4: f64,
-    pub ask_price_5: f64,
-    pub bid_volume_1: f64,
-    pub bid_volume_2: f64,
-    pub bid_volume_3: f64,
-    pub bid_volume_4: f64,
-    pub bid_volume_5: f64,
-    pub ask_volume_1: f64,
-    pub ask_volume_2: f64,
-    pub ask_volume_3: f64,
-    pub ask_volume_4: f64,
-    pub ask_volume_5: f64,
+    pub bid_price: [f64; 5],
+    pub ask_price: [f64; 5],
+    pub bid_volume: [f64; 5],
+    pub ask_volume: [f64; 5],
 }
 
 impl Default for TickData {
     fn default() -> TickData {
         TickData {
-            symbol: "".to_string(),
+            symbol: Cow::Borrowed(""),
             exchange: None,
             datetime: None,
             name: None,
@@ -64,27 +48,29 @@ impl Default for TickData {
             high_price: 0.0,
             low_price: 0.0,
             pre_close: 0.0,
-            bid_price_1: 0.0,
-            bid_price_2: 0.0,
-            bid_price_3: 0.0,
-            bid_price_4: 0.0,
-            bid_price_5: 0.0,
-            ask_price_1: 0.0,
-            ask_price_2: 0.0,
-            ask_price_3: 0.0,
-            ask_price_4: 0.0,
-            ask_price_5: 0.0,
-            bid_volume_1: 0.0,
-            bid_volume_2: 0.0,
-            bid_volume_3: 0.0,
-            bid_volume_4: 0.0,
-            bid_volume_5: 0.0,
-            ask_volume_1: 0.0,
-            ask_volume_2: 0.0,
-            ask_volume_3: 0.0,
-            ask_volume_4: 0.0,
-            ask_volume_5: 0.0,
+            bid_price: [0.0; 5],
+            ask_price: [0.0; 5],
+            bid_volume: [0.0; 5],
+            ask_volume: [0.0; 5],
         }
+    }
+}
+
+impl TickData {
+    pub fn bid_price(&self, index: usize) -> f64 {
+        *self.bid_price.get(index).unwrap()
+    }
+
+    pub fn ask_price(&self, index: usize) -> f64 {
+        *self.ask_price.get(index).unwrap()
+    }
+
+    pub fn bid_volume(&self, index: usize) -> f64 {
+        *self.bid_volume.get(index).unwrap()
+    }
+
+    pub fn ask_volume(&self, index: usize) -> f64 {
+        *self.ask_volume.get(index).unwrap()
     }
 }
 
@@ -101,7 +87,7 @@ pub struct OrderData {
     pub price: f64,
     pub volume: f64,
     pub traded: f64,
-    pub status: Option<Status>,
+    pub status: Status,
 }
 
 impl Default for OrderData {
@@ -117,7 +103,7 @@ impl Default for OrderData {
             price: 0.0,
             volume: 0.0,
             traded: 0.0,
-            status: None,
+            status: Status::INIT,
         }
     }
 }
@@ -125,7 +111,7 @@ impl Default for OrderData {
 /// Trade Data
 #[derive(Clone, Debug)]
 pub struct TradeData {
-    pub symbol: String,
+    pub symbol: Cow<'static, str>,
     pub exchange: Option<Exchange>,
     pub datetime: Option<NaiveDateTime>,
     pub orderid: Option<String>,
@@ -139,7 +125,7 @@ pub struct TradeData {
 impl Default for TradeData {
     fn default() -> TradeData {
         TradeData {
-            symbol: "".to_string(),
+            symbol: Cow::Borrowed(""),
             exchange: None,
             datetime: None,
             orderid: None,

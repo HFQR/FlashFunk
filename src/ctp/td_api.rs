@@ -11,6 +11,7 @@ use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
 use crate::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TradeData};
+use std::borrow::Cow;
 use std::cmp::max;
 
 /// et the api instance  for the TdCallApi
@@ -2196,7 +2197,8 @@ pub trait TdCallApi {
     fn on_rtn_trading_notice(
         &mut self,
         pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {}
+    ) -> () {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2568,7 +2570,6 @@ pub struct CallDataCollector<'a> {
     api: &'a mut TdApi,
 }
 
-
 impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_front_connected(&mut self) {
         println!(">>> Td Front Connected");
@@ -2675,7 +2676,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                     price: (*pOrder).LimitPrice as f64,
                     volume: (*pOrder).VolumeTotalOriginal as f64,
                     traded: (*pOrder).VolumeTraded as f64,
-                    status: Some(Status::from((*pOrder).OrderStatus)),
+                    status: Status::from((*pOrder).OrderStatus),
                 },
                 idx,
             )
@@ -2705,7 +2706,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             let (idx, refs) = split_into_vec(order_id.as_str());
             (
                 TradeData {
-                    symbol: slice_to_string(&(*pTrade).InstrumentID),
+                    symbol: Cow::Owned(slice_to_string(&(*pTrade).InstrumentID)),
                     exchange: Some(Exchange::from((*pTrade).ExchangeID)),
                     datetime: Option::from(naive),
                     orderid: Option::from(order_id),
@@ -2745,15 +2746,15 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
 
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
-            Err(e) =>
-                println!(">>> Order Insert failed, id: {} msg: {}", e.id, e.msg)
+            Err(e) => println!(">>> Order Insert failed, id: {} msg: {}", e.id, e.msg),
         }
     }
 
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
+    ) {
+    }
 }
 
 unsafe impl Send for TdApi {}
@@ -2845,12 +2846,27 @@ impl From<i8> for OrderType {
     }
 }
 
+// impl From<i8> for Status {
+//     fn from(i: i8) -> Self {
+//         match i as u8 {
+//             THOST_FTDC_OAS_Submitted => Self::SUBMITTING,
+//             THOST_FTDC_OAS_Accepted => Self::SUBMITTING,
+//             THOST_FTDC_OAS_Rejected => Self::REJECTED,
+//             THOST_FTDC_OST_NoTradeQueueing => Status::NOTTRADED,
+//             THOST_FTDC_OST_PartTradedQueueing => Status::PARTTRADED,
+//             THOST_FTDC_OST_AllTraded => Status::ALLTRADED,
+//             THOST_FTDC_OST_Canceled => Status::CANCELLED,
+//             _ => panic!("ctp do not support this status"),
+//         }
+//     }
+// }
+
 impl From<i8> for Status {
     fn from(i: i8) -> Self {
         match i as u8 {
-            THOST_FTDC_OAS_Submitted => Self::SUBMITTING,
-            THOST_FTDC_OAS_Accepted => Self::SUBMITTING,
-            THOST_FTDC_OAS_Rejected => Self::REJECTED,
+            THOST_FTDC_OAS_Submitted => Status::SUBMITTING,
+            THOST_FTDC_OAS_Accepted => Status::SUBMITTING,
+            THOST_FTDC_OAS_Rejected => Status::REJECTED,
             THOST_FTDC_OST_NoTradeQueueing => Status::NOTTRADED,
             THOST_FTDC_OST_PartTradedQueueing => Status::PARTTRADED,
             THOST_FTDC_OST_AllTraded => Status::ALLTRADED,

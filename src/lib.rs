@@ -1,4 +1,5 @@
-#![recursion_limit = "5120"]
+#[macro_use]
+extern crate bitflags;
 
 use std::env::var;
 use std::path::PathBuf;
