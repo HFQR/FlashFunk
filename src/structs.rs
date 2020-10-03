@@ -245,6 +245,7 @@ pub struct OrderRequest {
 pub struct CancelRequest {
     pub orderid: String,
     pub exchange: Exchange,
+    pub symbol: String,
 }
 
 #[derive(Clone, Debug)]

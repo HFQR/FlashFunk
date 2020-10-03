@@ -16,6 +16,8 @@ use crate::structs::{
     SubscribeRequest, TickData, TradeData,
 };
 
+const MESSAGE_LIMIT: usize = 1024usize;
+
 /// ctpbee核心运行器
 /// 作为该运行器
 pub struct CtpbeeR {
@@ -70,8 +72,8 @@ impl ProducerMdApi {
 
     // 根据订阅分组尝试发送，失败时返回消息
     pub fn try_send_group<M>(&self, msg: M, index: usize) -> Result<(), M>
-    where
-        M: Into<MdApiMessage> + Clone,
+        where
+            M: Into<MdApiMessage> + Clone,
     {
         match self.1.get(index) {
             Some(i) => {
@@ -310,14 +312,14 @@ fn start_sts<'a>(
 
         // 通道容量暂设为128.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
         // 只影响内存占用。
-        // MpApi -> Strategies.
-        let (p_md, c_md) = spsc::new(128);
+        // MpApi -> Strategies
+        let (p_md, c_md) = spsc::new(MESSAGE_LIMIT);
 
         // Strategies -> TdApi.
-        let (p_st, c_st) = spsc::new(128);
+        let (p_st, c_st) = spsc::new(MESSAGE_LIMIT);
 
         // TdApi -> Strategies.
-        let (p_td, c_td) = spsc::new(128);
+        let (p_td, c_td) = spsc::new(MESSAGE_LIMIT);
 
         let mut worker = StrategyWorker::new(st, c_md, c_td, p_st);
 
@@ -364,6 +366,7 @@ impl StrategyWorker {
             match self.c_md.pop() {
                 Ok(msg) => match msg {
                     // tick会返回订单vec，我们转发至td api
+                    // fixme: give more useful error message but unwrap()
                     MdApiMessage::TickData(data) => self
                         .st
                         .on_tick(&data)

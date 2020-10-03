@@ -2197,8 +2197,7 @@ pub trait TdCallApi {
     fn on_rtn_trading_notice(
         &mut self,
         pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {
-    }
+    ) -> () {}
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2753,7 +2752,15 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {
+    ) {}
+
+    fn on_rsp_order_action(&mut self, pInputOrderAction: *mut CThostFtdcInputOrderActionField, pRspInfo: *mut CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) -> () {
+        match get_rsp_info(pRspInfo) {
+            Ok(t) => {}
+            Err(e) => {
+                println!(">>> Order action error, id: {} msg: {}", e.id, e.msg);
+            }
+        }
     }
 }
 
@@ -3039,27 +3046,22 @@ impl Interface for TdApi {
     }
 
     fn cancel_order(&mut self, req: CancelRequest) {
-        // frontid, sessionid, order_ref = req.order_id.split("_")
-
+        self.request_id += 1;
+        // fixme: cancel do not success =_=
         let form = self.login_info();
-
         let action = CThostFtdcInputOrderActionField {
-            // InstrumentID: ,
+            InstrumentID: req.symbol.to_c_slice(),
             OrderRef: req.orderid.to_c_slice(),
-            FrontID: self.frontid,
-            SessionID: self.sessionid,
+            FrontID: self.frontid.clone(),
+            SessionID: self.sessionid.clone(),
             ActionFlag: THOST_FTDC_AF_Delete as i8,
             BrokerID: form._broke_id().to_c_slice(),
-            InvestorID: form._user_id().to_c_slice(),
+            InvestorID: form._broke_id().to_c_slice(),
             ExchangeID: get_order_exchange(req.exchange).to_c_slice(),
             ..CThostFtdcInputOrderActionField::default()
         };
         unsafe {
-            RustCtpCallReqOrderAction(
-                self.trader_api,
-                Box::into_raw(Box::new(action)),
-                self.request_id,
-            );
+            RustCtpCallReqOrderAction(self.trader_api, Box::into_raw(Box::new(action)), self.request_id);
         }
     }
 
