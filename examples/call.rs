@@ -1,28 +1,22 @@
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
 use chrono::Local;
-use ctpbee_rs::ac::{Ac, IntoStrategy};
-use ctpbee_rs::app::{CtpbeeR, StrategyMessage};
-use ctpbee_rs::constants::{Direction, Exchange, Offset, OrderType};
-use ctpbee_rs::ctp::md_api::MdApi;
-use ctpbee_rs::ctp::td_api::TdApi;
-use ctpbee_rs::interface::Interface;
-use ctpbee_rs::structs::{BarData, LoginForm, OrderData, OrderRequest, TickData};
-use ctpbee_rs::ac::OrderManager;
+use flashfunk::ac::OrderManager;
+use flashfunk::app::{CtpbeeR, StrategyMessage};
+use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
+use flashfunk::ctp::md_api::MdApi;
+use flashfunk::ctp::td_api::TdApi;
+use flashfunk::interface::Interface;
+use flashfunk::structs::{BarData, LoginForm, OrderData, OrderRequest, TickData};
+use flashfunk::{Ac, IntoStrategy};
+use flashfunk_codegen::Strategy;
 use std::thread;
 
+#[derive(Strategy)]
+#[name("阿呆")]
+#[symbol("r2101")]
 struct Strategy {
-    order_manager: OrderManager
-}
-
-impl IntoStrategy for Strategy {
-    fn name() -> &'static str {
-        "abc"
-    }
-
-    fn local_symbol() -> Vec<&'static str> {
-        vec!["rb2101"]
-    }
+    order_manager: OrderManager,
 }
 
 impl Ac for Strategy {
@@ -30,7 +24,8 @@ impl Ac for Strategy {
 
     fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
         println!(
-            "策略1收到行情 symbol: {}, time: {:?} price: {}",
+            "策略{}收到行情 symbol: {}, time: {:?} price: {}",
+            Self::name(),
             tick.symbol,
             tick.datetime.unwrap(),
             tick.last_price
@@ -57,24 +52,18 @@ impl Ac for Strategy {
     }
 }
 
+#[derive(Strategy)]
+#[name("阿瓜")]
+#[symbol("r2105")]
 struct Strategy2;
-
-impl IntoStrategy for Strategy2 {
-    fn name() -> &'static str {
-        "abc2"
-    }
-
-    fn local_symbol() -> Vec<&'static str> {
-        vec!["rb2105"]
-    }
-}
 
 impl Ac for Strategy2 {
     fn on_bar(&mut self, bar: &BarData) {}
 
     fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
         println!(
-            "策略2收到行情 symbol: {}, time: {:?} price: {}",
+            "策略{}收到行情 symbol: {}, time: {:?} price: {}",
+            Self::name(),
             tick.symbol,
             tick.datetime.unwrap(),
             tick.last_price
@@ -113,7 +102,9 @@ fn main() {
         .td_address("tcp://180.168.146.187:10130")
         .auth_code("0000000000000000")
         .production_info("");
-    let strategy_1 = Strategy { order_manager: Default::default() };
+    let strategy_1 = Strategy {
+        order_manager: Default::default(),
+    };
 
     CtpbeeR::new("ctpbee")
         .strategies(vec![strategy_1.into_str(), Strategy2.into_str()])

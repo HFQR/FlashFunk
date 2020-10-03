@@ -117,17 +117,33 @@ impl OrderManager {
     }
     /// 返回所有的活躍報單
     pub fn get_active_orders(&mut self) -> Vec<&OrderData> {
-        self.map.iter().filter_map(|(id, v)|
-            if self.active_in.contains(v.status.as_ref().unwrap()) { Some(v) } else { None }).collect()
+        self.map
+            .iter()
+            .filter_map(|(id, v)| {
+                if self.active_in.contains(v.status.as_ref().unwrap()) {
+                    Some(v)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
     pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
         self.map.get(order_id)
     }
     pub fn get_active_ids(&mut self) -> Vec<&str> {
-        self.map.iter().filter_map(|(id, v)|
-            if self.active_in.contains(v.status.as_ref().unwrap()) { Some(id.as_str()) } else { None }).collect()
+        self.map
+            .iter()
+            .filter_map(|(id, v)| {
+                if self.active_in.contains(v.status.as_ref().unwrap()) {
+                    Some(id.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
     pub fn get_ids(&mut self) -> Vec<&str> {
-        self.map.iter().map(|x| { x.0.as_str() }).collect()
+        self.map.iter().map(|x| x.0.as_str()).collect()
     }
 }

@@ -2195,7 +2195,8 @@ pub trait TdCallApi {
     fn on_rtn_trading_notice(
         &mut self,
         pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {}
+    ) -> () {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2668,19 +2669,22 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                 .unwrap();
             self.api.order_ref += 1;
-            (OrderData {
-                symbol: slice_to_string(&(*pOrder).InstrumentID),
-                exchange: Some(Exchange::from((*pOrder).ExchangeID)),
-                datetime: Option::from(naive),
-                orderid: Option::from(order_id),
-                order_type: OrderType::from((*pOrder).OrderPriceType),
-                direction: Some(Direction::from((*pOrder).Direction)),
-                offset: Offset::from((*pOrder).CombOffsetFlag),
-                price: (*pOrder).LimitPrice as f64,
-                volume: (*pOrder).VolumeTotalOriginal as f64,
-                traded: (*pOrder).VolumeTraded as f64,
-                status: Some(Status::from((*pOrder).OrderStatus)),
-            }, idx)
+            (
+                OrderData {
+                    symbol: slice_to_string(&(*pOrder).InstrumentID),
+                    exchange: Some(Exchange::from((*pOrder).ExchangeID)),
+                    datetime: Option::from(naive),
+                    orderid: Option::from(order_id),
+                    order_type: OrderType::from((*pOrder).OrderPriceType),
+                    direction: Some(Direction::from((*pOrder).Direction)),
+                    offset: Offset::from((*pOrder).CombOffsetFlag),
+                    price: (*pOrder).LimitPrice as f64,
+                    volume: (*pOrder).VolumeTotalOriginal as f64,
+                    traded: (*pOrder).VolumeTraded as f64,
+                    status: Some(Status::from((*pOrder).OrderStatus)),
+                },
+                idx,
+            )
         };
         // 这里控制接收order data的策略index
         match idx {
@@ -2711,17 +2715,20 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                 r.get(0).unwrap().parse().unwrap()
             };
 
-            (TradeData {
-                symbol: slice_to_string(&(*pTrade).InstrumentID),
-                exchange: Some(Exchange::from((*pTrade).ExchangeID)),
-                datetime: Option::from(naive),
-                orderid: Option::from(order_id),
-                direction: Some(Direction::from((*pTrade).Direction)),
-                offset: Some(Offset::from((*pTrade).OffsetFlag)),
-                price: (*pTrade).Price as f64,
-                volume: (*pTrade).Volume as f64,
-                tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
-            }, idx)
+            (
+                TradeData {
+                    symbol: slice_to_string(&(*pTrade).InstrumentID),
+                    exchange: Some(Exchange::from((*pTrade).ExchangeID)),
+                    datetime: Option::from(naive),
+                    orderid: Option::from(order_id),
+                    direction: Some(Direction::from((*pTrade).Direction)),
+                    offset: Some(Offset::from((*pTrade).OffsetFlag)),
+                    price: (*pTrade).Price as f64,
+                    volume: (*pTrade).Volume as f64,
+                    tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
+                },
+                idx,
+            )
         };
         // 这里控制接收order data的策略index
         match idx {
@@ -2752,7 +2759,8 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
+    ) {
+    }
 }
 
 unsafe impl Send for TdApi {}

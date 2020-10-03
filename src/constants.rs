@@ -29,7 +29,7 @@ pub enum Offset {
 }
 
 /// 状态
-#[derive(Clone, PartialEq )]
+#[derive(Clone, PartialEq)]
 pub enum Status {
     /// 提交中
     SUBMITTING,
