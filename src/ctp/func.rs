@@ -97,7 +97,6 @@ pub trait QuoteApi {
 unsafe fn get_quote_spi<'a>(spi: *mut c_void) -> &'a mut dyn QuoteApi {
     &mut **(spi as *mut *mut dyn QuoteApi)
 }
-
 ///  1.我们在rust里面新建 结构体
 ///  2. 为他声明一系列简单的on_回调
 ///  3. 把这个结构体塞给QuatoSpi

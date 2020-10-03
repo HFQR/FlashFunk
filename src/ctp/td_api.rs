@@ -2705,7 +2705,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             let order_id = slice_to_string(&(*pTrade).OrderRef);
 
             let idx = if !order_id.contains("_") {
-                10000000 as usize
+                10000000usize
             } else {
                 let r: Vec<&str> = order_id.split('_').collect();
                 r.get(0).unwrap().parse().unwrap()

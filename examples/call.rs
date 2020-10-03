@@ -8,17 +8,16 @@ use ctpbee_rs::ctp::md_api::MdApi;
 use ctpbee_rs::ctp::td_api::TdApi;
 use ctpbee_rs::interface::Interface;
 use ctpbee_rs::structs::{BarData, LoginForm, OrderData, OrderRequest, TickData};
+use ctpbee_rs::ac::OrderManager;
 use std::thread;
 
-struct Strategy;
+struct Strategy {
+    order_manager: OrderManager
+}
 
 impl IntoStrategy for Strategy {
     fn name() -> &'static str {
         "abc"
-    }
-
-    fn price() -> Vec<f64> {
-        vec![100.0]
     }
 
     fn local_symbol() -> Vec<&'static str> {
@@ -51,7 +50,7 @@ impl Ac for Strategy {
                 reference: None,
             };
 
-            res.push(req.into());
+            // res.push(req.into());
         }
 
         res
@@ -63,10 +62,6 @@ struct Strategy2;
 impl IntoStrategy for Strategy2 {
     fn name() -> &'static str {
         "abc2"
-    }
-
-    fn price() -> Vec<f64> {
-        vec![100.0]
     }
 
     fn local_symbol() -> Vec<&'static str> {
@@ -118,9 +113,10 @@ fn main() {
         .td_address("tcp://180.168.146.187:10130")
         .auth_code("0000000000000000")
         .production_info("");
+    let strategy_1 = Strategy { order_manager: Default::default() };
 
     CtpbeeR::new("ctpbee")
-        .strategies(vec![Strategy.into_str(), Strategy2.into_str()])
+        .strategies(vec![strategy_1.into_str(), Strategy2.into_str()])
         .id("name")
         .pwd("id")
         .path("bug")

@@ -8,7 +8,9 @@ include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
 build = "build.rs"
 
 [dependencies]
-chrono = "0.4.13"
+
+chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
+
 libc = "0.2.0"
 encoding = "0.2.33"
 crossbeam-queue = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
@@ -30,5 +32,5 @@ panic = "abort"
 rpath = true
 
 [build-dependencies]
-bindgen = { git ="https://github.com/rust-lang/rust-bindgen.git", branch = "master" }
+bindgen = { git ="https://github.com/rust-lang/rust-bindgen.git", branch = "master", default-features = false }
 cc = "1.0"
