@@ -10,6 +10,16 @@ use ctpbee_rs::interface::Interface;
 use ctpbee_rs::structs::{BarData, LoginForm, OrderData, OrderRequest, TickData};
 use ctpbee_rs::ac::OrderManager;
 use std::thread;
+use std::fmt::Pointer;
+
+/// 價格公司
+struct Quote {
+    ask: f64,
+    bid: f64,
+    bid_volume: f64,
+    ask_volume: f64,
+    thread: f64,
+}
 
 struct Strategy {
     order_manager: OrderManager
@@ -35,25 +45,24 @@ impl Ac for Strategy {
             tick.datetime.unwrap(),
             tick.last_price
         );
-
         let mut res = Vec::new();
-
-        if tick.last_price > 3520.0 {
-            let req = OrderRequest {
-                symbol: "rb2101".to_string(),
-                exchange: Exchange::SHFE,
-                direction: Direction::LONG,
-                order_type: OrderType::LIMIT,
-                volume: 1.0,
-                price: tick.last_price + 10.0,
-                offset: Offset::OPEN,
-                reference: None,
-            };
-
-            // res.push(req.into());
-        }
-
+        if tick.last_price > 3520.0 {}
+        let req = OrderRequest {
+            symbol: "rb2101".to_string(),
+            exchange: Exchange::SHFE,
+            direction: Direction::LONG,
+            order_type: OrderType::LIMIT,
+            volume: 1.0,
+            price: tick.last_price + 10.0,
+            offset: Offset::OPEN,
+            reference: None,
+        };
+        // res.push(req.into());
         res
+    }
+
+    fn on_order(&mut self, order: &OrderData) {
+        self.order_manager.add_order(*order.clone())
     }
 }
 
@@ -79,7 +88,6 @@ impl Ac for Strategy2 {
             tick.datetime.unwrap(),
             tick.last_price
         );
-
         let mut res = Vec::new();
         if tick.last_price > 3520.0 {
             let req = OrderRequest {
@@ -92,14 +100,9 @@ impl Ac for Strategy2 {
                 offset: Offset::OPEN,
                 reference: None,
             };
-
             res.push(req.into());
         };
         res
-    }
-
-    fn on_order(&mut self, order: &OrderData) {
-        println!("{} - {}", order.symbol, order.price)
     }
 }
 
@@ -114,7 +117,6 @@ fn main() {
         .auth_code("0000000000000000")
         .production_info("");
     let strategy_1 = Strategy { order_manager: Default::default() };
-
     CtpbeeR::new("ctpbee")
         .strategies(vec![strategy_1.into_str(), Strategy2.into_str()])
         .id("name")
