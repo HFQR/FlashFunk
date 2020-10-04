@@ -57,13 +57,13 @@ pub enum Offset {
 bitflags! {
     /// 状态
     pub struct Status: u8 {
-        const INIT =        0b00000001;
-        const SUBMITTING =  0b00000010;
-        const NOTTRADED =   0b00000100;
-        const PARTTRADED =  0b00001000;
-        const ALLTRADED =   0b00010000;
-        const CANCELLED =   0b00100000;
-        const REJECTED =    0b01000000;
+        const INIT =        0b_0000_0001;
+        const SUBMITTING =  0b_0000_0010;
+        const NOTTRADED =   0b_0000_0100;
+        const PARTTRADED =  0b_0000_1000;
+        const ALLTRADED =   0b_0001_0000;
+        const CANCELLED =   0b_0010_0000;
+        const REJECTED =    0b_0100_0000;
         const ACTIVE_IN = Self::NOTTRADED.bits | Self::SUBMITTING.bits | Self::PARTTRADED.bits;
     }
 }
@@ -116,29 +116,46 @@ pub enum OptionType {
     PUT,
 }
 
-/// 交易所
-/// 暫時只支持國內期貨交易
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum Exchange {
-    // Chinese
-    #[display(fmt = "CFETS")]
-    CFETS,
-    #[display(fmt = "CFFEX")]
-    CFFEX,
-    #[display(fmt = "CZCE")]
-    CZCE,
-    #[display(fmt = "DCE")]
-    DCE,
-    #[display(fmt = "INE")]
-    INE,
-    #[display(fmt = "SGE")]
-    SGE,
-    #[display(fmt = "SHFE")]
-    SHFE,
-    #[display(fmt = "SSE")]
-    SSE,
-    #[display(fmt = "SZSE")]
-    SZSE,
-    #[display(fmt = "WXE")]
-    WXE,
+// /// 交易所
+// /// 暫時只支持國內期貨交易
+// #[derive(Copy, Clone, Debug, PartialEq, Display)]
+// pub enum Exchange {
+//     // Chinese
+//     #[display(fmt = "CFETS")]
+//     CFETS,
+//     #[display(fmt = "CFFEX")]
+//     CFFEX,
+//     #[display(fmt = "CZCE")]
+//     CZCE,
+//     #[display(fmt = "DCE")]
+//     DCE,
+//     #[display(fmt = "INE")]
+//     INE,
+//     #[display(fmt = "SGE")]
+//     SGE,
+//     #[display(fmt = "SHFE")]
+//     SHFE,
+//     #[display(fmt = "SSE")]
+//     SSE,
+//     #[display(fmt = "SZSE")]
+//     SZSE,
+//     #[display(fmt = "WXE")]
+//     WXE,
+// }
+
+bitflags! {
+    /// 交易所
+    /// 暫時只支持國內期貨交易
+    pub struct Exchange: u16 {
+        const CFETS =   0b_0000_0000_0001;
+        const CFFEX =   0b_0000_0000_0010;
+        const CZCE =    0b_0000_0000_0100;
+        const DCE =     0b_0000_0000_1000;
+        const INE =     0b_0000_0001_0000;
+        const SGE =     0b_0000_0010_0000;
+        const SHFE =    0b_0000_0100_0000;
+        const SSE =     0b_0000_1000_0000;
+        const SZSE =    0b_0001_0000_0000;
+        const WXE =     0b_0010_0000_0000;
+    }
 }

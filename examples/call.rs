@@ -38,38 +38,34 @@ struct Strategy {
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
         let mut res = Vec::new();
-        let req = OrderRequest {
-            symbol: "rb2101".to_string(),
-            exchange: Exchange::SHFE,
-            direction: Direction::LONG,
-            order_type: OrderType::LIMIT,
-            volume: 1.0,
-            price: tick.last_price - 20.0,
-            offset: Offset::OPEN,
-            reference: None,
-        };
+        // let req = OrderRequest {
+        //     symbol: "rb2101".to_string(),
+        //     exchange: Exchange::SHFE,
+        //     direction: Direction::LONG,
+        //     order_type: OrderType::LIMIT,
+        //     volume: 1.0,
+        //     price: tick.last_price - 20.0,
+        //     offset: Offset::OPEN,
+        //     reference: None,
+        // };
         println!("行情 : {}", tick.last_price);
-        res.push(req.into());
-        for order in self.order_manager.get_active_orders() {
-            ;
-            res.push(
-                CancelRequest {
-                    order_id: order.orderid.as_ref().unwrap().to_string(),
-                    exchange: Exchange::SHFE,
-                    symbol: order.symbol.to_string(),
-                }
-                    .into(),
-            );
-        }
+        // res.push(req.into());
+        // for order in self.order_manager.get_active_orders() {
+        //     res.push(
+        //         CancelRequest::new(
+        //             order.orderid.as_ref().unwrap().to_string(),
+        //             order.symbol.to_string(),
+        //         )
+        //         .into(),
+        //     );
+        // }
         res
     }
 
-    fn on_order(&mut self, order: &OrderData) {
-        self.order_manager.add_order(order.clone()
-        );
+    fn on_order(&mut self, order: OrderData) {
+        self.order_manager.add_order(order);
     }
 }
-
 
 fn main() {
     let login_form = LoginForm::new()

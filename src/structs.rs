@@ -78,7 +78,7 @@ impl TickData {
 #[derive(Clone, Debug)]
 pub struct OrderData {
     pub symbol: String,
-    pub exchange: Option<Exchange>,
+    pub exchange: Exchange,
     pub datetime: Option<NaiveDateTime>,
     pub orderid: Option<String>,
     pub order_type: OrderType,
@@ -90,22 +90,11 @@ pub struct OrderData {
     pub status: Status,
 }
 
-impl Default for OrderData {
-    fn default() -> OrderData {
-        OrderData {
-            symbol: "".to_string(),
-            exchange: None,
-            datetime: None,
-            orderid: None,
-            order_type: OrderType::LIMIT,
-            direction: None,
-            offset: Offset::NONE,
-            price: 0.0,
-            volume: 0.0,
-            traded: 0.0,
-            status: Status::INIT,
-        }
-    }
+#[derive(Copy, Clone)]
+pub struct OrderMeta {
+    pub exchange: Exchange,
+    pub session_id: i32,
+    pub front_id: i32,
 }
 
 /// Trade Data
@@ -241,11 +230,30 @@ pub struct OrderRequest {
 }
 
 /// Cancel Request
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct CancelRequest {
     pub order_id: String,
     pub symbol: String,
-    pub exchange: Exchange,
+    meta: Option<OrderMeta>,
+}
+
+impl CancelRequest {
+    pub fn new(order_id: String, symbol: String) -> Self {
+        Self {
+            order_id,
+            symbol,
+            meta: None,
+        }
+    }
+
+    pub(crate) fn add_meta(&mut self, meta: OrderMeta) {
+        self.meta = Some(meta);
+    }
+
+    pub(crate) fn into_parts(mut self) -> (CancelRequest, OrderMeta) {
+        let meta = self.meta.take().unwrap();
+        (self, meta)
+    }
 }
 
 #[derive(Clone, Debug)]

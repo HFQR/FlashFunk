@@ -55,7 +55,7 @@ pub trait Ac {
 
     fn on_trade(&mut self, trade: &TradeData) {}
 
-    fn on_order(&mut self, order: &OrderData) {}
+    fn on_order(&mut self, order: OrderData) {}
 
     fn on_account(&mut self, account: &AccountData) {}
 
