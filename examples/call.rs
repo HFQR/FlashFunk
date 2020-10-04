@@ -7,7 +7,7 @@ use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
-use flashfunk::structs::{LoginForm, OrderData, OrderRequest, TickData, CancelRequest};
+use flashfunk::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TickData};
 use flashfunk::{Ac, IntoStrategy};
 use flashfunk_codegen::Strategy;
 use std::fmt::Pointer;
@@ -45,11 +45,14 @@ impl Ac for Strategy {
         };
         res.push(req.into());
         for id in self.order_manager.get_active_ids() {
-            res.push(CancelRequest {
-                orderid: id.to_string(),
-                exchange: Exchange::SHFE,
-                symbol: tick.symbol.to_string(),
-            }.into());
+            res.push(
+                CancelRequest {
+                    orderid: id.to_string(),
+                    exchange: Exchange::SHFE,
+                    symbol: tick.symbol.to_string(),
+                }
+                .into(),
+            );
         }
         res
     }

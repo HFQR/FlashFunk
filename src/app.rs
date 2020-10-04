@@ -4,8 +4,6 @@ use core::time::Duration;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use crossbeam_queue::spsc::{self, Consumer, Producer};
-
 use super::interface::Interface;
 use crate::ac::{IntoStrategy, __Strategy};
 use crate::account::Account;
@@ -15,7 +13,10 @@ use crate::structs::{
     AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
     SubscribeRequest, TickData, TradeData,
 };
+use crate::util::channel::{channel, ChannelError, GroupSender, Receiver, Sender};
 
+// 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
+// 只影响内存占用。
 const MESSAGE_LIMIT: usize = 1024usize;
 
 /// ctpbee核心运行器
@@ -58,44 +59,25 @@ impl Debug for CtpbeeR {
     }
 }
 
-pub struct ProducerMdApi(Vec<Producer<MdApiMessage>>, Vec<Vec<usize>>);
+pub struct GroupSenderMdApi(GroupSender<MdApiMessage>);
 
-const OVERFLOW_PANIC_MSG: &str = "Strategy index overflow";
-
-impl ProducerMdApi {
+impl GroupSenderMdApi {
     // 无视分组发送给所有策略
-    pub fn send_all(&self, msg: impl Into<MdApiMessage> + Clone) {
-        self.0.iter().for_each(|p| {
-            p.push(msg.clone().into()).unwrap();
-        });
+    pub(crate) fn send_all(&self, msg: impl Into<MdApiMessage> + Clone) {
+        self.0.send_all(msg)
     }
 
     // 根据订阅分组尝试发送，失败时返回消息
-    pub fn try_send_group<M>(&self, msg: M, index: usize) -> Result<(), M>
-        where
-            M: Into<MdApiMessage> + Clone,
+    pub(crate) fn try_send_group<M>(&self, msg: M, index: usize) -> Result<(), ChannelError<M>>
+    where
+        M: Into<MdApiMessage> + Clone,
     {
-        match self.1.get(index) {
-            Some(i) => {
-                i.iter().for_each(|i| self._send(msg.clone().into(), *i));
-                Ok(())
-            }
-            None => Err(msg),
-        }
+        self.0.try_send_group(msg, index)
     }
 
     // 根据index直接发送，失败会panic
-    pub fn send_to(&self, msg: impl Into<MdApiMessage>, index: usize) {
-        self._send(msg.into(), index);
-    }
-
-    // 内部方法，发送给指定的索引策略
-    fn _send(&self, msg: MdApiMessage, index: usize) {
-        self.0
-            .get(index)
-            .expect(OVERFLOW_PANIC_MSG)
-            .push(msg)
-            .unwrap();
+    pub(crate) fn send_to(&self, msg: impl Into<MdApiMessage>, index: usize) {
+        self.0.send_to(msg.into(), index);
     }
 }
 
@@ -136,28 +118,17 @@ impl From<TradeData> for TdApiMessage {
     }
 }
 
-pub struct ProducerTdApi(Vec<Producer<TdApiMessage>>);
+pub struct GroupSenderTdApi(GroupSender<TdApiMessage>);
 
-impl ProducerTdApi {
+impl GroupSenderTdApi {
     // 无视分组发送给所有策略
     pub fn send_all(&self, msg: impl Into<TdApiMessage> + Clone) {
-        self.0.iter().for_each(|p| {
-            p.push(msg.clone().into()).unwrap();
-        });
+        self.0.send_all(msg)
     }
 
     // 根据index直接发送，失败会panic
     pub fn send_to(&self, msg: impl Into<TdApiMessage>, index: usize) {
-        self._send(msg.into(), index);
-    }
-
-    // 内部方法，发送给指定的索引策略
-    fn _send(&self, msg: TdApiMessage, index: usize) {
-        self.0
-            .get(index)
-            .expect(OVERFLOW_PANIC_MSG)
-            .push(msg)
-            .unwrap();
+        self.0.send_to(msg.into(), index)
     }
 }
 
@@ -178,16 +149,16 @@ impl From<CancelRequest> for StrategyMessage {
     }
 }
 
-pub struct ConsumerStrategy(Vec<Consumer<StrategyMessage>>);
+pub struct GroupReceiverStrategy(Vec<Receiver<StrategyMessage>>);
 
-impl ConsumerStrategy {
+impl GroupReceiverStrategy {
     // 策略消息从此处进入td_api
     pub fn block_handle(&self, td_api: &mut TdApi) {
         loop {
             self.0
                 .iter()
                 .enumerate()
-                .filter_map(|(idx, c)| c.pop().map(|msg| (idx, msg)).ok())
+                .filter_map(|(idx, c)| c.recv().map(|msg| (idx, msg)).ok())
                 // 此处idx为策略通道的index，可以交给回调用以确认回程消息的策略
                 .for_each(|(idx, msg)| match msg {
                     StrategyMessage::OrderRequest(req) => {
@@ -244,15 +215,15 @@ impl<'a> CtpBuilder<'a> {
     pub fn start(mut self) {
         // 启动所有策略线程，并返回对应的通道制造（消费）端 和订阅symbols集合
         // * 策略已被此函数消费无法再次调用。
-        let (symbols, p_md, p_td, c_st) = start_sts(&mut self);
+        let (symbols, s_md, s_td, c_st) = start_sts(&mut self);
 
         let id = self.id.into();
         let pwd = self.pwd.into();
         let path = self.path.into();
 
         // 构造api
-        let mut md_api = MdApi::new(id, pwd, path, p_md);
-        let mut td_api = TdApi::new("".parse().unwrap(), p_td);
+        let mut md_api = MdApi::new(id, pwd, path, s_md);
+        let mut td_api = TdApi::new("".parse().unwrap(), s_td);
 
         let login_form = self.login_form.into();
 
@@ -274,9 +245,9 @@ fn start_sts<'a>(
     builder: &mut CtpBuilder<'a>,
 ) -> (
     Vec<&'static str>,
-    ProducerMdApi,
-    ProducerTdApi,
-    ConsumerStrategy,
+    GroupSenderMdApi,
+    GroupSenderTdApi,
+    GroupReceiverStrategy,
 ) {
     let sts = std::mem::take(&mut builder.strategy);
 
@@ -310,47 +281,45 @@ fn start_sts<'a>(
                 });
         });
 
-        // 通道容量暂设为128.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
-        // 只影响内存占用。
         // MpApi -> Strategies
-        let (p_md, c_md) = spsc::new(MESSAGE_LIMIT);
+        let (s_md, r_md) = channel(MESSAGE_LIMIT);
 
         // Strategies -> TdApi.
-        let (p_st, c_st) = spsc::new(MESSAGE_LIMIT);
+        let (s_st, r_st) = channel(MESSAGE_LIMIT);
 
         // TdApi -> Strategies.
-        let (p_td, c_td) = spsc::new(MESSAGE_LIMIT);
+        let (s_td, r_td) = channel(MESSAGE_LIMIT);
 
-        let mut worker = StrategyWorker::new(st, c_md, c_td, p_st);
+        let mut worker = StrategyWorker::new(st, r_md, r_td, s_st);
 
         std::thread::spawn(move || worker.start());
 
-        producer_md.push(p_md);
-        producer_td.push(p_td);
-        consumer_st.push(c_st);
+        producer_md.push(s_md);
+        producer_td.push(s_td);
+        consumer_st.push(r_st);
     });
 
     (
         symbols,
-        ProducerMdApi(producer_md, groups),
-        ProducerTdApi(producer_td),
-        ConsumerStrategy(consumer_st),
+        GroupSenderMdApi(GroupSender::new(producer_md, groups)),
+        GroupSenderTdApi(GroupSender::new(producer_td, vec![])),
+        GroupReceiverStrategy(consumer_st),
     )
 }
 
 struct StrategyWorker {
     st: __Strategy,
-    c_md: Consumer<MdApiMessage>,
-    c_td: Consumer<TdApiMessage>,
-    p_st: Producer<StrategyMessage>,
+    c_md: Receiver<MdApiMessage>,
+    c_td: Receiver<TdApiMessage>,
+    p_st: Sender<StrategyMessage>,
 }
 
 impl StrategyWorker {
     fn new(
         st: __Strategy,
-        c_md: Consumer<MdApiMessage>,
-        c_td: Consumer<TdApiMessage>,
-        p_st: Producer<StrategyMessage>,
+        c_md: Receiver<MdApiMessage>,
+        c_td: Receiver<TdApiMessage>,
+        p_st: Sender<StrategyMessage>,
     ) -> Self {
         Self {
             st,
@@ -363,7 +332,7 @@ impl StrategyWorker {
     fn start(&mut self) {
         loop {
             // 接收md_api的消息并处理。
-            match self.c_md.pop() {
+            match self.c_md.recv() {
                 Ok(msg) => match msg {
                     // tick会返回订单vec，我们转发至td api
                     // fixme: give more useful error message but unwrap()
@@ -371,7 +340,7 @@ impl StrategyWorker {
                         .st
                         .on_tick(&data)
                         .into_iter()
-                        .for_each(|m| self.p_st.push(m).unwrap()),
+                        .for_each(|m| self.p_st.send(m)),
                     MdApiMessage::AccountData(data) => self.st.on_account(&data),
                     MdApiMessage::PositionData(data) => self.st.on_position(&data),
                     MdApiMessage::ContractData(data) => self.st.on_contract(&data),
@@ -380,7 +349,7 @@ impl StrategyWorker {
                 Err(_) => (),
             }
             // 接收td_api的消息并处理。
-            match self.c_td.pop() {
+            match self.c_td.recv() {
                 Ok(msg) => match msg {
                     TdApiMessage::OrderData(data) => self.st.on_order(&data),
                     TdApiMessage::TradeData(data) => self.st.on_trade(&data),

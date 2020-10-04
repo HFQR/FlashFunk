@@ -38,7 +38,6 @@ pub enum Offset {
     OPEN,
 }
 
-/// 状态
 // #[derive(Clone, Debug, Display, PartialEq)]
 // pub enum Status {
 //     #[display(fmt = "Submiting")]
@@ -56,6 +55,7 @@ pub enum Offset {
 // }
 
 bitflags! {
+    /// 状态
     pub struct Status: u8 {
         const INIT =        0b00000001;
         const SUBMITTING =  0b00000010;

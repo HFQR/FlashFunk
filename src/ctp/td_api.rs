@@ -6,7 +6,7 @@ use std::os::raw::{c_char, c_int};
 
 use chrono::NaiveDateTime;
 
-use crate::app::{ConsumerStrategy, CtpbeeR, ProducerTdApi};
+use crate::app::{CtpbeeR, GroupReceiverStrategy, GroupSenderTdApi};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
@@ -2197,7 +2197,8 @@ pub trait TdCallApi {
     fn on_rtn_trading_notice(
         &mut self,
         pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {}
+    ) -> () {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2550,7 +2551,7 @@ pub struct TdApi {
     trader_api: *mut CThostFtdcTraderApi,
     trader_spi: Option<*mut FCtpTdSpi>,
     path: CString,
-    producer: ProducerTdApi,
+    producer: GroupSenderTdApi,
     login_info: Option<LoginForm>,
     request_id: i32,
     frontid: c_int,
@@ -2752,9 +2753,16 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
+    ) {
+    }
 
-    fn on_rsp_order_action(&mut self, pInputOrderAction: *mut CThostFtdcInputOrderActionField, pRspInfo: *mut CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) -> () {
+    fn on_rsp_order_action(
+        &mut self,
+        pInputOrderAction: *mut CThostFtdcInputOrderActionField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) -> () {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
@@ -2894,7 +2902,7 @@ impl From<i8> for Direction {
 }
 
 impl TdApi {
-    pub fn new(path: String, producer: ProducerTdApi) -> TdApi {
+    pub fn new(path: String, producer: GroupSenderTdApi) -> TdApi {
         let p = CString::new(path).unwrap();
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
@@ -3061,7 +3069,11 @@ impl Interface for TdApi {
             ..CThostFtdcInputOrderActionField::default()
         };
         unsafe {
-            RustCtpCallReqOrderAction(self.trader_api, Box::into_raw(Box::new(action)), self.request_id);
+            RustCtpCallReqOrderAction(
+                self.trader_api,
+                Box::into_raw(Box::new(action)),
+                self.request_id,
+            );
         }
     }
 

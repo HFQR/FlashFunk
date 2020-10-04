@@ -11,7 +11,7 @@ use encoding::all::GB18030;
 use encoding::{DecoderTrap, Encoding};
 
 use super::interface::Interface;
-use crate::app::{CtpbeeR, MdApiMessage, ProducerMdApi};
+use crate::app::{CtpbeeR, GroupSenderMdApi, MdApiMessage};
 use crate::ctp::func::QuoteApi;
 use crate::ctp::sys::{
     slice_to_string, CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField,
@@ -34,14 +34,14 @@ pub struct MdApi {
     path: CString,
     market_api: *mut CThostFtdcMdApi,
     market_spi: Option<*mut QuoteSpi>,
-    producer: Option<ProducerMdApi>,
+    producer: Option<GroupSenderMdApi>,
     login_info: Option<LoginForm>,
     request_id: i32,
     symbols: Vec<&'static str>,
 }
 
 struct DataCollector<'a> {
-    producer: ProducerMdApi,
+    producer: GroupSenderMdApi,
     login_status: bool,
     connect_status: bool,
     api: &'a mut MdApi,
@@ -152,7 +152,7 @@ unsafe impl Send for MdApi {}
 ///
 /// 实现行情API的一些主动基准调用方法
 impl MdApi {
-    pub fn new(id: String, pwd: String, path: String, producer: ProducerMdApi) -> Self {
+    pub fn new(id: String, pwd: String, path: String, producer: GroupSenderMdApi) -> Self {
         let ids = CString::new(id).unwrap();
         let pwds = CString::new(pwd).unwrap();
         let paths = CString::new(path).unwrap();
@@ -211,7 +211,7 @@ impl MdApi {
     }
 
     /// 注册回调
-    fn register_spi(&mut self, login_info: LoginForm, producer: ProducerMdApi) {
+    fn register_spi(&mut self, login_info: LoginForm, producer: GroupSenderMdApi) {
         self.login_info = Some(login_info);
 
         let collector = DataCollector {
