@@ -72,8 +72,8 @@ impl ProducerMdApi {
 
     // 根据订阅分组尝试发送，失败时返回消息
     pub fn try_send_group<M>(&self, msg: M, index: usize) -> Result<(), M>
-        where
-            M: Into<MdApiMessage> + Clone,
+    where
+        M: Into<MdApiMessage> + Clone,
     {
         match self.1.get(index) {
             Some(i) => {

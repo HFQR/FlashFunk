@@ -2197,7 +2197,8 @@ pub trait TdCallApi {
     fn on_rtn_trading_notice(
         &mut self,
         pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {}
+    ) -> () {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2752,9 +2753,16 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
+    ) {
+    }
 
-    fn on_rsp_order_action(&mut self, pInputOrderAction: *mut CThostFtdcInputOrderActionField, pRspInfo: *mut CThostFtdcRspInfoField, nRequestID: c_int, bIsLast: bool) -> () {
+    fn on_rsp_order_action(
+        &mut self,
+        pInputOrderAction: *mut CThostFtdcInputOrderActionField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) -> () {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
@@ -3061,7 +3069,11 @@ impl Interface for TdApi {
             ..CThostFtdcInputOrderActionField::default()
         };
         unsafe {
-            RustCtpCallReqOrderAction(self.trader_api, Box::into_raw(Box::new(action)), self.request_id);
+            RustCtpCallReqOrderAction(
+                self.trader_api,
+                Box::into_raw(Box::new(action)),
+                self.request_id,
+            );
         }
     }
 

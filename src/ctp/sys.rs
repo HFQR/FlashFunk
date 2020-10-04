@@ -161,10 +161,10 @@ impl_to_c_slice!(
     6, 22, 1025, 7, 101
 );
 
-const orderid_length: usize = 12usize;
+const ORDER_ID_LENGTH: usize = 12usize;
 
 pub fn split_into_vec(order_id: &str) -> (usize, i32) {
-    if order_id.len().eq(&orderid_length) {
+    if order_id.len().eq(&ORDER_ID_LENGTH) {
         (
             order_id[9..12].parse::<usize>().unwrap(),
             order_id[0..9].parse::<i32>().unwrap(),

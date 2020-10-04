@@ -188,7 +188,7 @@ impl MdApi {
     }
 
     fn login(&mut self) {
-        let login_form = self.login_info.take().unwrap();
+        let login_form = self.login_info.as_ref().unwrap();
         let user_id = CString::new(login_form._user_id()).unwrap();
         let pwd = CString::new(login_form._password()).unwrap();
         let broker_id = CString::new(login_form._broke_id()).unwrap();

@@ -58,44 +58,27 @@ async fn main() {
 
 
 ## 前置声明
-此项目作为ctpbee前置闭源项目,代码所有权归`somewheve`所有，目前仅限 代码贡献成员所属公司内部使用, 
-不允许以任何方式私自出售源码或者泄露. 尊重劳动成果 ^_^. 
-未来可能进行商业化开源/开源 
+
+This project are contributed by  `somewheve` and `fakeshadow` and `qzm`
+
 
 ###  Task 
 
 |  task   | contributor  |  status  |
 |  ----  | ----  | ----  |
 | 账户基类计算         | `somewheve` | `finished` |
-| 整体架构实现  | `somewheve `|  `finished`  |
-| 策略模板实现         |  `somewheve`  | `pending`   |  
-| ctp c++接口对接      | `somewheve`   |  `running`   |
+| 整体架构实现  | `fakeshadow `|  `finished`  |
+| 策略模板实现         |  `somewheve`  | `finished`   |  
+| ctp c++接口对接      | `somewheve`   |  `finished`   |
 |  盛立 c++ 接口对接    |  `somewheve`  |    `not started`  |
 |  `clickhouse`数据获取 |   `somewheve` | `not started`  | 
 |  持仓管理    |  `qzm`          |    `not started`  |
-|  k线生成 |   `qzm`           |  `running`  |
 
 
 ### Interface compile 
 本项目最终采用`bindgen` 作为`c++`接口封装 
-请安装llvm以支持RUST  C++ bindgen
 
 
-for windows 前往[地址](https://releases.llvm.org/download.html) 下载windows安装包即可, 注意要加入系统环境，其他系统亦可 
- 
- > 注意windows此安装包仅仅提供 clang等编译程序 并不提供llvm-config程序，需要手动下载llvm源码进行编译
-Here are the explanation 
-```
-llvm-config does not exist in windows prebuilt binaries. You need to compile from the source code to get it.
-
-1.Grab CMAKE > 3.5 , install it and make sure you add it to PATH.
-2.Download Visual Studio 2019
-3.Donwload the source code (9.0.1 is the latest as I'm writing this)
-4.Extract the source code
-5.Cd into the root of the llvm source-code
-6.In cmd, type cmake . this will generate Visual Studio 2019 sln.
-7.open sln file(LLVM.sln), change the build type to Rlease, build the whole project
-8.navigate to your Rlease\bin, and there you have your llvm-config.exe
 ```
 
 ### 一些详细工作 

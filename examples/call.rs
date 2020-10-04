@@ -7,19 +7,27 @@ use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
-use flashfunk::structs::{LoginForm, OrderData, OrderRequest, TickData, CancelRequest};
+use flashfunk::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TickData};
 use flashfunk::{Ac, IntoStrategy};
 use flashfunk_codegen::Strategy;
 use std::fmt::Pointer;
 use std::thread;
 
-/// 價格公司
+/// 價格
 struct Quote {
     ask: f64,
     bid: f64,
     bid_volume: f64,
     ask_volume: f64,
     thread: f64,
+}
+
+impl Quote{
+    /// 計算盤口信息
+    pub fn update_tick(&mut self){
+
+    }
+
 }
 
 #[derive(Strategy)]
@@ -43,13 +51,16 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-        res.push(req.into());
+        // res.push(req.into());
         for id in self.order_manager.get_active_ids() {
-            res.push(CancelRequest {
-                orderid: id.to_string(),
-                exchange: Exchange::SHFE,
-                symbol: tick.symbol.to_string(),
-            }.into());
+            res.push(
+                CancelRequest {
+                    orderid: id.to_string(),
+                    exchange: Exchange::SHFE,
+                    symbol: tick.symbol.to_string(),
+                }
+                .into(),
+            );
         }
         res
     }
