@@ -22,12 +22,9 @@ struct Quote {
     thread: f64,
 }
 
-impl Quote{
+impl Quote {
     /// 計算盤口信息
-    pub fn update_tick(&mut self){
-
-    }
-
+    pub fn update_tick(&mut self) {}
 }
 
 #[derive(Strategy)]
@@ -51,14 +48,17 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-        // res.push(req.into());
-        for order in self.order_manager.get_active_orders() { ;
+        println!("行情 : {}", tick.last_price);
+        res.push(req.into());
+        for order in self.order_manager.get_active_orders() {
+            ;
             res.push(
                 CancelRequest {
-                    sysid: order.sysid.as_ref().unwrap().to_string(),
+                    order_id: order.orderid.as_ref().unwrap().to_string(),
                     exchange: Exchange::SHFE,
+                    symbol: order.symbol.to_string(),
                 }
-                .into(),
+                    .into(),
             );
         }
         res

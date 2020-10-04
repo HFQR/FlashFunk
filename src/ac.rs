@@ -117,12 +117,6 @@ impl OrderManager {
             .map(|(_, v)| v)
             .collect()
     }
-    pub fn get_sysid(&mut self, order_id: &str) -> Option<&str> {
-        match self.map.get(order_id) {
-            Some(v) => Some(v.sysid.as_ref().unwrap().as_str()),
-            None => None
-        }
-    }
 
     pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
         self.map.get(order_id)
@@ -132,11 +126,11 @@ impl OrderManager {
         self.map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
-            .map(|(_, vb)| vb.sysid.as_ref().unwrap().as_str())
+            .map(|(i, _)| i.as_str())
             .collect()
     }
 
-    pub fn get_sysids(&mut self) -> Vec<&str> {
-        self.map.iter().map(|x| x.1.sysid.as_ref().unwrap().as_str()).collect()
+    pub fn get_order_ids(&mut self) -> Vec<&str> {
+        self.map.iter().map(|x| x.0.as_str()).collect()
     }
 }

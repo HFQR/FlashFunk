@@ -81,7 +81,6 @@ pub struct OrderData {
     pub exchange: Option<Exchange>,
     pub datetime: Option<NaiveDateTime>,
     pub orderid: Option<String>,
-    pub sysid: Option<String>,
     pub order_type: OrderType,
     pub direction: Option<Direction>,
     pub offset: Offset,
@@ -98,7 +97,6 @@ impl Default for OrderData {
             exchange: None,
             datetime: None,
             orderid: None,
-            sysid: None,
             order_type: OrderType::LIMIT,
             direction: None,
             offset: Offset::NONE,
@@ -245,7 +243,8 @@ pub struct OrderRequest {
 /// Cancel Request
 #[derive(Clone, Debug)]
 pub struct CancelRequest {
-    pub sysid: String,
+    pub order_id: String,
+    pub symbol: String,
     pub exchange: Exchange,
 }
 

@@ -2657,6 +2657,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             // fixme : we need a fast solution to parse datetime
             let order_id = slice_to_string(&(*pOrder).OrderRef);
             let sysid = slice_to_string(&(*pOrder).OrderSysID);
+            let id = format!("{}_{}_{}", (*pOrder).SessionID, (*pOrder).FrontID, order_id);
             let (idx, refs) = split_into_vec(order_id.as_str());
             let time_string: String = slice_to_string(&(*pOrder).InsertTime);
             let date_string: String = slice_to_string(&(*pOrder).InsertDate);
@@ -2668,8 +2669,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                     symbol: slice_to_string(&(*pOrder).InstrumentID),
                     exchange: Some(Exchange::from((*pOrder).ExchangeID)),
                     datetime: Option::from(naive),
-                    orderid: Option::from(order_id),
-                    sysid: Option::from(sysid),
+                    orderid: Option::from(id),
                     order_type: OrderType::from((*pOrder).OrderPriceType),
                     direction: Some(Direction::from((*pOrder).Direction)),
                     offset: Offset::from((*pOrder).CombOffsetFlag),
@@ -3054,10 +3054,16 @@ impl Interface for TdApi {
 
     fn cancel_order(&mut self, req: CancelRequest) {
         self.request_id += 1;
+        let data = req.order_id.split("_").into_iter().map(|x| x.to_string()).collect::<Vec<String>>();
         let form = self.login_info();
         let action = CThostFtdcInputOrderActionField {
-            OrderSysID: req.sysid.to_c_slice(),
+            InstrumentID: req.symbol.to_c_slice(),
+            OrderRef: data[2].clone().to_c_slice(),
+            FrontID: data[1].parse::<i32>().unwrap() as c_int,
+            SessionID: data[0].parse::<i32>().unwrap() as c_int,
             ActionFlag: THOST_FTDC_AF_Delete as i8,
+            BrokerID: form._broke_id().to_c_slice(),
+            InvestorID: form._user_id().to_c_slice(),
             ExchangeID: get_order_exchange(req.exchange).to_c_slice(),
             ..CThostFtdcInputOrderActionField::default()
         };
