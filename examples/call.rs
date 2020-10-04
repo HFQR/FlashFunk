@@ -51,13 +51,12 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-        res.push(req.into());
-        for order in self.order_manager.get_active_orders() {
+        // res.push(req.into());
+        for order in self.order_manager.get_active_orders() { ;
             res.push(
                 CancelRequest {
                     sysid: order.sysid.as_ref().unwrap().to_string(),
                     exchange: Exchange::SHFE,
-                    symbol: order.symbol.to_string(),
                 }
                 .into(),
             );
@@ -67,7 +66,6 @@ impl Ac for Strategy {
 
     fn on_order(&mut self, order: &OrderData) {
         self.order_manager.add_order(order.clone()
-
         );
     }
 }
