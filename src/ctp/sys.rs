@@ -170,7 +170,6 @@ pub fn split_into_vec(order_id: &str) -> (usize, i32) {
             order_id[0..9].parse::<i32>().unwrap(),
         )
     } else {
-        (10000000 as usize, order_id.parse::<i32>().unwrap_or(0))
-        //  (10000000 as usize, order_id.parse::<i32>().unwrap())
+        (10000000 as usize, order_id.parse::<i32>().unwrap())
     }
 }

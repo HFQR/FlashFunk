@@ -11,6 +11,7 @@ pub mod constants;
 pub mod ctp;
 pub mod interface;
 pub mod structs;
+pub(crate) mod util;
 
 pub use ac::{Ac, IntoStrategy};
 

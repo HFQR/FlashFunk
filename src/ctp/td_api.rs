@@ -6,7 +6,7 @@ use std::os::raw::{c_char, c_int};
 
 use chrono::NaiveDateTime;
 
-use crate::app::{ConsumerStrategy, CtpbeeR, ProducerTdApi};
+use crate::app::{CtpbeeR, GroupReceiverStrategy, GroupSenderTdApi};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
@@ -2197,8 +2197,7 @@ pub trait TdCallApi {
     fn on_rtn_trading_notice(
         &mut self,
         pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {
-    }
+    ) -> () {}
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2551,7 +2550,7 @@ pub struct TdApi {
     trader_api: *mut CThostFtdcTraderApi,
     trader_spi: Option<*mut FCtpTdSpi>,
     path: CString,
-    producer: ProducerTdApi,
+    producer: GroupSenderTdApi,
     login_info: Option<LoginForm>,
     request_id: i32,
     frontid: c_int,
@@ -2655,9 +2654,9 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     }
     fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) -> () {
         let (order, idx) = unsafe {
-            // todo : we need a fast solution to parse datetime
+            // fixme : we need a fast solution to parse datetime
             let order_id = slice_to_string(&(*pOrder).OrderRef);
-            // fixme: maybe we need a char to  identify order from this system
+            let sysid = slice_to_string(&(*pOrder).OrderSysID);
             let (idx, refs) = split_into_vec(order_id.as_str());
             let time_string: String = slice_to_string(&(*pOrder).InsertTime);
             let date_string: String = slice_to_string(&(*pOrder).InsertDate);
@@ -2670,6 +2669,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                     exchange: Some(Exchange::from((*pOrder).ExchangeID)),
                     datetime: Option::from(naive),
                     orderid: Option::from(order_id),
+                    sysid: Option::from(sysid),
                     order_type: OrderType::from((*pOrder).OrderPriceType),
                     direction: Some(Direction::from((*pOrder).Direction)),
                     offset: Offset::from((*pOrder).CombOffsetFlag),
@@ -2753,8 +2753,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {
-    }
+    ) {}
 
     fn on_rsp_order_action(
         &mut self,
@@ -2902,7 +2901,7 @@ impl From<i8> for Direction {
 }
 
 impl TdApi {
-    pub fn new(path: String, producer: ProducerTdApi) -> TdApi {
+    pub fn new(path: String, producer: GroupSenderTdApi) -> TdApi {
         let p = CString::new(path).unwrap();
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
@@ -3055,16 +3054,10 @@ impl Interface for TdApi {
 
     fn cancel_order(&mut self, req: CancelRequest) {
         self.request_id += 1;
-        // fixme: cancel do not success =_=
         let form = self.login_info();
         let action = CThostFtdcInputOrderActionField {
-            InstrumentID: req.symbol.to_c_slice(),
-            OrderRef: req.orderid.to_c_slice(),
-            FrontID: self.frontid.clone(),
-            SessionID: self.sessionid.clone(),
+            OrderSysID: req.sysid.to_c_slice(),
             ActionFlag: THOST_FTDC_AF_Delete as i8,
-            BrokerID: form._broke_id().to_c_slice(),
-            InvestorID: form._broke_id().to_c_slice(),
             ExchangeID: get_order_exchange(req.exchange).to_c_slice(),
             ..CThostFtdcInputOrderActionField::default()
         };

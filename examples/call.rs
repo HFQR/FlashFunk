@@ -51,13 +51,13 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-        // res.push(req.into());
-        for id in self.order_manager.get_active_ids() {
+        res.push(req.into());
+        for order in self.order_manager.get_active_orders() {
             res.push(
                 CancelRequest {
-                    orderid: id.to_string(),
+                    sysid: order.sysid.as_ref().unwrap().to_string(),
                     exchange: Exchange::SHFE,
-                    symbol: tick.symbol.to_string(),
+                    symbol: order.symbol.to_string(),
                 }
                 .into(),
             );
@@ -66,43 +66,12 @@ impl Ac for Strategy {
     }
 
     fn on_order(&mut self, order: &OrderData) {
-        self.order_manager.add_order(order.clone());
+        self.order_manager.add_order(order.clone()
+
+        );
     }
 }
 
-#[derive(Strategy)]
-#[name("阿瓜")]
-#[symbol("rb2105")]
-struct Strategy2;
-
-impl Ac for Strategy2 {
-    fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
-        // println!(
-        //     "策略{}收到行情 symbol: {}, time: {:?} price: {}",
-        //     Self::name(),
-        //     tick.symbol,
-        //     tick.datetime.unwrap(),
-        //     tick.last_price
-        // );
-        let mut res = Vec::new();
-        if tick.last_price > 3520.0 {
-            let req = OrderRequest {
-                symbol: "rb2105".to_string(),
-                exchange: Exchange::SHFE,
-                direction: Direction::SHORT,
-                order_type: OrderType::LIMIT,
-                volume: 1.0,
-                price: tick.last_price,
-                offset: Offset::OPEN,
-                reference: None,
-            };
-            // res.push(req.into());
-        };
-        res
-    }
-
-    fn on_order(&mut self, order: &OrderData) {}
-}
 
 fn main() {
     let login_form = LoginForm::new()
