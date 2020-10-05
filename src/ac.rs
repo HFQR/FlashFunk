@@ -11,6 +11,7 @@ pub trait IntoStrategy: Sized + Send + Ac + 'static {
             str: Box::new(self),
             name: Self::name(),
             symbols: Self::local_symbol(),
+            _order_manager: OrderManager::new(),
         }
     }
 
@@ -23,11 +24,16 @@ pub struct __Strategy {
     str: Box<dyn Ac + Send>,
     name: &'static str,
     symbols: Vec<&'static str>,
+    _order_manager: OrderManager,
 }
 
 impl __Strategy {
     pub fn symbols(&self) -> &[&'static str] {
         &self.symbols
+    }
+
+    pub fn order_manager(&mut self) -> &mut OrderManager {
+        &mut self._order_manager
     }
 }
 

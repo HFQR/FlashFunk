@@ -66,8 +66,14 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-        println!("行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}", tick.last_price,
-                 tick.bid_price(0), tick.ask_price(0), tick.bid_volume(0), tick.ask_volume(0));
+        println!(
+            "行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}",
+            tick.last_price,
+            tick.bid_price(0),
+            tick.ask_price(0),
+            tick.bid_volume(0),
+            tick.ask_volume(0)
+        );
 
         self.quote.update_tick(tick);
 
@@ -87,11 +93,9 @@ impl Ac for Strategy {
     }
 
     fn on_order(&mut self, order: &OrderData) {
-        self.order_manager.add_order(order.clone()
-        );
+        // self.order_manager.add_order(order);
     }
 }
-
 
 fn main() {
     let login_form = LoginForm::new()

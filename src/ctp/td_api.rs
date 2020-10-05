@@ -1,18 +1,23 @@
 use core::ffi::c_void;
 use core::ptr::slice_from_raw_parts;
 
+use std::borrow::Cow;
+use std::cmp::max;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 
 use chrono::NaiveDateTime;
 
-use crate::app::{CtpbeeR, GroupReceiverStrategy, GroupSenderTdApi};
+use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TradeData};
-use std::borrow::Cow;
-use std::cmp::max;
+use crate::structs::{CancelRequest, LoginForm, OrderData, OrderMeta, OrderRequest, TradeData};
+use crate::util::blocker::Blocker;
+use crate::util::channel::GroupSender;
+use bitflags::_core::sync::atomic::AtomicI32;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 /// et the api instance  for the TdCallApi
 unsafe fn get_trader_spi<'a>(spi: *mut c_void) -> &'a mut dyn TdCallApi {
@@ -23,7 +28,7 @@ unsafe fn get_trader_spi<'a>(spi: *mut c_void) -> &'a mut dyn TdCallApi {
 // extern "C" {}
 
 #[no_mangle]
-pub unsafe extern "C" fn RustCtpOnFrontConnected(this: *mut ::std::os::raw::c_void) -> () {
+pub unsafe extern "C" fn RustCtpOnFrontConnected(this: *mut ::std::os::raw::c_void) {
     let x = get_trader_spi(this);
     x.on_front_connected();
 }
@@ -32,7 +37,7 @@ pub unsafe extern "C" fn RustCtpOnFrontConnected(this: *mut ::std::os::raw::c_vo
 pub unsafe extern "C" fn RustCtpOnFrontDisconnected(
     this: *mut ::std::os::raw::c_void,
     nReason: c_int,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_front_disconnected(nReason);
 }
@@ -41,7 +46,7 @@ pub unsafe extern "C" fn RustCtpOnFrontDisconnected(
 pub unsafe extern "C" fn RustCtpOnHeartBeatWarning(
     this: *mut ::std::os::raw::c_void,
     nTimeLapse: c_int,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_heart_beat_warning(nTimeLapse);
 }
@@ -53,7 +58,7 @@ pub unsafe extern "C" fn RustCtpOnRspAuthenticate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_authenticate(pRspAuthenticateField, pRspInfo, nRequestID, bIsLast);
 }
@@ -65,7 +70,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserLogin(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_user_login(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
 }
@@ -77,7 +82,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserLogout(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_user_logout(pUserLogout, pRspInfo, nRequestID, bIsLast);
 }
@@ -89,7 +94,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserPasswordUpdate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_user_password_update(pUserPasswordUpdate, pRspInfo, nRequestID, bIsLast);
 }
@@ -101,7 +106,7 @@ pub unsafe extern "C" fn RustCtpOnRspTradingAccountPasswordUpdate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_trading_account_password_update(
         pTradingAccountPasswordUpdate,
@@ -118,7 +123,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserAuthMethod(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_user_auth_method(pRspUserAuthMethod, pRspInfo, nRequestID, bIsLast);
 }
@@ -130,7 +135,7 @@ pub unsafe extern "C" fn RustCtpOnRspGenUserCaptcha(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_gen_user_captcha(pRspGenUserCaptcha, pRspInfo, nRequestID, bIsLast);
 }
@@ -142,7 +147,7 @@ pub unsafe extern "C" fn RustCtpOnRspGenUserText(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_gen_user_text(pRspGenUserText, pRspInfo, nRequestID, bIsLast);
 }
@@ -154,7 +159,7 @@ pub unsafe extern "C" fn RustCtpOnRspOrderInsert(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_order_insert(pInputOrder, pRspInfo, nRequestID, bIsLast);
 }
@@ -166,7 +171,7 @@ pub unsafe extern "C" fn RustCtpOnRspParkedOrderInsert(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_parked_order_insert(pParkedOrder, pRspInfo, nRequestID, bIsLast);
 }
@@ -178,7 +183,7 @@ pub unsafe extern "C" fn RustCtpOnRspParkedOrderAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_parked_order_action(pParkedOrderAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -190,7 +195,7 @@ pub unsafe extern "C" fn RustCtpOnRspOrderAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_order_action(pInputOrderAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -202,7 +207,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryMaxOrderVolume(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_query_max_order_volume(pQueryMaxOrderVolume, pRspInfo, nRequestID, bIsLast);
 }
@@ -214,7 +219,7 @@ pub unsafe extern "C" fn RustCtpOnRspSettlementInfoConfirm(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_settlement_info_confirm(pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast);
 }
@@ -226,7 +231,7 @@ pub unsafe extern "C" fn RustCtpOnRspRemoveParkedOrder(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_remove_parked_order(pRemoveParkedOrder, pRspInfo, nRequestID, bIsLast);
 }
@@ -238,7 +243,7 @@ pub unsafe extern "C" fn RustCtpOnRspRemoveParkedOrderAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_remove_parked_order_action(pRemoveParkedOrderAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -250,7 +255,7 @@ pub unsafe extern "C" fn RustCtpOnRspExecOrderInsert(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_exec_order_insert(pInputExecOrder, pRspInfo, nRequestID, bIsLast);
 }
@@ -262,7 +267,7 @@ pub unsafe extern "C" fn RustCtpOnRspExecOrderAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_exec_order_action(pInputExecOrderAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -274,7 +279,7 @@ pub unsafe extern "C" fn RustCtpOnRspForQuoteInsert(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_for_quote_insert(pInputForQuote, pRspInfo, nRequestID, bIsLast);
 }
@@ -286,7 +291,7 @@ pub unsafe extern "C" fn RustCtpOnRspQuoteInsert(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_quote_insert(pInputQuote, pRspInfo, nRequestID, bIsLast);
 }
@@ -298,7 +303,7 @@ pub unsafe extern "C" fn RustCtpOnRspQuoteAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_quote_action(pInputQuoteAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -310,7 +315,7 @@ pub unsafe extern "C" fn RustCtpOnRspBatchOrderAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_batch_order_action(pInputBatchOrderAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -322,7 +327,7 @@ pub unsafe extern "C" fn RustCtpOnRspOptionSelfCloseInsert(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_option_self_close_insert(pInputOptionSelfClose, pRspInfo, nRequestID, bIsLast);
 }
@@ -334,7 +339,7 @@ pub unsafe extern "C" fn RustCtpOnRspOptionSelfCloseAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_option_self_close_action(pInputOptionSelfCloseAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -346,7 +351,7 @@ pub unsafe extern "C" fn RustCtpOnRspCombActionInsert(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_comb_action_insert(pInputCombAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -358,7 +363,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOrder(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_order(pOrder, pRspInfo, nRequestID, bIsLast);
 }
@@ -370,7 +375,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTrade(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_trade(pTrade, pRspInfo, nRequestID, bIsLast);
 }
@@ -382,7 +387,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorPosition(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_investor_position(pInvestorPosition, pRspInfo, nRequestID, bIsLast);
 }
@@ -394,7 +399,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTradingAccount(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_trading_account(pTradingAccount, pRspInfo, nRequestID, bIsLast);
 }
@@ -406,7 +411,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestor(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_investor(pInvestor, pRspInfo, nRequestID, bIsLast);
 }
@@ -418,7 +423,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTradingCode(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_trading_code(pTradingCode, pRspInfo, nRequestID, bIsLast);
 }
@@ -430,7 +435,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrumentMarginRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_instrument_margin_rate(pInstrumentMarginRate, pRspInfo, nRequestID, bIsLast);
 }
@@ -442,7 +447,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrumentCommissionRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_instrument_commission_rate(
         pInstrumentCommissionRate,
@@ -459,7 +464,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchange(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_exchange(pExchange, pRspInfo, nRequestID, bIsLast);
 }
@@ -471,7 +476,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryProduct(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_product(pProduct, pRspInfo, nRequestID, bIsLast);
 }
@@ -483,7 +488,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrument(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_instrument(pInstrument, pRspInfo, nRequestID, bIsLast);
 }
@@ -495,7 +500,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryDepthMarketData(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_depth_market_data(pDepthMarketData, pRspInfo, nRequestID, bIsLast);
 }
@@ -507,7 +512,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySettlementInfo(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_settlement_info(pSettlementInfo, pRspInfo, nRequestID, bIsLast);
 }
@@ -519,7 +524,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTransferBank(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_transfer_bank(pTransferBank, pRspInfo, nRequestID, bIsLast);
 }
@@ -531,7 +536,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorPositionDetail(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_investor_position_detail(pInvestorPositionDetail, pRspInfo, nRequestID, bIsLast);
 }
@@ -543,7 +548,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryNotice(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_notice(pNotice, pRspInfo, nRequestID, bIsLast);
 }
@@ -555,7 +560,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySettlementInfoConfirm(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_settlement_info_confirm(pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast);
 }
@@ -567,7 +572,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorPositionCombineDetail(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_investor_position_combine_detail(
         pInvestorPositionCombineDetail,
@@ -584,7 +589,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryCFMMCTradingAccountKey(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_c_f_m_m_c_trading_account_key(
         pCFMMCTradingAccountKey,
@@ -601,7 +606,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryEWarrantOffset(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_e_warrant_offset(pEWarrantOffset, pRspInfo, nRequestID, bIsLast);
 }
@@ -613,7 +618,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorProductGroupMargin(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_investor_product_group_margin(
         pInvestorProductGroupMargin,
@@ -630,7 +635,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchangeMarginRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_exchange_margin_rate(pExchangeMarginRate, pRspInfo, nRequestID, bIsLast);
 }
@@ -642,7 +647,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchangeMarginRateAdjust(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_exchange_margin_rate_adjust(
         pExchangeMarginRateAdjust,
@@ -659,7 +664,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchangeRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_exchange_rate(pExchangeRate, pRspInfo, nRequestID, bIsLast);
 }
@@ -671,7 +676,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentACIDMap(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_sec_agent_a_c_i_d_map(pSecAgentACIDMap, pRspInfo, nRequestID, bIsLast);
 }
@@ -683,7 +688,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryProductExchRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_product_exch_rate(pProductExchRate, pRspInfo, nRequestID, bIsLast);
 }
@@ -695,7 +700,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryProductGroup(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_product_group(pProductGroup, pRspInfo, nRequestID, bIsLast);
 }
@@ -707,7 +712,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryMMInstrumentCommissionRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_m_m_instrument_commission_rate(
         pMMInstrumentCommissionRate,
@@ -724,7 +729,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryMMOptionInstrCommRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_m_m_option_instr_comm_rate(pMMOptionInstrCommRate, pRspInfo, nRequestID, bIsLast);
 }
@@ -736,7 +741,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrumentOrderCommRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_instrument_order_comm_rate(
         pInstrumentOrderCommRate,
@@ -753,7 +758,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentTradingAccount(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_sec_agent_trading_account(pTradingAccount, pRspInfo, nRequestID, bIsLast);
 }
@@ -765,7 +770,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentCheckMode(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_sec_agent_check_mode(pSecAgentCheckMode, pRspInfo, nRequestID, bIsLast);
 }
@@ -777,7 +782,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentTradeInfo(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_sec_agent_trade_info(pSecAgentTradeInfo, pRspInfo, nRequestID, bIsLast);
 }
@@ -789,7 +794,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOptionInstrTradeCost(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_option_instr_trade_cost(pOptionInstrTradeCost, pRspInfo, nRequestID, bIsLast);
 }
@@ -801,7 +806,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOptionInstrCommRate(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_option_instr_comm_rate(pOptionInstrCommRate, pRspInfo, nRequestID, bIsLast);
 }
@@ -813,7 +818,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExecOrder(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_exec_order(pExecOrder, pRspInfo, nRequestID, bIsLast);
 }
@@ -825,7 +830,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryForQuote(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_for_quote(pForQuote, pRspInfo, nRequestID, bIsLast);
 }
@@ -837,7 +842,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryQuote(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_quote(pQuote, pRspInfo, nRequestID, bIsLast);
 }
@@ -849,7 +854,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOptionSelfClose(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_option_self_close(pOptionSelfClose, pRspInfo, nRequestID, bIsLast);
 }
@@ -861,7 +866,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestUnit(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_invest_unit(pInvestUnit, pRspInfo, nRequestID, bIsLast);
 }
@@ -873,7 +878,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryCombInstrumentGuard(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_comb_instrument_guard(pCombInstrumentGuard, pRspInfo, nRequestID, bIsLast);
 }
@@ -885,7 +890,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryCombAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_comb_action(pCombAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -897,7 +902,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTransferSerial(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_transfer_serial(pTransferSerial, pRspInfo, nRequestID, bIsLast);
 }
@@ -909,7 +914,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryAccountregister(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_accountregister(pAccountregister, pRspInfo, nRequestID, bIsLast);
 }
@@ -920,7 +925,7 @@ pub unsafe extern "C" fn RustCtpOnRspError(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_error(pRspInfo, nRequestID, bIsLast);
 }
@@ -929,7 +934,7 @@ pub unsafe extern "C" fn RustCtpOnRspError(
 pub unsafe extern "C" fn RustCtpOnRtnOrder(
     this: *mut ::std::os::raw::c_void,
     pOrder: *mut CThostFtdcOrderField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_order(pOrder);
 }
@@ -938,7 +943,7 @@ pub unsafe extern "C" fn RustCtpOnRtnOrder(
 pub unsafe extern "C" fn RustCtpOnRtnTrade(
     this: *mut ::std::os::raw::c_void,
     pTrade: *mut CThostFtdcTradeField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_trade(pTrade);
 }
@@ -948,7 +953,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOrderInsert(
     this: *mut ::std::os::raw::c_void,
     pInputOrder: *mut CThostFtdcInputOrderField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_order_insert(pInputOrder, pRspInfo);
 }
@@ -958,7 +963,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOrderAction(
     this: *mut ::std::os::raw::c_void,
     pOrderAction: *mut CThostFtdcOrderActionField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_order_action(pOrderAction, pRspInfo);
 }
@@ -967,7 +972,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOrderAction(
 pub unsafe extern "C" fn RustCtpOnRtnInstrumentStatus(
     this: *mut ::std::os::raw::c_void,
     pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_instrument_status(pInstrumentStatus);
 }
@@ -976,7 +981,7 @@ pub unsafe extern "C" fn RustCtpOnRtnInstrumentStatus(
 pub unsafe extern "C" fn RustCtpOnRtnBulletin(
     this: *mut ::std::os::raw::c_void,
     pBulletin: *mut CThostFtdcBulletinField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_bulletin(pBulletin);
 }
@@ -985,7 +990,7 @@ pub unsafe extern "C" fn RustCtpOnRtnBulletin(
 pub unsafe extern "C" fn RustCtpOnRtnTradingNotice(
     this: *mut ::std::os::raw::c_void,
     pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_trading_notice(pTradingNoticeInfo);
 }
@@ -994,7 +999,7 @@ pub unsafe extern "C" fn RustCtpOnRtnTradingNotice(
 pub unsafe extern "C" fn RustCtpOnRtnErrorConditionalOrder(
     this: *mut ::std::os::raw::c_void,
     pErrorConditionalOrder: *mut CThostFtdcErrorConditionalOrderField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_error_conditional_order(pErrorConditionalOrder);
 }
@@ -1003,7 +1008,7 @@ pub unsafe extern "C" fn RustCtpOnRtnErrorConditionalOrder(
 pub unsafe extern "C" fn RustCtpOnRtnExecOrder(
     this: *mut ::std::os::raw::c_void,
     pExecOrder: *mut CThostFtdcExecOrderField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_exec_order(pExecOrder);
 }
@@ -1013,7 +1018,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnExecOrderInsert(
     this: *mut ::std::os::raw::c_void,
     pInputExecOrder: *mut CThostFtdcInputExecOrderField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_exec_order_insert(pInputExecOrder, pRspInfo);
 }
@@ -1023,7 +1028,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnExecOrderAction(
     this: *mut ::std::os::raw::c_void,
     pExecOrderAction: *mut CThostFtdcExecOrderActionField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_exec_order_action(pExecOrderAction, pRspInfo);
 }
@@ -1033,7 +1038,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnForQuoteInsert(
     this: *mut ::std::os::raw::c_void,
     pInputForQuote: *mut CThostFtdcInputForQuoteField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_for_quote_insert(pInputForQuote, pRspInfo);
 }
@@ -1042,7 +1047,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnForQuoteInsert(
 pub unsafe extern "C" fn RustCtpOnRtnQuote(
     this: *mut ::std::os::raw::c_void,
     pQuote: *mut CThostFtdcQuoteField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_quote(pQuote);
 }
@@ -1052,7 +1057,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQuoteInsert(
     this: *mut ::std::os::raw::c_void,
     pInputQuote: *mut CThostFtdcInputQuoteField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_quote_insert(pInputQuote, pRspInfo);
 }
@@ -1062,7 +1067,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQuoteAction(
     this: *mut ::std::os::raw::c_void,
     pQuoteAction: *mut CThostFtdcQuoteActionField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_quote_action(pQuoteAction, pRspInfo);
 }
@@ -1071,7 +1076,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQuoteAction(
 pub unsafe extern "C" fn RustCtpOnRtnForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
     pForQuoteRsp: *mut CThostFtdcForQuoteRspField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_for_quote_rsp(pForQuoteRsp);
 }
@@ -1080,7 +1085,7 @@ pub unsafe extern "C" fn RustCtpOnRtnForQuoteRsp(
 pub unsafe extern "C" fn RustCtpOnRtnCFMMCTradingAccountToken(
     this: *mut ::std::os::raw::c_void,
     pCFMMCTradingAccountToken: *mut CThostFtdcCFMMCTradingAccountTokenField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_c_f_m_m_c_trading_account_token(pCFMMCTradingAccountToken);
 }
@@ -1090,7 +1095,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnBatchOrderAction(
     this: *mut ::std::os::raw::c_void,
     pBatchOrderAction: *mut CThostFtdcBatchOrderActionField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_batch_order_action(pBatchOrderAction, pRspInfo);
 }
@@ -1099,7 +1104,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnBatchOrderAction(
 pub unsafe extern "C" fn RustCtpOnRtnOptionSelfClose(
     this: *mut ::std::os::raw::c_void,
     pOptionSelfClose: *mut CThostFtdcOptionSelfCloseField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_option_self_close(pOptionSelfClose);
 }
@@ -1109,7 +1114,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOptionSelfCloseInsert(
     this: *mut ::std::os::raw::c_void,
     pInputOptionSelfClose: *mut CThostFtdcInputOptionSelfCloseField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_option_self_close_insert(pInputOptionSelfClose, pRspInfo);
 }
@@ -1119,7 +1124,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOptionSelfCloseAction(
     this: *mut ::std::os::raw::c_void,
     pOptionSelfCloseAction: *mut CThostFtdcOptionSelfCloseActionField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_option_self_close_action(pOptionSelfCloseAction, pRspInfo);
 }
@@ -1128,7 +1133,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOptionSelfCloseAction(
 pub unsafe extern "C" fn RustCtpOnRtnCombAction(
     this: *mut ::std::os::raw::c_void,
     pCombAction: *mut CThostFtdcCombActionField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_comb_action(pCombAction);
 }
@@ -1138,7 +1143,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnCombActionInsert(
     this: *mut ::std::os::raw::c_void,
     pInputCombAction: *mut CThostFtdcInputCombActionField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_comb_action_insert(pInputCombAction, pRspInfo);
 }
@@ -1150,7 +1155,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryContractBank(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_contract_bank(pContractBank, pRspInfo, nRequestID, bIsLast);
 }
@@ -1162,7 +1167,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryParkedOrder(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_parked_order(pParkedOrder, pRspInfo, nRequestID, bIsLast);
 }
@@ -1174,7 +1179,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryParkedOrderAction(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_parked_order_action(pParkedOrderAction, pRspInfo, nRequestID, bIsLast);
 }
@@ -1186,7 +1191,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTradingNotice(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_trading_notice(pTradingNotice, pRspInfo, nRequestID, bIsLast);
 }
@@ -1198,7 +1203,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryBrokerTradingParams(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_broker_trading_params(pBrokerTradingParams, pRspInfo, nRequestID, bIsLast);
 }
@@ -1210,7 +1215,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryBrokerTradingAlgos(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_qry_broker_trading_algos(pBrokerTradingAlgos, pRspInfo, nRequestID, bIsLast);
 }
@@ -1222,7 +1227,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryCFMMCTradingAccountToken(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_query_c_f_m_m_c_trading_account_token(
         pQueryCFMMCTradingAccountToken,
@@ -1236,7 +1241,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryCFMMCTradingAccountToken(
 pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByBank(
     this: *mut ::std::os::raw::c_void,
     pRspTransfer: *mut CThostFtdcRspTransferField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_from_bank_to_future_by_bank(pRspTransfer);
 }
@@ -1245,7 +1250,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByBank(
 pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByBank(
     this: *mut ::std::os::raw::c_void,
     pRspTransfer: *mut CThostFtdcRspTransferField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_from_future_to_bank_by_bank(pRspTransfer);
 }
@@ -1254,7 +1259,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByBank(
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByBank(
     this: *mut ::std::os::raw::c_void,
     pRspRepeal: *mut CThostFtdcRspRepealField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_repeal_from_bank_to_future_by_bank(pRspRepeal);
 }
@@ -1263,7 +1268,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByBank(
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByBank(
     this: *mut ::std::os::raw::c_void,
     pRspRepeal: *mut CThostFtdcRspRepealField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_repeal_from_future_to_bank_by_bank(pRspRepeal);
 }
@@ -1272,7 +1277,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByBank(
 pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByFuture(
     this: *mut ::std::os::raw::c_void,
     pRspTransfer: *mut CThostFtdcRspTransferField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_from_bank_to_future_by_future(pRspTransfer);
 }
@@ -1281,7 +1286,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByFuture(
 pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByFuture(
     this: *mut ::std::os::raw::c_void,
     pRspTransfer: *mut CThostFtdcRspTransferField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_from_future_to_bank_by_future(pRspTransfer);
 }
@@ -1290,7 +1295,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByFuture(
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFutureManual(
     this: *mut ::std::os::raw::c_void,
     pRspRepeal: *mut CThostFtdcRspRepealField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_repeal_from_bank_to_future_by_future_manual(pRspRepeal);
 }
@@ -1299,7 +1304,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFutureManual(
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByFutureManual(
     this: *mut ::std::os::raw::c_void,
     pRspRepeal: *mut CThostFtdcRspRepealField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_repeal_from_future_to_bank_by_future_manual(pRspRepeal);
 }
@@ -1308,7 +1313,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByFutureManual(
 pub unsafe extern "C" fn RustCtpOnRtnQueryBankBalanceByFuture(
     this: *mut ::std::os::raw::c_void,
     pNotifyQueryAccount: *mut CThostFtdcNotifyQueryAccountField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_query_bank_balance_by_future(pNotifyQueryAccount);
 }
@@ -1318,7 +1323,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnBankToFutureByFuture(
     this: *mut ::std::os::raw::c_void,
     pReqTransfer: *mut CThostFtdcReqTransferField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_bank_to_future_by_future(pReqTransfer, pRspInfo);
 }
@@ -1328,7 +1333,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnFutureToBankByFuture(
     this: *mut ::std::os::raw::c_void,
     pReqTransfer: *mut CThostFtdcReqTransferField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_future_to_bank_by_future(pReqTransfer, pRspInfo);
 }
@@ -1338,7 +1343,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnRepealBankToFutureByFutureManual(
     this: *mut ::std::os::raw::c_void,
     pReqRepeal: *mut CThostFtdcReqRepealField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_repeal_bank_to_future_by_future_manual(pReqRepeal, pRspInfo);
 }
@@ -1348,7 +1353,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnRepealFutureToBankByFutureManual(
     this: *mut ::std::os::raw::c_void,
     pReqRepeal: *mut CThostFtdcReqRepealField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_repeal_future_to_bank_by_future_manual(pReqRepeal, pRspInfo);
 }
@@ -1358,7 +1363,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQueryBankBalanceByFuture(
     this: *mut ::std::os::raw::c_void,
     pReqQueryAccount: *mut CThostFtdcReqQueryAccountField,
     pRspInfo: *mut CThostFtdcRspInfoField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_err_rtn_query_bank_balance_by_future(pReqQueryAccount, pRspInfo);
 }
@@ -1367,7 +1372,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQueryBankBalanceByFuture(
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFuture(
     this: *mut ::std::os::raw::c_void,
     pRspRepeal: *mut CThostFtdcRspRepealField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_repeal_from_bank_to_future_by_future(pRspRepeal);
 }
@@ -1376,7 +1381,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFuture(
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByFuture(
     this: *mut ::std::os::raw::c_void,
     pRspRepeal: *mut CThostFtdcRspRepealField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_repeal_from_future_to_bank_by_future(pRspRepeal);
 }
@@ -1388,7 +1393,7 @@ pub unsafe extern "C" fn RustCtpOnRspFromBankToFutureByFuture(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_from_bank_to_future_by_future(pReqTransfer, pRspInfo, nRequestID, bIsLast);
 }
@@ -1400,7 +1405,7 @@ pub unsafe extern "C" fn RustCtpOnRspFromFutureToBankByFuture(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_from_future_to_bank_by_future(pReqTransfer, pRspInfo, nRequestID, bIsLast);
 }
@@ -1412,7 +1417,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryBankAccountMoneyByFuture(
     pRspInfo: *mut CThostFtdcRspInfoField,
     nRequestID: c_int,
     bIsLast: bool,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rsp_query_bank_account_money_by_future(pReqQueryAccount, pRspInfo, nRequestID, bIsLast);
 }
@@ -1421,7 +1426,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryBankAccountMoneyByFuture(
 pub unsafe extern "C" fn RustCtpOnRtnOpenAccountByBank(
     this: *mut ::std::os::raw::c_void,
     pOpenAccount: *mut CThostFtdcOpenAccountField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_open_account_by_bank(pOpenAccount);
 }
@@ -1430,7 +1435,7 @@ pub unsafe extern "C" fn RustCtpOnRtnOpenAccountByBank(
 pub unsafe extern "C" fn RustCtpOnRtnCancelAccountByBank(
     this: *mut ::std::os::raw::c_void,
     pCancelAccount: *mut CThostFtdcCancelAccountField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_cancel_account_by_bank(pCancelAccount);
 }
@@ -1439,7 +1444,7 @@ pub unsafe extern "C" fn RustCtpOnRtnCancelAccountByBank(
 pub unsafe extern "C" fn RustCtpOnRtnChangeAccountByBank(
     this: *mut ::std::os::raw::c_void,
     pChangeAccount: *mut CThostFtdcChangeAccountField,
-) -> () {
+) {
     let x = get_trader_spi(this);
     x.on_rtn_change_account_by_bank(pChangeAccount);
 }
@@ -1448,15 +1453,15 @@ pub unsafe extern "C" fn RustCtpOnRtnChangeAccountByBank(
 /// 此处应该天有很多地方的回调方法
 /// 比如on_front_connected等， 此处的代码应该被python的cpp_generator快速生成
 pub trait TdCallApi {
-    fn on_front_connected(&mut self) -> () {
+    fn on_front_connected(&mut self) {
         println!("function callback: OnFrontConnected");
     }
 
-    fn on_front_disconnected(&mut self, nReason: c_int) -> () {
+    fn on_front_disconnected(&mut self, nReason: c_int) {
         println!("function callback: OnFrontDisconnected");
     }
 
-    fn on_heart_beat_warning(&mut self, nTimeLapse: c_int) -> () {
+    fn on_heart_beat_warning(&mut self, nTimeLapse: c_int) {
         println!("function callback: OnHeartBeatWarning");
     }
 
@@ -1466,7 +1471,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspAuthenticate");
     }
 
@@ -1476,7 +1481,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspUserLogin");
     }
 
@@ -1486,7 +1491,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspUserLogout");
     }
 
@@ -1496,7 +1501,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspUserPasswordUpdate");
     }
 
@@ -1506,7 +1511,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspTradingAccountPasswordUpdate");
     }
 
@@ -1516,7 +1521,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspUserAuthMethod");
     }
 
@@ -1526,7 +1531,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspGenUserCaptcha");
     }
 
@@ -1536,7 +1541,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspGenUserText");
     }
 
@@ -1546,7 +1551,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspOrderInsert");
     }
 
@@ -1556,7 +1561,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspParkedOrderInsert");
     }
 
@@ -1566,7 +1571,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspParkedOrderAction");
     }
 
@@ -1576,7 +1581,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspOrderAction");
     }
 
@@ -1586,7 +1591,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQueryMaxOrderVolume");
     }
 
@@ -1596,7 +1601,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspSettlementInfoConfirm");
     }
 
@@ -1606,7 +1611,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspRemoveParkedOrder");
     }
 
@@ -1616,7 +1621,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspRemoveParkedOrderAction");
     }
 
@@ -1626,7 +1631,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspExecOrderInsert");
     }
 
@@ -1636,7 +1641,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspExecOrderAction");
     }
 
@@ -1646,7 +1651,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspForQuoteInsert");
     }
 
@@ -1656,7 +1661,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQuoteInsert");
     }
 
@@ -1666,7 +1671,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQuoteAction");
     }
 
@@ -1676,7 +1681,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspBatchOrderAction");
     }
 
@@ -1686,7 +1691,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspOptionSelfCloseInsert");
     }
 
@@ -1696,7 +1701,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspOptionSelfCloseAction");
     }
 
@@ -1706,7 +1711,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspCombActionInsert");
     }
 
@@ -1716,7 +1721,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryOrder");
     }
 
@@ -1726,7 +1731,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryTrade");
     }
 
@@ -1736,7 +1741,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInvestorPosition");
     }
 
@@ -1746,7 +1751,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryTradingAccount");
     }
 
@@ -1756,7 +1761,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInvestor");
     }
 
@@ -1766,7 +1771,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryTradingCode");
     }
 
@@ -1776,7 +1781,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInstrumentMarginRate");
     }
 
@@ -1786,7 +1791,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInstrumentCommissionRate");
     }
 
@@ -1796,7 +1801,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryExchange");
     }
 
@@ -1806,7 +1811,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryProduct");
     }
 
@@ -1816,7 +1821,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInstrument");
     }
 
@@ -1826,7 +1831,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryDepthMarketData");
     }
 
@@ -1836,7 +1841,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQrySettlementInfo");
     }
 
@@ -1846,7 +1851,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryTransferBank");
     }
 
@@ -1856,7 +1861,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInvestorPositionDetail");
     }
 
@@ -1866,7 +1871,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryNotice");
     }
 
@@ -1876,7 +1881,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQrySettlementInfoConfirm");
     }
 
@@ -1886,7 +1891,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInvestorPositionCombineDetail");
     }
 
@@ -1896,7 +1901,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryCFMMCTradingAccountKey");
     }
 
@@ -1906,7 +1911,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryEWarrantOffset");
     }
 
@@ -1916,7 +1921,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInvestorProductGroupMargin");
     }
 
@@ -1926,7 +1931,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryExchangeMarginRate");
     }
 
@@ -1936,7 +1941,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryExchangeMarginRateAdjust");
     }
 
@@ -1946,7 +1951,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryExchangeRate");
     }
 
@@ -1956,7 +1961,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQrySecAgentACIDMap");
     }
 
@@ -1966,7 +1971,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryProductExchRate");
     }
 
@@ -1976,7 +1981,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryProductGroup");
     }
 
@@ -1986,7 +1991,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryMMInstrumentCommissionRate");
     }
 
@@ -1996,7 +2001,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryMMOptionInstrCommRate");
     }
 
@@ -2006,7 +2011,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInstrumentOrderCommRate");
     }
 
@@ -2016,7 +2021,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQrySecAgentTradingAccount");
     }
 
@@ -2026,7 +2031,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQrySecAgentCheckMode");
     }
 
@@ -2036,7 +2041,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQrySecAgentTradeInfo");
     }
 
@@ -2046,7 +2051,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryOptionInstrTradeCost");
     }
 
@@ -2056,7 +2061,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryOptionInstrCommRate");
     }
 
@@ -2066,7 +2071,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryExecOrder");
     }
 
@@ -2076,7 +2081,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryForQuote");
     }
 
@@ -2086,7 +2091,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryQuote");
     }
 
@@ -2096,7 +2101,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryOptionSelfClose");
     }
 
@@ -2106,7 +2111,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryInvestUnit");
     }
 
@@ -2116,7 +2121,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryCombInstrumentGuard");
     }
 
@@ -2126,7 +2131,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryCombAction");
     }
 
@@ -2136,7 +2141,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryTransferSerial");
     }
 
@@ -2146,7 +2151,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryAccountregister");
     }
 
@@ -2155,15 +2160,15 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspError");
     }
 
-    fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) -> () {
+    fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
         println!("function callback: OnRtnOrder");
     }
 
-    fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) -> () {
+    fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
         println!("function callback: OnRtnTrade");
     }
 
@@ -2171,7 +2176,7 @@ pub trait TdCallApi {
         &mut self,
         pInputOrder: *mut CThostFtdcInputOrderField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnOrderInsert");
     }
 
@@ -2179,34 +2184,32 @@ pub trait TdCallApi {
         &mut self,
         pOrderAction: *mut CThostFtdcOrderActionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnOrderAction");
     }
 
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnInstrumentStatus");
     }
 
-    fn on_rtn_bulletin(&mut self, pBulletin: *mut CThostFtdcBulletinField) -> () {
+    fn on_rtn_bulletin(&mut self, pBulletin: *mut CThostFtdcBulletinField) {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(
-        &mut self,
-        pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField,
-    ) -> () {}
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
         pErrorConditionalOrder: *mut CThostFtdcErrorConditionalOrderField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnErrorConditionalOrder");
     }
 
-    fn on_rtn_exec_order(&mut self, pExecOrder: *mut CThostFtdcExecOrderField) -> () {
+    fn on_rtn_exec_order(&mut self, pExecOrder: *mut CThostFtdcExecOrderField) {
         println!("function callback: OnRtnExecOrder");
     }
 
@@ -2214,7 +2217,7 @@ pub trait TdCallApi {
         &mut self,
         pInputExecOrder: *mut CThostFtdcInputExecOrderField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnExecOrderInsert");
     }
 
@@ -2222,7 +2225,7 @@ pub trait TdCallApi {
         &mut self,
         pExecOrderAction: *mut CThostFtdcExecOrderActionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnExecOrderAction");
     }
 
@@ -2230,11 +2233,11 @@ pub trait TdCallApi {
         &mut self,
         pInputForQuote: *mut CThostFtdcInputForQuoteField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnForQuoteInsert");
     }
 
-    fn on_rtn_quote(&mut self, pQuote: *mut CThostFtdcQuoteField) -> () {
+    fn on_rtn_quote(&mut self, pQuote: *mut CThostFtdcQuoteField) {
         println!("function callback: OnRtnQuote");
     }
 
@@ -2242,7 +2245,7 @@ pub trait TdCallApi {
         &mut self,
         pInputQuote: *mut CThostFtdcInputQuoteField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnQuoteInsert");
     }
 
@@ -2250,18 +2253,18 @@ pub trait TdCallApi {
         &mut self,
         pQuoteAction: *mut CThostFtdcQuoteActionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnQuoteAction");
     }
 
-    fn on_rtn_for_quote_rsp(&mut self, pForQuoteRsp: *mut CThostFtdcForQuoteRspField) -> () {
+    fn on_rtn_for_quote_rsp(&mut self, pForQuoteRsp: *mut CThostFtdcForQuoteRspField) {
         println!("function callback: OnRtnForQuoteRsp");
     }
 
     fn on_rtn_c_f_m_m_c_trading_account_token(
         &mut self,
         pCFMMCTradingAccountToken: *mut CThostFtdcCFMMCTradingAccountTokenField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnCFMMCTradingAccountToken");
     }
 
@@ -2269,14 +2272,11 @@ pub trait TdCallApi {
         &mut self,
         pBatchOrderAction: *mut CThostFtdcBatchOrderActionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnBatchOrderAction");
     }
 
-    fn on_rtn_option_self_close(
-        &mut self,
-        pOptionSelfClose: *mut CThostFtdcOptionSelfCloseField,
-    ) -> () {
+    fn on_rtn_option_self_close(&mut self, pOptionSelfClose: *mut CThostFtdcOptionSelfCloseField) {
         println!("function callback: OnRtnOptionSelfClose");
     }
 
@@ -2284,7 +2284,7 @@ pub trait TdCallApi {
         &mut self,
         pInputOptionSelfClose: *mut CThostFtdcInputOptionSelfCloseField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnOptionSelfCloseInsert");
     }
 
@@ -2292,11 +2292,11 @@ pub trait TdCallApi {
         &mut self,
         pOptionSelfCloseAction: *mut CThostFtdcOptionSelfCloseActionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnOptionSelfCloseAction");
     }
 
-    fn on_rtn_comb_action(&mut self, pCombAction: *mut CThostFtdcCombActionField) -> () {
+    fn on_rtn_comb_action(&mut self, pCombAction: *mut CThostFtdcCombActionField) {
         println!("function callback: OnRtnCombAction");
     }
 
@@ -2304,7 +2304,7 @@ pub trait TdCallApi {
         &mut self,
         pInputCombAction: *mut CThostFtdcInputCombActionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnCombActionInsert");
     }
 
@@ -2314,7 +2314,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryContractBank");
     }
 
@@ -2324,7 +2324,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryParkedOrder");
     }
 
@@ -2334,7 +2334,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryParkedOrderAction");
     }
 
@@ -2344,7 +2344,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryTradingNotice");
     }
 
@@ -2354,7 +2354,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryBrokerTradingParams");
     }
 
@@ -2364,7 +2364,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQryBrokerTradingAlgos");
     }
 
@@ -2374,70 +2374,70 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQueryCFMMCTradingAccountToken");
     }
 
     fn on_rtn_from_bank_to_future_by_bank(
         &mut self,
         pRspTransfer: *mut CThostFtdcRspTransferField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnFromBankToFutureByBank");
     }
 
     fn on_rtn_from_future_to_bank_by_bank(
         &mut self,
         pRspTransfer: *mut CThostFtdcRspTransferField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnFromFutureToBankByBank");
     }
 
     fn on_rtn_repeal_from_bank_to_future_by_bank(
         &mut self,
         pRspRepeal: *mut CThostFtdcRspRepealField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnRepealFromBankToFutureByBank");
     }
 
     fn on_rtn_repeal_from_future_to_bank_by_bank(
         &mut self,
         pRspRepeal: *mut CThostFtdcRspRepealField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnRepealFromFutureToBankByBank");
     }
 
     fn on_rtn_from_bank_to_future_by_future(
         &mut self,
         pRspTransfer: *mut CThostFtdcRspTransferField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnFromBankToFutureByFuture");
     }
 
     fn on_rtn_from_future_to_bank_by_future(
         &mut self,
         pRspTransfer: *mut CThostFtdcRspTransferField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnFromFutureToBankByFuture");
     }
 
     fn on_rtn_repeal_from_bank_to_future_by_future_manual(
         &mut self,
         pRspRepeal: *mut CThostFtdcRspRepealField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnRepealFromBankToFutureByFutureManual");
     }
 
     fn on_rtn_repeal_from_future_to_bank_by_future_manual(
         &mut self,
         pRspRepeal: *mut CThostFtdcRspRepealField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnRepealFromFutureToBankByFutureManual");
     }
 
     fn on_rtn_query_bank_balance_by_future(
         &mut self,
         pNotifyQueryAccount: *mut CThostFtdcNotifyQueryAccountField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnQueryBankBalanceByFuture");
     }
 
@@ -2445,7 +2445,7 @@ pub trait TdCallApi {
         &mut self,
         pReqTransfer: *mut CThostFtdcReqTransferField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnBankToFutureByFuture");
     }
 
@@ -2453,7 +2453,7 @@ pub trait TdCallApi {
         &mut self,
         pReqTransfer: *mut CThostFtdcReqTransferField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnFutureToBankByFuture");
     }
 
@@ -2461,7 +2461,7 @@ pub trait TdCallApi {
         &mut self,
         pReqRepeal: *mut CThostFtdcReqRepealField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnRepealBankToFutureByFutureManual");
     }
 
@@ -2469,7 +2469,7 @@ pub trait TdCallApi {
         &mut self,
         pReqRepeal: *mut CThostFtdcReqRepealField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnRepealFutureToBankByFutureManual");
     }
 
@@ -2477,21 +2477,21 @@ pub trait TdCallApi {
         &mut self,
         pReqQueryAccount: *mut CThostFtdcReqQueryAccountField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         println!("function callback: OnErrRtnQueryBankBalanceByFuture");
     }
 
     fn on_rtn_repeal_from_bank_to_future_by_future(
         &mut self,
         pRspRepeal: *mut CThostFtdcRspRepealField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnRepealFromBankToFutureByFuture");
     }
 
     fn on_rtn_repeal_from_future_to_bank_by_future(
         &mut self,
         pRspRepeal: *mut CThostFtdcRspRepealField,
-    ) -> () {
+    ) {
         println!("function callback: OnRtnRepealFromFutureToBankByFuture");
     }
 
@@ -2501,7 +2501,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspFromBankToFutureByFuture");
     }
 
@@ -2511,7 +2511,7 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspFromFutureToBankByFuture");
     }
 
@@ -2521,25 +2521,19 @@ pub trait TdCallApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) -> () {
+    ) {
         println!("function callback: OnRspQueryBankAccountMoneyByFuture");
     }
 
-    fn on_rtn_open_account_by_bank(&mut self, pOpenAccount: *mut CThostFtdcOpenAccountField) -> () {
+    fn on_rtn_open_account_by_bank(&mut self, pOpenAccount: *mut CThostFtdcOpenAccountField) {
         println!("function callback: OnRtnOpenAccountByBank");
     }
 
-    fn on_rtn_cancel_account_by_bank(
-        &mut self,
-        pCancelAccount: *mut CThostFtdcCancelAccountField,
-    ) -> () {
+    fn on_rtn_cancel_account_by_bank(&mut self, pCancelAccount: *mut CThostFtdcCancelAccountField) {
         println!("function callback: OnRtnCancelAccountByBank");
     }
 
-    fn on_rtn_change_account_by_bank(
-        &mut self,
-        pChangeAccount: *mut CThostFtdcChangeAccountField,
-    ) -> () {
+    fn on_rtn_change_account_by_bank(&mut self, pChangeAccount: *mut CThostFtdcChangeAccountField) {
         println!("function callback: OnRtnChangeAccountByBank");
     }
 }
@@ -2550,30 +2544,67 @@ pub struct TdApi {
     trader_api: *mut CThostFtdcTraderApi,
     trader_spi: Option<*mut FCtpTdSpi>,
     path: CString,
-    producer: GroupSenderTdApi,
     login_info: Option<LoginForm>,
     request_id: i32,
-    frontid: c_int,
-    sessionid: c_int,
+    front_id: i32,
+    session_id: i32,
 }
 
 impl TdApi {
     fn login_info(&self) -> &LoginForm {
         self.login_info.as_ref().unwrap()
     }
+
+    pub(crate) fn session_id(&self) -> i32 {
+        self.session_id
+    }
+
+    pub(crate) fn front_id(&self) -> i32 {
+        self.front_id
+    }
 }
 
-pub struct CallDataCollector<'a> {
+pub struct CallDataCollector {
     login_status: bool,
     connect_status: bool,
-    api: &'a mut TdApi,
+    sender: GroupSender<TdApiMessage>,
+    blocker: Option<TdApiBlocker>,
 }
 
-impl<'a> TdCallApi for CallDataCollector<'a> {
+struct TdApiBlockerInner {
+    front_id: AtomicI32,
+    session_id: AtomicI32,
+    step1: Blocker,
+    step2: Blocker,
+    step3: Blocker,
+}
+
+struct TdApiBlocker(Arc<TdApiBlockerInner>);
+
+impl Clone for TdApiBlocker {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl TdApiBlocker {
+    fn new() -> Self {
+        Self(Arc::new(TdApiBlockerInner {
+            front_id: AtomicI32::new(0),
+            session_id: AtomicI32::new(0),
+            step1: Default::default(),
+            step2: Default::default(),
+            step3: Default::default(),
+        }))
+    }
+}
+
+impl TdCallApi for CallDataCollector {
     fn on_front_connected(&mut self) {
         println!(">>> Td Front Connected");
-        self.api.auth();
+        self.blocker.as_ref().unwrap().0.step1.unblock();
     }
+
     fn on_rsp_authenticate(
         &mut self,
         pRspAuthenticateField: *mut CThostFtdcRspAuthenticateField,
@@ -2584,7 +2615,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
                 println!(">>> Td Auth successful");
-                self.api.login();
+                self.blocker.as_ref().unwrap().0.step2.unblock();
             }
             Err(e) => {
                 println!(">>> Td Auth failed, id: {} msg: {}", e.id, e.msg);
@@ -2610,17 +2641,26 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                     );
                 }
 
+                let blocker = self.blocker.take().unwrap();
+
                 unsafe {
-                    self.api.frontid = (*pRspUserLogin).FrontID;
-                    self.api.sessionid = (*pRspUserLogin).SessionID;
+                    blocker
+                        .0
+                        .front_id
+                        .store((*pRspUserLogin).FrontID, Ordering::SeqCst);
+                    blocker
+                        .0
+                        .session_id
+                        .store((*pRspUserLogin).SessionID, Ordering::SeqCst);
                 }
-                self.api.req_settle();
+                blocker.0.step3.unblock();
             }
             Err(e) => {
                 println!(">>> Td Login failed, id: {} msg: {}", e.id, e.msg);
             }
         }
     }
+
     fn on_rsp_order_insert(
         &mut self,
         pInputOrder: *mut CThostFtdcInputOrderField,
@@ -2632,6 +2672,21 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             Ok(t) => {}
             Err(e) => {
                 // println!(">>> Order failed, id: {} msg: {}", e.id, e.msg);
+            }
+        }
+    }
+
+    fn on_rsp_order_action(
+        &mut self,
+        pInputOrderAction: *mut CThostFtdcInputOrderActionField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) {
+        match get_rsp_info(pRspInfo) {
+            Ok(t) => {}
+            Err(e) => {
+                println!(">>> Order action error, id: {} msg: {}", e.id, e.msg);
             }
         }
     }
@@ -2652,24 +2707,26 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             }
         }
     }
-    fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) -> () {
+
+    fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
         let (order, idx) = unsafe {
             // fixme : we need a fast solution to parse datetime
             let order_id = slice_to_string(&(*pOrder).OrderRef);
             let sysid = slice_to_string(&(*pOrder).OrderSysID);
-            let id = format!("{}_{}_{}", (*pOrder).SessionID, (*pOrder).FrontID, order_id);
             let (idx, refs) = split_into_vec(order_id.as_str());
             let time_string: String = slice_to_string(&(*pOrder).InsertTime);
             let date_string: String = slice_to_string(&(*pOrder).InsertDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
             let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                 .unwrap();
+
+            let exchange = Exchange::from((*pOrder).ExchangeID);
             (
                 OrderData {
                     symbol: slice_to_string(&(*pOrder).InstrumentID),
-                    exchange: Some(Exchange::from((*pOrder).ExchangeID)),
+                    exchange,
                     datetime: Option::from(naive),
-                    orderid: Option::from(id),
+                    orderid: Option::from(order_id),
                     order_type: OrderType::from((*pOrder).OrderPriceType),
                     direction: Some(Direction::from((*pOrder).Direction)),
                     offset: Offset::from((*pOrder).CombOffsetFlag),
@@ -2689,7 +2746,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                 // self.api.producer.send_all(order)
             }
             _ => {
-                self.api.producer.send_to(order, idx);
+                self.sender.send_to(order, idx);
             }
         }
     }
@@ -2727,7 +2784,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
                 // self.api.producer.send_all(trade)
             }
             _ => {
-                self.api.producer.send_to(trade, idx);
+                self.sender.send_to(trade, idx);
             }
         }
     }
@@ -2741,7 +2798,9 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             let order_id = slice_to_string(&(*pInputOrder).OrderRef);
             println!("insert order err id: {}", order_id);
             let (idx, refs) = split_into_vec(order_id.as_str());
-            self.api.order_ref = max(refs, self.api.order_ref);
+
+            // FixMe: 这里是否必须调用api?
+            // self.api.order_ref = max(refs, self.api.order_ref);
         };
 
         match get_rsp_info(pRspInfo) {
@@ -2753,21 +2812,7 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
-
-    fn on_rsp_order_action(
-        &mut self,
-        pInputOrderAction: *mut CThostFtdcInputOrderActionField,
-        pRspInfo: *mut CThostFtdcRspInfoField,
-        nRequestID: c_int,
-        bIsLast: bool,
-    ) -> () {
-        match get_rsp_info(pRspInfo) {
-            Ok(t) => {}
-            Err(e) => {
-                println!(">>> Order action error, id: {} msg: {}", e.id, e.msg);
-            }
-        }
+    ) {
     }
 
     fn on_err_rtn_order_action(
@@ -2804,14 +2849,14 @@ fn get_order_offset(offset: Offset) -> u8 {
     }
 }
 
-fn get_order_exchange(exchange: Exchange) -> String {
+fn get_order_exchange(exchange: Exchange) -> &'static str {
     match exchange {
-        Exchange::SHFE => "SHFE".to_string(),
-        Exchange::DCE => "DCE".to_string(),
-        Exchange::CZCE => "CZCE".to_string(),
-        Exchange::INE => "INE".to_string(),
-        Exchange::CFFEX => "CFFEX".to_string(),
-        _ => panic!("This Interface do not support this exchange"),
+        Exchange::SHFE => "SHFE",
+        Exchange::DCE => "DCE",
+        Exchange::CZCE => "CZCE",
+        Exchange::INE => "INE",
+        Exchange::CFFEX => "CFFEX",
+        _ => unreachable!("This Interface do not support this exchange"),
     }
 }
 
@@ -2914,7 +2959,7 @@ impl From<i8> for Direction {
 }
 
 impl TdApi {
-    pub fn new(path: String, producer: GroupSenderTdApi) -> TdApi {
+    pub(crate) fn new(path: String) -> TdApi {
         let p = CString::new(path).unwrap();
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
@@ -2923,11 +2968,10 @@ impl TdApi {
             path: p,
             trader_api: api,
             trader_spi: None,
-            producer,
             login_info: None,
             request_id: 0,
-            frontid: 0 as c_int,
-            sessionid: 0 as c_int,
+            front_id: 0,
+            session_id: 0,
         }
     }
 
@@ -2949,6 +2993,7 @@ impl TdApi {
             )
         };
     }
+
     pub fn login(&mut self) {
         self.request_id += 1;
         let form = self.login_info();
@@ -2980,12 +3025,18 @@ impl TdApi {
         true
     }
 
-    fn register_spi(&mut self, login_info: LoginForm) {
+    fn register_spi(
+        &mut self,
+        login_info: LoginForm,
+        sender: GroupSender<TdApiMessage>,
+        blocker: TdApiBlocker,
+    ) {
         self.login_info = Some(login_info);
         let collector = CallDataCollector {
             login_status: false,
             connect_status: false,
-            api: self,
+            sender,
+            blocker: Some(blocker),
         };
         // rust object
         let trait_object_box: Box<Box<dyn TdCallApi>> = Box::new(Box::new(collector));
@@ -3025,7 +3076,9 @@ impl Drop for TdApi {
 }
 
 impl Interface for TdApi {
-    fn send_order(&mut self, idx: usize, order: OrderRequest) -> String {
+    type Sender = GroupSender<TdApiMessage>;
+
+    fn send_order(&mut self, idx: usize, order: OrderRequest) {
         self.request_id += 1;
         self.order_ref += 1;
 
@@ -3062,22 +3115,29 @@ impl Interface for TdApi {
                 self.request_id,
             )
         };
-        "".to_string()
     }
 
     fn cancel_order(&mut self, req: CancelRequest) {
         self.request_id += 1;
-        let data = req.order_id.split("_").into_iter().map(|x| x.to_string()).collect::<Vec<String>>();
+
+        let (req, meta) = req.into_parts();
+
+        let exchange = meta.exchange;
+        let session_id = meta.session_id;
+        let front_id = meta.front_id;
+
+        let order_id = req.order_id.as_str();
+
         let form = self.login_info();
         let action = CThostFtdcInputOrderActionField {
             InstrumentID: req.symbol.to_c_slice(),
-            OrderRef: data[2].clone().to_c_slice(),
-            FrontID: data[1].parse::<i32>().unwrap() as c_int,
-            SessionID: data[0].parse::<i32>().unwrap() as c_int,
+            OrderRef: order_id.to_c_slice(),
+            FrontID: front_id as c_int,
+            SessionID: session_id as c_int,
             ActionFlag: THOST_FTDC_AF_Delete as i8,
             BrokerID: form._broke_id().to_c_slice(),
             InvestorID: form._user_id().to_c_slice(),
-            ExchangeID: get_order_exchange(req.exchange).to_c_slice(),
+            ExchangeID: get_order_exchange(exchange).to_c_slice(),
             ..CThostFtdcInputOrderActionField::default()
         };
         unsafe {
@@ -3089,14 +3149,39 @@ impl Interface for TdApi {
         }
     }
 
-    fn connect(&mut self, req: &LoginForm) {
-        self.register_spi(req.clone());
+    fn connect(&mut self, req: &LoginForm, sender: Self::Sender) {
+        // 建立线程阻塞器
+        let blocker = TdApiBlocker::new();
+
+        // 阻塞器交给data collector
+        self.register_spi(req.clone(), sender, blocker.clone());
+
         let addr = CString::new(req._td_address()).unwrap();
+
         self.register_fronted(addr);
+
         self.init();
+
+        // 阻塞等待on_front_connected
+        blocker.0.step1.block();
+
+        self.auth();
+
+        // 阻塞等待on_rsp_authenticate
+        blocker.0.step2.block();
+        self.login();
+
+        // 阻塞等待on_rsp_user_login
+        blocker.0.step3.block();
+
+        // on_rsp_user_login 完成时会写入atomic i32至blocker，我们读取并赋予TdApi.
+        self.session_id = blocker.0.session_id.load(Ordering::SeqCst);
+        self.front_id = blocker.0.front_id.load(Ordering::SeqCst);
+
+        self.req_settle();
     }
 
-    fn subscribe(&mut self, _: Vec<&'static str>) {
+    fn subscribe(&mut self) {
         unimplemented!("This API is not allowed in Trade")
     }
 
