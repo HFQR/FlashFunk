@@ -114,7 +114,7 @@ pub struct TradeData {
 impl Default for TradeData {
     fn default() -> TradeData {
         TradeData {
-            symbol: Cow::Borrowed(""),
+            symbol: Cow::from(""),
             exchange: None,
             datetime: None,
             orderid: None,
@@ -173,7 +173,7 @@ pub struct ContractData {
     pub exchange: Option<Exchange>,
     pub name: Option<String>,
     pub product: Option<Product>,
-    pub size: Option<i32>,
+    pub size: f64,
     pub pricetick: f64,
     pub min_volume: f64,
     pub stop_supported: bool,
@@ -194,7 +194,7 @@ impl Default for ContractData {
             exchange: None,
             name: None,
             product: None,
-            size: None,
+            size: 0.0,
             pricetick: 0.0,
             min_volume: 1.0,
             stop_supported: false,

@@ -1,11 +1,11 @@
 #![allow(
-    dead_code,
-    unused_must_use,
-    unused_variables,
-    non_camel_case_types,
-    non_snake_case,
-    non_upper_case_globals,
-    unused_imports
+dead_code,
+unused_must_use,
+unused_variables,
+non_camel_case_types,
+non_snake_case,
+non_upper_case_globals,
+unused_imports
 )]
 
 use std::env::var;
@@ -76,7 +76,9 @@ fn main() {
 
     // output the bindings.rs and ctp.o to the .HFQ/ctp dir
     let out_path = get_interface_path("ctp").join("bindings.rs");
-    build("ctp", out_path);
+    if !out_path.exists() {
+        build("ctp", out_path);
+    }
 }
 
 fn get_interface_path(path: &str) -> PathBuf {

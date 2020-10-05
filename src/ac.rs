@@ -1,6 +1,6 @@
 use core::ops::{Deref, DerefMut};
 
-use crate::app::{StrategyMessage, StrategyWorkerContext};
+use crate::app::{StrategyWorkerContext};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::structs::{AccountData, ContractData, OrderData, PositionData, TickData, TradeData};
 use std::collections::HashMap;
@@ -60,18 +60,4 @@ pub trait Ac {
     fn on_account(&mut self, account: &AccountData, ctx: &mut StrategyWorkerContext) {}
 
     fn on_realtime(&mut self, ctx: &mut StrategyWorkerContext) {}
-}
-
-/// an easy order manager
-#[derive(Default)]
-pub struct OrderManager {
-    pub map: HashMap<String, OrderData>,
-}
-
-impl OrderManager {
-    pub fn new() -> OrderManager {
-        OrderManager {
-            map: Default::default(),
-        }
-    }
 }

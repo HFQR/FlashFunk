@@ -1,7 +1,6 @@
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
 use chrono::Local;
-use flashfunk::ac::OrderManager;
 use flashfunk::app::{CtpbeeR, StrategyMessage, StrategyWorkerContext};
 use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
 use flashfunk::ctp::md_api::MdApi;
@@ -49,7 +48,6 @@ impl Quote {
 #[name("阿呆")]
 #[symbol("rb2101")]
 struct Strategy {
-    order_manager: OrderManager,
     quote: Quote,
 }
 
@@ -75,9 +73,8 @@ impl Ac for Strategy {
         );
 
         self.quote.update_tick(tick);
-
         // ctx.send(req.into());
-        let cancel_reqs: Vec<StrategyMessage> = ctx.get_active_orders().iter().map(|f|{
+        let cancel_reqs: Vec<StrategyMessage> = ctx.get_active_orders().iter().map(|f| {
             CancelRequest {
                 order_id: f.orderid.clone().unwrap(),
                 exchange: Exchange::SHFE,
@@ -88,7 +85,6 @@ impl Ac for Strategy {
         for order in cancel_reqs {
             ctx.send(order);
         }
-
         println!("{:?}", ctx.get_active_ids());
     }
 }
@@ -104,7 +100,6 @@ fn main() {
         .auth_code("0000000000000000")
         .production_info("");
     let strategy_1 = Strategy {
-        order_manager: OrderManager::new(),
         quote: Quote::new(),
     };
     CtpbeeR::new("ctpbee")

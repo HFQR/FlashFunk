@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use super::interface::Interface;
-use crate::ac::{IntoStrategy, __Strategy, OrderManager};
+use crate::ac::{IntoStrategy, __Strategy};
 use crate::account::Account;
 use crate::ctp::md_api::MdApi;
 use crate::ctp::td_api::TdApi;
@@ -14,7 +14,7 @@ use crate::structs::{
     PositionData, SubscribeRequest, TickData, TradeData,
 };
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
-use crate::constants::Status;
+use crate::constants::{Status, Exchange};
 use crossbeam_queue::spsc::Producer;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
@@ -63,9 +63,6 @@ impl Debug for CtpbeeR {
 
 pub enum MdApiMessage {
     TickData(TickData),
-    AccountData(AccountData),
-    PositionData(PositionData),
-    ContractData(ContractData),
     SubscribeRequest(SubscribeRequest),
 }
 
@@ -84,6 +81,9 @@ impl From<TickData> for MdApiMessage {
 pub enum TdApiMessage {
     OrderData(OrderData),
     TradeData(TradeData),
+    AccountData(AccountData),
+    PositionData(PositionData),
+    ContractData(ContractData),
 }
 
 impl From<OrderData> for TdApiMessage {
@@ -95,6 +95,24 @@ impl From<OrderData> for TdApiMessage {
 impl From<TradeData> for TdApiMessage {
     fn from(data: TradeData) -> Self {
         Self::TradeData(data)
+    }
+}
+
+impl From<AccountData> for TdApiMessage {
+    fn from(data: AccountData) -> Self {
+        Self::AccountData(data)
+    }
+}
+
+impl From<PositionData> for TdApiMessage {
+    fn from(data: PositionData) -> Self {
+        Self::PositionData(data)
+    }
+}
+
+impl From<ContractData> for TdApiMessage {
+    fn from(data: ContractData) -> Self {
+        Self::ContractData(data)
     }
 }
 
@@ -295,25 +313,29 @@ struct StrategyWorker {
 }
 
 pub struct StrategyWorkerContext<'a> {
-    map: HashMap<String, OrderData>,
+    order_map: HashMap<String, OrderData>,
     sender: &'a Sender<StrategyMessage>,
+    contract_map: HashMap<String, ContractData>,
+    exchange_map: HashMap<String, Exchange>,
 }
 
 
 impl StrategyWorkerContext<'_> {
     pub fn new(sender: &mut Sender<StrategyMessage>) -> StrategyWorkerContext {
         StrategyWorkerContext {
-            map: Default::default(),
+            order_map: Default::default(),
             sender,
+            contract_map: Default::default(),
+            exchange_map: Default::default(),
         }
     }
 
     pub fn add_order(&mut self, order: OrderData) {
-        self.map.insert(order.orderid.clone().unwrap(), order);
+        self.order_map.insert(order.orderid.clone().unwrap(), order);
     }
 
     pub fn get_active_orders(&mut self) -> Vec<&OrderData> {
-        self.map
+        self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(_, v)| v)
@@ -321,11 +343,11 @@ impl StrategyWorkerContext<'_> {
     }
 
     pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
-        self.map.get(order_id)
+        self.order_map.get(order_id)
     }
 
     pub fn get_active_ids(&mut self) -> Vec<&str> {
-        self.map
+        self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(i, _)| i.as_str())
@@ -333,7 +355,7 @@ impl StrategyWorkerContext<'_> {
     }
 
     pub fn get_order_ids(&mut self) -> Vec<&str> {
-        self.map.iter().map(|x| x.0.as_str()).collect()
+        self.order_map.iter().map(|x| x.0.as_str()).collect()
     }
 
 
@@ -376,9 +398,6 @@ impl StrategyWorker {
                         // })
                         self.st.on_tick(&data, &mut ctx)
                     }
-                    MdApiMessage::AccountData(data) => self.st.on_account(&data, &mut ctx),
-                    MdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
-                    MdApiMessage::ContractData(data) => self.st.on_contract(&data, &mut ctx),
                     _ => {}
                 },
                 Err(_) => (),
@@ -397,6 +416,12 @@ impl StrategyWorker {
                         self.st.on_order(&data, &mut ctx);
                     }
                     TdApiMessage::TradeData(data) => self.st.on_trade(&data, &mut ctx),
+                    TdApiMessage::AccountData(data) => self.st.on_account(&data, &mut ctx),
+                    TdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
+                    TdApiMessage::ContractData(data) => {
+                        ctx.exchange_map.insert(data.symbol.clone(), *data.exchange.as_ref().unwrap());
+                        self.st.on_contract(&data, &mut ctx);
+                    }
                 },
                 Err(_) => (),
             }

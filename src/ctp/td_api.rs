@@ -12,7 +12,7 @@ use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{CancelRequest, LoginForm, OrderData, OrderMeta, OrderRequest, TradeData};
+use crate::structs::{CancelRequest, LoginForm, OrderData, OrderMeta, OrderRequest, TradeData, ContractData};
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use bitflags::_core::sync::atomic::AtomicI32;
@@ -23,9 +23,6 @@ use std::sync::Arc;
 unsafe fn get_trader_spi<'a>(spi: *mut c_void) -> &'a mut dyn TdCallApi {
     &mut **(spi as *mut *mut dyn TdCallApi)
 }
-
-// #[link(name = "thosttraderapi_se")]
-// extern "C" {}
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnFrontConnected(this: *mut ::std::os::raw::c_void) {
@@ -2576,6 +2573,7 @@ struct TdApiBlockerInner {
     step1: Blocker,
     step2: Blocker,
     step3: Blocker,
+    step4: Blocker,
 }
 
 struct TdApiBlocker(Arc<TdApiBlockerInner>);
@@ -2594,6 +2592,7 @@ impl TdApiBlocker {
             step1: Default::default(),
             step2: Default::default(),
             step3: Default::default(),
+            step4: Default::default(),
         }))
     }
 }
@@ -2640,7 +2639,7 @@ impl TdCallApi for CallDataCollector {
                     );
                 }
 
-                let blocker = self.blocker.take().unwrap();
+                let blocker = self.blocker.as_ref().unwrap();
 
                 unsafe {
                     blocker
@@ -2672,6 +2671,9 @@ impl TdCallApi for CallDataCollector {
             Err(e) => {
                 // println!(">>> Order failed, id: {} msg: {}", e.id, e.msg);
             }
+        }
+        if bIsLast{
+
         }
     }
 
@@ -2758,10 +2760,9 @@ impl TdCallApi for CallDataCollector {
                 .unwrap();
             let orderref = slice_to_string(&(*pTrade).OrderRef);
             let (idx, refs) = split_into_vec(orderref.as_str());
-
             (
                 TradeData {
-                    symbol: Cow::Owned(slice_to_string(&(*pTrade).InstrumentID)),
+                    symbol: Cow::from(slice_to_string(&(*pTrade).InstrumentID)),
                     exchange: Some(Exchange::from((*pTrade).ExchangeID)),
                     datetime: Option::from(naive),
                     orderid: Option::from(orderref),
@@ -2771,7 +2772,7 @@ impl TdCallApi for CallDataCollector {
                     volume: (*pTrade).Volume as f64,
                     tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
                 },
-                idx,
+                idx
             )
         };
         // 这里控制接收order data的策略index
@@ -2823,6 +2824,42 @@ impl TdCallApi for CallDataCollector {
                 println!(">>> Order Action Err, id: {} msg: {}", e.id, e.msg);
             }
         };
+    }
+
+    fn on_rsp_qry_instrument(
+        &mut self,
+        pInstrument: *mut CThostFtdcInstrumentField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) {
+        // todo: add Contract data in here and send it
+        unsafe {
+            let contract = ContractData {
+                symbol: slice_to_string(&(*pInstrument).InstrumentID),
+                exchange: Option::from(Exchange::from((*pInstrument).ExchangeID)),
+                name: None,
+                product: None,
+                size: (*pInstrument).VolumeMultiple as f64,
+                pricetick: (*pInstrument).PriceTick as f64,
+                min_volume: 0.0,
+                stop_supported: false,
+                net_position: false,
+                history_data: false,
+                option_strike: 0.0,
+                option_underlying: None,
+                option_type: None,
+                option_expiry: None,
+                option_portfolio: None,
+                option_index: None,
+            };
+            self.sender.send_all(contract);
+        }
+
+        if bIsLast {
+            let mut blocker = self.blocker.take().unwrap();
+            blocker.0.step4.unblock();
+        }
     }
 }
 
@@ -3011,6 +3048,13 @@ impl TdApi {
         };
     }
 
+    pub fn req_instrument(&mut self) {
+        self.request_id += 1;
+        unsafe {
+            RustCtpCallReqQryInstrument(self.trader_api, Box::into_raw(Box::new(CThostFtdcQryInstrumentField::default())), self.request_id);
+        }
+    }
+
     /// 注册交易前值
     fn register_fronted(&mut self, register_addr: CString) {
         let front_socket_address_ptr = register_addr.into_raw();
@@ -3169,6 +3213,9 @@ impl Interface for TdApi {
         self.front_id = blocker.0.front_id.load(Ordering::SeqCst);
 
         self.req_settle();
+
+        self.req_instrument();
+        blocker.0.step4.block();
     }
 
     fn subscribe(&mut self) {
