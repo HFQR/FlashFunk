@@ -1,7 +1,6 @@
 #![allow(dead_code, unused_variables)]
 
-use std::collections::hash_map::RandomState;
-use std::collections::HashMap;
+use crate::util::hash::HashMap;
 
 use crate::constants::{Direction, Offset};
 use crate::structs::{DailyResult, OrderData, Params, TickData, TradeData};
@@ -206,8 +205,8 @@ impl Account {
                             let today = x.volume - x.yd_volume;
                             today * (real_price - x.price) * self.get_size_map(x.symbol.as_str())
                                 + x.yd_volume
-                                    * (real_price - self.get_pre_price(x.symbol.as_str()))
-                                    * self.get_size_map(x.symbol.as_str())
+                                * (real_price - self.get_pre_price(x.symbol.as_str()))
+                                * self.get_size_map(x.symbol.as_str())
                         }
                     }
                     Direction::SHORT => {
@@ -217,8 +216,8 @@ impl Account {
                             let today = x.volume - x.yd_volume;
                             today * (x.price - real_price) * self.get_size_map(x.symbol.as_str())
                                 + x.yd_volume
-                                    * (self.get_pre_price(x.symbol.as_str()) - real_price)
-                                    * self.get_size_map(x.symbol.as_str())
+                                * (self.get_pre_price(x.symbol.as_str()) - real_price)
+                                * self.get_size_map(x.symbol.as_str())
                         }
                     }
                     Direction::NET => panic!("暂不支持"),
@@ -289,7 +288,7 @@ impl Account {
 }
 
 impl From<HashMap<String, f64>> for Account {
-    fn from(_: HashMap<String, f64, RandomState>) -> Self {
+    fn from(_: HashMap<String, f64>) -> Self {
         unimplemented!()
     }
 }

@@ -1,7 +1,7 @@
 use core::fmt::{Debug, Formatter, Result as FmtResult};
 
 use std::borrow::{Cow, Borrow, BorrowMut};
-use std::collections::HashMap;
+use crate::util::hash::HashMap;
 use std::hash::Hash;
 
 use super::interface::Interface;

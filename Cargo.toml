@@ -16,7 +16,8 @@ chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
 crossbeam-queue = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
 encoding = "0.2.33"
 libc = "0.2.0"
-derive_more ="0.99.10"
+derive_more = "0.99.10"
+ahash = "0.4.5"
 
 [dev-dependencies]
 flashfunk-codegen = { path = "./flashfunk-codegen" }
@@ -38,5 +39,5 @@ panic = "abort"
 rpath = true
 
 [build-dependencies]
-bindgen = { git ="https://github.com/rust-lang/rust-bindgen.git", branch = "master", default-features = false }
+bindgen = { git = "https://github.com/rust-lang/rust-bindgen.git", branch = "master", default-features = false }
 cc = "1.0"
