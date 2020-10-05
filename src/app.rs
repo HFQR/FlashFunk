@@ -1,19 +1,21 @@
 use core::fmt::{Debug, Formatter, Result as FmtResult};
 
-use std::borrow::Cow;
+use std::borrow::{Cow, Borrow, BorrowMut};
 use std::collections::HashMap;
 use std::hash::Hash;
 
 use super::interface::Interface;
-use crate::ac::{IntoStrategy, __Strategy};
+use crate::ac::{IntoStrategy, __Strategy, OrderManager};
 use crate::account::Account;
 use crate::ctp::md_api::MdApi;
 use crate::ctp::td_api::TdApi;
 use crate::structs::{
-    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderMeta, OrderRequest,
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest,
     PositionData, SubscribeRequest, TickData, TradeData,
 };
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
+use crate::constants::Status;
+use crossbeam_queue::spsc::Producer;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。
@@ -176,13 +178,10 @@ impl<'a> CtpBuilder<'a> {
 
         td_api.connect(&login_form, s_td);
 
-        let session_id = td_api.session_id();
-        let front_id = td_api.front_id();
-
         // 启动策略工人线程。
         workers
             .into_iter()
-            .for_each(|worker| worker.start(session_id, front_id));
+            .for_each(|worker| worker.start());
 
         // 此处策略消费端会阻塞线程并发送消息给td_api。
         c_st.block_handle(td_api);
@@ -290,35 +289,56 @@ impl StrategyDispatcher {
 
 struct StrategyWorker {
     st: __Strategy,
-    session_id: i32,
-    front_id: i32,
     c_md: Receiver<MdApiMessage>,
     c_td: Receiver<TdApiMessage>,
-    p_st: Sender<StrategyMessage>,
+    pub p_st: Sender<StrategyMessage>,
 }
 
-pub struct StrategyWorkerContext<K, V> {
-    map: HashMap<K, V>,
+pub struct StrategyWorkerContext<'a> {
+    map: HashMap<String, OrderData>,
+    sender: &'a Sender<StrategyMessage>,
 }
 
-impl<K, V> Default for StrategyWorkerContext<K, V> {
-    fn default() -> Self {
-        Self {
+
+impl StrategyWorkerContext<'_> {
+    pub fn new(sender: &mut Sender<StrategyMessage>) -> StrategyWorkerContext {
+        StrategyWorkerContext {
             map: Default::default(),
+            sender,
         }
     }
-}
 
-impl<K, V> StrategyWorkerContext<K, V>
-where
-    K: Eq + Hash,
-{
-    fn insert(&mut self, k: K, v: V) -> Option<V> {
-        self.map.insert(k, v)
+    pub fn add_order(&mut self, order: OrderData) {
+        self.map.insert(order.orderid.clone().unwrap(), order);
     }
 
-    fn remove(&mut self, k: &K) -> Option<V> {
-        self.map.remove(k)
+    pub fn get_active_orders(&mut self) -> Vec<&OrderData> {
+        self.map
+            .iter()
+            .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
+            .map(|(_, v)| v)
+            .collect()
+    }
+
+    pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
+        self.map.get(order_id)
+    }
+
+    pub fn get_active_ids(&mut self) -> Vec<&str> {
+        self.map
+            .iter()
+            .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
+            .map(|(i, _)| i.as_str())
+            .collect()
+    }
+
+    pub fn get_order_ids(&mut self) -> Vec<&str> {
+        self.map.iter().map(|x| x.0.as_str()).collect()
+    }
+
+
+    pub fn send(&mut self, message: StrategyMessage) {
+        self.sender.send(message);
     }
 }
 
@@ -331,8 +351,6 @@ impl StrategyWorker {
     ) -> Self {
         Self {
             st,
-            session_id: 0,
-            front_id: 0,
             c_md,
             c_td,
             p_st,
@@ -340,45 +358,27 @@ impl StrategyWorker {
     }
 
     // 初次启动
-    fn start(mut self, session_id: i32, front_id: i32) {
-        self.session_id = session_id;
-        self.front_id = front_id;
-
+    fn start(mut self) {
         std::thread::spawn(move || self._start());
     }
 
     fn _start(&mut self) {
         // worker上下文. 保存order_id和其对应的exchange
-        let mut ctx = StrategyWorkerContext::default();
-
+        let mut ctx = StrategyWorkerContext::new(self.p_st.borrow_mut());
         loop {
             // 接收md_api的消息并处理。
             match self.c_md.recv() {
                 Ok(msg) => match msg {
                     // tick会返回订单vec，我们转发至td api
                     MdApiMessage::TickData(data) => {
-                        self.st.on_tick(&data).into_iter().for_each(|mut m| {
-                            if let StrategyMessage::CancelRequest(ref mut req) = m {
-                                // 可以在这里获得order id对应的 exchange
-                                // ToDo: 如果用户能发送错误的撤单，我们就需要在这里处理错误
-                                // fixme:  這裏問題在於 需要我們實現order ref對應的sessionid 和 fronted對應的id，
-                                // 單純的寫這個沒有用， 如果用戶重新啓動了 sessionid和frontid會發生改變，而撤單的時候需要記錄那個發單的時候對應的sessionid和frontid
-                                // let (sessionid, frontid) = ctx.remove(&req.order_id).unwrap()
-                                let exchange = ctx.remove(&req.order_id).unwrap();
-                                // 补全撤单信息
-                                req.add_meta(OrderMeta {
-                                    exchange,
-                                    session_id: self.session_id,
-                                    front_id: self.front_id,
-                                });
-                            }
-
-                            self.p_st.send(m);
-                        })
+                        // self.st.on_tick(&data).into_iter().for_each(|mut m| {
+                        //     self.p_st.send(m);
+                        // })
+                        self.st.on_tick(&data, &mut ctx)
                     }
-                    MdApiMessage::AccountData(data) => self.st.on_account(&data),
-                    MdApiMessage::PositionData(data) => self.st.on_position(&data),
-                    MdApiMessage::ContractData(data) => self.st.on_contract(&data),
+                    MdApiMessage::AccountData(data) => self.st.on_account(&data, &mut ctx),
+                    MdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
+                    MdApiMessage::ContractData(data) => self.st.on_contract(&data, &mut ctx),
                     _ => {}
                 },
                 Err(_) => (),
@@ -391,14 +391,12 @@ impl StrategyWorker {
                         // 可以在这里插入信息至ctx
                         // 目前所有order都会被加入map，需要过滤我们建立的单子。
                         // 目前没有删除机制，此insert会泄露内存。
-                        // fixme: 這裏目前實現了默認的order manager,但是用的是clone 有沒有辦法實現Copy
-                        ctx.insert(data.orderid.clone().unwrap(), data.exchange);
-                        self.st.order_manager().add_order(data.clone());
                         // fixme: 針對於當前的order需要和on_tick一樣 返回消息轉發給td_api,實現追單補單等邏輯
                         //  self.st.on_order(&data).into_iter().for_each() ...
-                        self.st.on_order(&data);
+                        ctx.add_order(data.clone());
+                        self.st.on_order(&data, &mut ctx);
                     }
-                    TdApiMessage::TradeData(data) => self.st.on_trade(&data),
+                    TdApiMessage::TradeData(data) => self.st.on_trade(&data, &mut ctx),
                 },
                 Err(_) => (),
             }

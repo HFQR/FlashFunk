@@ -2,7 +2,7 @@
 
 use chrono::Local;
 use flashfunk::ac::OrderManager;
-use flashfunk::app::{CtpbeeR, StrategyMessage};
+use flashfunk::app::{CtpbeeR, StrategyMessage, StrategyWorkerContext};
 use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
@@ -54,8 +54,7 @@ struct Strategy {
 }
 
 impl Ac for Strategy {
-    fn on_tick(&mut self, tick: &TickData) -> Vec<StrategyMessage> {
-        let mut res = Vec::new();
+    fn on_tick(&mut self, tick: &TickData, ctx: &mut StrategyWorkerContext) {
         let req = OrderRequest {
             symbol: "rb2101".to_string(),
             exchange: Exchange::SHFE,
@@ -77,23 +76,20 @@ impl Ac for Strategy {
 
         self.quote.update_tick(tick);
 
-        // res.push(req.into());
-        // for order in self.order_manager.get_active_orders() {
-        //     ;
-        //     res.push(
-        //         CancelRequest {
-        //             order_id: order.orderid.as_ref().unwrap().to_string(),
-        //             exchange: Exchange::SHFE,
-        //             symbol: order.symbol.to_string(),
-        //         }
-        //             .into(),
-        //     );
-        // }
-        res
-    }
+        // ctx.send(req.into());
+        let cancel_reqs: Vec<StrategyMessage> = ctx.get_active_orders().iter().map(|f|{
+            CancelRequest {
+                order_id: f.orderid.clone().unwrap(),
+                exchange: Exchange::SHFE,
+                symbol: f.symbol.to_string(),
+            }.into()
+        }).collect();
 
-    fn on_order(&mut self, order: &OrderData) {
-        // self.order_manager.add_order(order);
+        for order in cancel_reqs {
+            ctx.send(order);
+        }
+
+        println!("{:?}", ctx.get_active_ids());
     }
 }
 

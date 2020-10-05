@@ -234,26 +234,7 @@ pub struct OrderRequest {
 pub struct CancelRequest {
     pub order_id: String,
     pub symbol: String,
-    meta: Option<OrderMeta>,
-}
-
-impl CancelRequest {
-    pub fn new(order_id: String, symbol: String) -> Self {
-        Self {
-            order_id,
-            symbol,
-            meta: None,
-        }
-    }
-
-    pub(crate) fn add_meta(&mut self, meta: OrderMeta) {
-        self.meta = Some(meta);
-    }
-
-    pub(crate) fn into_parts(mut self) -> (CancelRequest, OrderMeta) {
-        let meta = self.meta.take().unwrap();
-        (self, meta)
-    }
+    pub exchange: Exchange,
 }
 
 #[derive(Clone, Debug)]

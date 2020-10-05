@@ -2199,8 +2199,7 @@ pub trait TdCallApi {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
-    }
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {}
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2711,22 +2710,21 @@ impl TdCallApi for CallDataCollector {
     fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
         let (order, idx) = unsafe {
             // fixme : we need a fast solution to parse datetime
-            let order_id = slice_to_string(&(*pOrder).OrderRef);
-            let sysid = slice_to_string(&(*pOrder).OrderSysID);
-            let (idx, refs) = split_into_vec(order_id.as_str());
+            let orderref = slice_to_string(&(*pOrder).OrderRef);
+            let id = format!("{}_{}_{}", (*pOrder).SessionID, (*pOrder).FrontID, orderref);
+            let (idx, refs) = split_into_vec(orderref.as_str());
             let time_string: String = slice_to_string(&(*pOrder).InsertTime);
             let date_string: String = slice_to_string(&(*pOrder).InsertDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
             let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                 .unwrap();
-
             let exchange = Exchange::from((*pOrder).ExchangeID);
             (
                 OrderData {
                     symbol: slice_to_string(&(*pOrder).InstrumentID),
                     exchange,
                     datetime: Option::from(naive),
-                    orderid: Option::from(order_id),
+                    orderid: Option::from(id),
                     order_type: OrderType::from((*pOrder).OrderPriceType),
                     direction: Some(Direction::from((*pOrder).Direction)),
                     offset: Offset::from((*pOrder).CombOffsetFlag),
@@ -2758,15 +2756,15 @@ impl TdCallApi for CallDataCollector {
             let datetime = format!("{:?} {:?}", date_string, time_string);
             let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                 .unwrap();
-            let order_id = slice_to_string(&(*pTrade).OrderRef);
+            let orderref = slice_to_string(&(*pTrade).OrderRef);
+            let (idx, refs) = split_into_vec(orderref.as_str());
 
-            let (idx, refs) = split_into_vec(order_id.as_str());
             (
                 TradeData {
                     symbol: Cow::Owned(slice_to_string(&(*pTrade).InstrumentID)),
                     exchange: Some(Exchange::from((*pTrade).ExchangeID)),
                     datetime: Option::from(naive),
-                    orderid: Option::from(order_id),
+                    orderid: Option::from(orderref),
                     direction: Some(Direction::from((*pTrade).Direction)),
                     offset: Some(Offset::from((*pTrade).OffsetFlag)),
                     price: (*pTrade).Price as f64,
@@ -2812,8 +2810,7 @@ impl TdCallApi for CallDataCollector {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {
-    }
+    ) {}
 
     fn on_err_rtn_order_action(
         &mut self,
@@ -3119,21 +3116,14 @@ impl Interface for TdApi {
 
     fn cancel_order(&mut self, req: CancelRequest) {
         self.request_id += 1;
-
-        let (req, meta) = req.into_parts();
-
-        let exchange = meta.exchange;
-        let session_id = meta.session_id;
-        let front_id = meta.front_id;
-
-        let order_id = req.order_id.as_str();
-
+        let exchange = req.exchange;
+        let data = req.order_id.split("_").into_iter().map(|x| x.to_string()).collect::<Vec<String>>();
         let form = self.login_info();
         let action = CThostFtdcInputOrderActionField {
             InstrumentID: req.symbol.to_c_slice(),
-            OrderRef: order_id.to_c_slice(),
-            FrontID: front_id as c_int,
-            SessionID: session_id as c_int,
+            OrderRef: data[2].to_c_slice(),
+            FrontID: data[1].parse::<i32>().unwrap() as c_int,
+            SessionID: data[0].parse::<i32>().unwrap() as c_int,
             ActionFlag: THOST_FTDC_AF_Delete as i8,
             BrokerID: form._broke_id().to_c_slice(),
             InvestorID: form._user_id().to_c_slice(),

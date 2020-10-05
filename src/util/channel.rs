@@ -9,7 +9,7 @@ pub(crate) fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
     (Sender(tx), Receiver(rx))
 }
 
-pub(crate) struct Sender<M>(Producer<M>);
+pub struct Sender<M>(Producer<M>);
 
 impl<M> Sender<M> {
     // 发送失败会panic
