@@ -36,7 +36,7 @@ fn expand(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
 
     quote! {
-        impl #impl_generics ::flashfunk::IntoStrategy for #name #ty_generics #where_clause {
+        impl #impl_generics ::flashfunk::prelude::IntoStrategy for #name #ty_generics #where_clause {
             fn name() -> &'static str {
                 #str_name
             }

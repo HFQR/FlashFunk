@@ -1,62 +1,38 @@
 //! # General Enum
 //! Author: Aaron Qiu
-#![allow(dead_code)]
 
-use derive_more::Display;
-
-/// Direction of order/trade/position.
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum Direction {
-    /// 多
-    #[display(fmt = "LONG")]
-    LONG,
-    /// 净
-    #[display(fmt = "NET")]
-    NET,
-    /// 空
-    #[display(fmt = "SHORT")]
-    SHORT,
+bitflags! {
+    /// Direction of order/trade/position.
+    pub struct Direction: u8 {
+        /// 多
+        const LONG =    0;
+        /// 净
+        const NET =     1;
+        /// 空
+        const SHORT =   2;
+    }
 }
 
-/// 对冲
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum Offset {
-    /// 无
-    #[display(fmt = "None")]
-    NONE,
-    /// 平
-    #[display(fmt = "CLOSE")]
-    CLOSE,
-    /// 平今
-    #[display(fmt = "CLOSETODAY")]
-    CLOSETODAY,
-    /// 平昨
-    #[display(fmt = "CLOSEYESTERDAY")]
-    CLOSEYESTERDAY,
-    /// 开
-    #[display(fmt = "OPEN")]
-    OPEN,
+bitflags! {
+    /// 对冲
+    pub struct Offset: u8 {
+        /// 无
+        const NONE =            0;
+        /// 平
+        const CLOSE =           1;
+        /// 平今
+        const CLOSETODAY =      2;
+        /// 平昨
+        const CLOSEYESTERDAY =  3;
+        /// 开
+        const OPEN =            4;
+    }
 }
-
-// #[derive(Clone, Debug, Display, PartialEq)]
-// pub enum Status {
-//     #[display(fmt = "Submiting")]
-//     SUBMITTING,
-//     #[display(fmt = "NotTraded")]
-//     NOTTRADED,
-//     #[display(fmt = "PartTraded")]
-//     PARTTRADED,
-//     #[display(fmt = "AllTraded")]
-//     ALLTRADED,
-//     #[display(fmt = "Cancelled")]
-//     CANCELLED,
-//     #[display(fmt = "Rejected")]
-//     REJECTED,
-// }
 
 bitflags! {
     /// 状态
     pub struct Status: u8 {
+        // 重要: default类型需要为 Status::INIT
         const INIT =        0b_0000_0001;
         const SUBMITTING =  0b_0000_0010;
         const NOTTRADED =   0b_0000_0100;
@@ -68,94 +44,60 @@ bitflags! {
     }
 }
 
-/// 产品
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum Product {
-    /// 股票
-    #[display(fmt = "EQUITY")]
-    EQUITY,
-    /// 期货
-    #[display(fmt = "FUTURES")]
-    FUTURES,
-    /// 期权
-    #[display(fmt = "OPTION")]
-    OPTION,
+bitflags! {
+    /// 产品
+    pub struct Product: u8 {
+        /// 股票
+        const EQUITY =  0;
+        /// 期货
+        const FUTURES = 1;
+        /// 期权
+        const OPTION =  2;
+    }
 }
 
-/// 订单类型
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum OrderType {
-    /// 限价
-    #[display(fmt = "LIMIT")]
-    LIMIT,
-    /// 市价
-    #[display(fmt = "MARKET")]
-    MARKET,
-    /// STOP
-    #[display(fmt = "STOP")]
-    STOP,
-    /// FAK
-    #[display(fmt = "FAK")]
-    FAK,
-    /// FOK
-    #[display(fmt = "FOK")]
-    FOK,
-    /// 询价
-    #[display(fmt = "RFQ")]
-    RFQ,
+bitflags! {
+    /// 订单类型
+    pub struct OrderType: u8 {
+        /// 限价
+        const LIMIT =   0;
+        /// 市价
+        const MARKET =  1;
+        /// STOP
+        const STOP =    2;
+        /// FAK
+        const FAK =     3;
+        /// FOK
+        const FOK =     4;
+        /// 询价
+        const RFQ =     5;
+    }
+
 }
 
-/// 期权类型
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum OptionType {
-    /// 看涨期权
-    #[display(fmt = "CALL")]
-    CALL,
-    /// 看跌期权
-    #[display(fmt = "PUT")]
-    PUT,
+bitflags! {
+    /// 期权类型
+    pub struct OptionType: u8 {
+        /// 看涨期权
+        const CALL =    0;
+        /// 看跌期权
+        const PUT =     1;
+    }
 }
-
-// /// 交易所
-// /// 暫時只支持國內期貨交易
-// #[derive(Copy, Clone, Debug, PartialEq, Display)]
-// pub enum Exchange {
-//     // Chinese
-//     #[display(fmt = "CFETS")]
-//     CFETS,
-//     #[display(fmt = "CFFEX")]
-//     CFFEX,
-//     #[display(fmt = "CZCE")]
-//     CZCE,
-//     #[display(fmt = "DCE")]
-//     DCE,
-//     #[display(fmt = "INE")]
-//     INE,
-//     #[display(fmt = "SGE")]
-//     SGE,
-//     #[display(fmt = "SHFE")]
-//     SHFE,
-//     #[display(fmt = "SSE")]
-//     SSE,
-//     #[display(fmt = "SZSE")]
-//     SZSE,
-//     #[display(fmt = "WXE")]
-//     WXE,
-// }
 
 bitflags! {
     /// 交易所
     /// 暫時只支持國內期貨交易
-    pub struct Exchange: u16 {
-        const CFETS =   0b_0000_0000_0001;
-        const CFFEX =   0b_0000_0000_0010;
-        const CZCE =    0b_0000_0000_0100;
-        const DCE =     0b_0000_0000_1000;
-        const INE =     0b_0000_0001_0000;
-        const SGE =     0b_0000_0010_0000;
-        const SHFE =    0b_0000_0100_0000;
-        const SSE =     0b_0000_1000_0000;
-        const SZSE =    0b_0001_0000_0000;
-        const WXE =     0b_0010_0000_0000;
+    pub struct Exchange: u8 {
+        const CFETS =   0;
+        const CFFEX =   1;
+        const CZCE =    2;
+        const DCE =     3;
+        const INE =     4;
+        const SGE =     5;
+        const SHFE =    6;
+        const SSE =     7;
+        const SZSE =    8;
+        const WXE =     9;
     }
 }

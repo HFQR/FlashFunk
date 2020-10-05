@@ -6,8 +6,8 @@ use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
+use flashfunk::prelude::*;
 use flashfunk::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TickData};
-use flashfunk::{Ac, IntoStrategy};
 use flashfunk_codegen::Strategy;
 use std::fmt::Pointer;
 use std::thread;
@@ -74,13 +74,32 @@ impl Ac for Strategy {
 
         self.quote.update_tick(tick);
         // ctx.send(req.into());
-        let cancel_reqs: Vec<StrategyMessage> = ctx.get_active_orders().iter().map(|f| {
-            CancelRequest {
-                order_id: f.orderid.clone().unwrap(),
-                exchange: Exchange::SHFE,
-                symbol: f.symbol.to_string(),
-            }.into()
-        }).collect();
+
+        // 当我们需要同时引用上下文的不同状态时，我们可以使用Context::enter方法
+        ctx.enter(|sender, ctx| {
+            ctx.get_active_orders().iter().for_each(|f| {
+                let order = CancelRequest {
+                    order_id: f.orderid.clone().unwrap(),
+                    exchange: Exchange::SHFE,
+                    symbol: f.symbol.to_string(),
+                };
+
+                sender.send(order);
+            });
+        });
+
+        let cancel_reqs: Vec<StrategyMessage> = ctx
+            .get_active_orders()
+            .iter()
+            .map(|f| {
+                CancelRequest {
+                    order_id: f.orderid.clone().unwrap(),
+                    exchange: Exchange::SHFE,
+                    symbol: f.symbol.to_string(),
+                }
+                .into()
+            })
+            .collect();
 
         for order in cancel_reqs {
             ctx.send(order);

@@ -13,8 +13,8 @@ pub struct Sender<M>(Producer<M>);
 
 impl<M> Sender<M> {
     // 发送失败会panic
-    pub(crate) fn send(&self, m: M) {
-        self.0.push(m).unwrap();
+    pub fn send(&self, m: impl Into<M>) {
+        self.0.push(m.into()).unwrap();
     }
 
     // 发送失败返回消息

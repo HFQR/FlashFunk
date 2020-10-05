@@ -1,11 +1,11 @@
 #![allow(
-dead_code,
-unused_must_use,
-unused_variables,
-non_camel_case_types,
-non_snake_case,
-non_upper_case_globals,
-unused_imports
+    dead_code,
+    unused_must_use,
+    unused_variables,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    unused_imports
 )]
 
 use std::env::var;
@@ -82,7 +82,7 @@ fn main() {
 }
 
 fn get_interface_path(path: &str) -> PathBuf {
-    let px = format!("{}/.HFQ/{}", var("HOME").unwrap(), path).to_string();
+    let px = format!("{}/.HFQ/{}", var("HOME").unwrap(), path);
     let path_buffer = PathBuf::from(px);
     if !path_buffer.exists() {
         panic!("please mkdier interface dir fisrt");
@@ -92,13 +92,13 @@ fn get_interface_path(path: &str) -> PathBuf {
 
 /// mkdir at home path
 fn mkdir_home_path(path: Vec<&str>) {
-    let px = format!("{}/.HFQ", var("HOME").unwrap()).to_string();
+    let px = format!("{}/.HFQ", var("HOME").unwrap());
     let home = Path::new(px.as_str());
     if !home.exists() {
         fs::create_dir(home);
     }
     for interface in path {
-        let pw = home.clone().join(interface);
+        let pw = home.join(interface);
         if !pw.exists() {
             fs::create_dir(pw);
         }

@@ -12,7 +12,9 @@ use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{CancelRequest, LoginForm, OrderData, OrderMeta, OrderRequest, TradeData, ContractData};
+use crate::structs::{
+    CancelRequest, ContractData, LoginForm, OrderData, OrderMeta, OrderRequest, TradeData,
+};
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use bitflags::_core::sync::atomic::AtomicI32;
@@ -24,12 +26,14 @@ unsafe fn get_trader_spi<'a>(spi: *mut c_void) -> &'a mut dyn TdCallApi {
     &mut **(spi as *mut *mut dyn TdCallApi)
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnFrontConnected(this: *mut ::std::os::raw::c_void) {
     let x = get_trader_spi(this);
     x.on_front_connected();
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnFrontDisconnected(
     this: *mut ::std::os::raw::c_void,
@@ -39,6 +43,7 @@ pub unsafe extern "C" fn RustCtpOnFrontDisconnected(
     x.on_front_disconnected(nReason);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnHeartBeatWarning(
     this: *mut ::std::os::raw::c_void,
@@ -48,6 +53,7 @@ pub unsafe extern "C" fn RustCtpOnHeartBeatWarning(
     x.on_heart_beat_warning(nTimeLapse);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspAuthenticate(
     this: *mut ::std::os::raw::c_void,
@@ -60,6 +66,7 @@ pub unsafe extern "C" fn RustCtpOnRspAuthenticate(
     x.on_rsp_authenticate(pRspAuthenticateField, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspUserLogin(
     this: *mut ::std::os::raw::c_void,
@@ -72,6 +79,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserLogin(
     x.on_rsp_user_login(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspUserLogout(
     this: *mut ::std::os::raw::c_void,
@@ -84,6 +92,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserLogout(
     x.on_rsp_user_logout(pUserLogout, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspUserPasswordUpdate(
     this: *mut ::std::os::raw::c_void,
@@ -96,6 +105,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserPasswordUpdate(
     x.on_rsp_user_password_update(pUserPasswordUpdate, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspTradingAccountPasswordUpdate(
     this: *mut ::std::os::raw::c_void,
@@ -113,6 +123,7 @@ pub unsafe extern "C" fn RustCtpOnRspTradingAccountPasswordUpdate(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspUserAuthMethod(
     this: *mut ::std::os::raw::c_void,
@@ -125,6 +136,7 @@ pub unsafe extern "C" fn RustCtpOnRspUserAuthMethod(
     x.on_rsp_user_auth_method(pRspUserAuthMethod, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspGenUserCaptcha(
     this: *mut ::std::os::raw::c_void,
@@ -137,6 +149,7 @@ pub unsafe extern "C" fn RustCtpOnRspGenUserCaptcha(
     x.on_rsp_gen_user_captcha(pRspGenUserCaptcha, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspGenUserText(
     this: *mut ::std::os::raw::c_void,
@@ -149,6 +162,7 @@ pub unsafe extern "C" fn RustCtpOnRspGenUserText(
     x.on_rsp_gen_user_text(pRspGenUserText, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspOrderInsert(
     this: *mut ::std::os::raw::c_void,
@@ -161,6 +175,7 @@ pub unsafe extern "C" fn RustCtpOnRspOrderInsert(
     x.on_rsp_order_insert(pInputOrder, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspParkedOrderInsert(
     this: *mut ::std::os::raw::c_void,
@@ -173,6 +188,7 @@ pub unsafe extern "C" fn RustCtpOnRspParkedOrderInsert(
     x.on_rsp_parked_order_insert(pParkedOrder, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspParkedOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -185,6 +201,7 @@ pub unsafe extern "C" fn RustCtpOnRspParkedOrderAction(
     x.on_rsp_parked_order_action(pParkedOrderAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -197,6 +214,7 @@ pub unsafe extern "C" fn RustCtpOnRspOrderAction(
     x.on_rsp_order_action(pInputOrderAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQueryMaxOrderVolume(
     this: *mut ::std::os::raw::c_void,
@@ -209,6 +227,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryMaxOrderVolume(
     x.on_rsp_query_max_order_volume(pQueryMaxOrderVolume, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspSettlementInfoConfirm(
     this: *mut ::std::os::raw::c_void,
@@ -221,6 +240,7 @@ pub unsafe extern "C" fn RustCtpOnRspSettlementInfoConfirm(
     x.on_rsp_settlement_info_confirm(pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspRemoveParkedOrder(
     this: *mut ::std::os::raw::c_void,
@@ -233,6 +253,7 @@ pub unsafe extern "C" fn RustCtpOnRspRemoveParkedOrder(
     x.on_rsp_remove_parked_order(pRemoveParkedOrder, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspRemoveParkedOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -245,6 +266,7 @@ pub unsafe extern "C" fn RustCtpOnRspRemoveParkedOrderAction(
     x.on_rsp_remove_parked_order_action(pRemoveParkedOrderAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspExecOrderInsert(
     this: *mut ::std::os::raw::c_void,
@@ -257,6 +279,7 @@ pub unsafe extern "C" fn RustCtpOnRspExecOrderInsert(
     x.on_rsp_exec_order_insert(pInputExecOrder, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspExecOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -269,6 +292,7 @@ pub unsafe extern "C" fn RustCtpOnRspExecOrderAction(
     x.on_rsp_exec_order_action(pInputExecOrderAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspForQuoteInsert(
     this: *mut ::std::os::raw::c_void,
@@ -281,6 +305,7 @@ pub unsafe extern "C" fn RustCtpOnRspForQuoteInsert(
     x.on_rsp_for_quote_insert(pInputForQuote, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQuoteInsert(
     this: *mut ::std::os::raw::c_void,
@@ -293,6 +318,7 @@ pub unsafe extern "C" fn RustCtpOnRspQuoteInsert(
     x.on_rsp_quote_insert(pInputQuote, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQuoteAction(
     this: *mut ::std::os::raw::c_void,
@@ -305,6 +331,7 @@ pub unsafe extern "C" fn RustCtpOnRspQuoteAction(
     x.on_rsp_quote_action(pInputQuoteAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspBatchOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -317,6 +344,7 @@ pub unsafe extern "C" fn RustCtpOnRspBatchOrderAction(
     x.on_rsp_batch_order_action(pInputBatchOrderAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspOptionSelfCloseInsert(
     this: *mut ::std::os::raw::c_void,
@@ -329,6 +357,7 @@ pub unsafe extern "C" fn RustCtpOnRspOptionSelfCloseInsert(
     x.on_rsp_option_self_close_insert(pInputOptionSelfClose, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspOptionSelfCloseAction(
     this: *mut ::std::os::raw::c_void,
@@ -341,6 +370,7 @@ pub unsafe extern "C" fn RustCtpOnRspOptionSelfCloseAction(
     x.on_rsp_option_self_close_action(pInputOptionSelfCloseAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspCombActionInsert(
     this: *mut ::std::os::raw::c_void,
@@ -353,6 +383,7 @@ pub unsafe extern "C" fn RustCtpOnRspCombActionInsert(
     x.on_rsp_comb_action_insert(pInputCombAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryOrder(
     this: *mut ::std::os::raw::c_void,
@@ -365,6 +396,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOrder(
     x.on_rsp_qry_order(pOrder, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryTrade(
     this: *mut ::std::os::raw::c_void,
@@ -377,6 +409,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTrade(
     x.on_rsp_qry_trade(pTrade, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInvestorPosition(
     this: *mut ::std::os::raw::c_void,
@@ -389,6 +422,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorPosition(
     x.on_rsp_qry_investor_position(pInvestorPosition, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryTradingAccount(
     this: *mut ::std::os::raw::c_void,
@@ -401,6 +435,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTradingAccount(
     x.on_rsp_qry_trading_account(pTradingAccount, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInvestor(
     this: *mut ::std::os::raw::c_void,
@@ -413,6 +448,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestor(
     x.on_rsp_qry_investor(pInvestor, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryTradingCode(
     this: *mut ::std::os::raw::c_void,
@@ -425,6 +461,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTradingCode(
     x.on_rsp_qry_trading_code(pTradingCode, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInstrumentMarginRate(
     this: *mut ::std::os::raw::c_void,
@@ -437,6 +474,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrumentMarginRate(
     x.on_rsp_qry_instrument_margin_rate(pInstrumentMarginRate, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInstrumentCommissionRate(
     this: *mut ::std::os::raw::c_void,
@@ -454,6 +492,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrumentCommissionRate(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryExchange(
     this: *mut ::std::os::raw::c_void,
@@ -466,6 +505,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchange(
     x.on_rsp_qry_exchange(pExchange, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryProduct(
     this: *mut ::std::os::raw::c_void,
@@ -478,6 +518,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryProduct(
     x.on_rsp_qry_product(pProduct, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInstrument(
     this: *mut ::std::os::raw::c_void,
@@ -490,6 +531,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrument(
     x.on_rsp_qry_instrument(pInstrument, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryDepthMarketData(
     this: *mut ::std::os::raw::c_void,
@@ -502,6 +544,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryDepthMarketData(
     x.on_rsp_qry_depth_market_data(pDepthMarketData, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQrySettlementInfo(
     this: *mut ::std::os::raw::c_void,
@@ -514,6 +557,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySettlementInfo(
     x.on_rsp_qry_settlement_info(pSettlementInfo, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryTransferBank(
     this: *mut ::std::os::raw::c_void,
@@ -526,6 +570,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTransferBank(
     x.on_rsp_qry_transfer_bank(pTransferBank, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInvestorPositionDetail(
     this: *mut ::std::os::raw::c_void,
@@ -538,6 +583,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorPositionDetail(
     x.on_rsp_qry_investor_position_detail(pInvestorPositionDetail, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryNotice(
     this: *mut ::std::os::raw::c_void,
@@ -550,6 +596,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryNotice(
     x.on_rsp_qry_notice(pNotice, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQrySettlementInfoConfirm(
     this: *mut ::std::os::raw::c_void,
@@ -562,6 +609,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySettlementInfoConfirm(
     x.on_rsp_qry_settlement_info_confirm(pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInvestorPositionCombineDetail(
     this: *mut ::std::os::raw::c_void,
@@ -579,6 +627,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorPositionCombineDetail(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryCFMMCTradingAccountKey(
     this: *mut ::std::os::raw::c_void,
@@ -596,6 +645,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryCFMMCTradingAccountKey(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryEWarrantOffset(
     this: *mut ::std::os::raw::c_void,
@@ -608,6 +658,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryEWarrantOffset(
     x.on_rsp_qry_e_warrant_offset(pEWarrantOffset, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInvestorProductGroupMargin(
     this: *mut ::std::os::raw::c_void,
@@ -625,6 +676,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestorProductGroupMargin(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryExchangeMarginRate(
     this: *mut ::std::os::raw::c_void,
@@ -637,6 +689,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchangeMarginRate(
     x.on_rsp_qry_exchange_margin_rate(pExchangeMarginRate, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryExchangeMarginRateAdjust(
     this: *mut ::std::os::raw::c_void,
@@ -654,6 +707,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchangeMarginRateAdjust(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryExchangeRate(
     this: *mut ::std::os::raw::c_void,
@@ -666,6 +720,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExchangeRate(
     x.on_rsp_qry_exchange_rate(pExchangeRate, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQrySecAgentACIDMap(
     this: *mut ::std::os::raw::c_void,
@@ -678,6 +733,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentACIDMap(
     x.on_rsp_qry_sec_agent_a_c_i_d_map(pSecAgentACIDMap, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryProductExchRate(
     this: *mut ::std::os::raw::c_void,
@@ -690,6 +746,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryProductExchRate(
     x.on_rsp_qry_product_exch_rate(pProductExchRate, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryProductGroup(
     this: *mut ::std::os::raw::c_void,
@@ -702,6 +759,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryProductGroup(
     x.on_rsp_qry_product_group(pProductGroup, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryMMInstrumentCommissionRate(
     this: *mut ::std::os::raw::c_void,
@@ -719,6 +777,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryMMInstrumentCommissionRate(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryMMOptionInstrCommRate(
     this: *mut ::std::os::raw::c_void,
@@ -731,6 +790,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryMMOptionInstrCommRate(
     x.on_rsp_qry_m_m_option_instr_comm_rate(pMMOptionInstrCommRate, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInstrumentOrderCommRate(
     this: *mut ::std::os::raw::c_void,
@@ -748,6 +808,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInstrumentOrderCommRate(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQrySecAgentTradingAccount(
     this: *mut ::std::os::raw::c_void,
@@ -760,6 +821,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentTradingAccount(
     x.on_rsp_qry_sec_agent_trading_account(pTradingAccount, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQrySecAgentCheckMode(
     this: *mut ::std::os::raw::c_void,
@@ -772,6 +834,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentCheckMode(
     x.on_rsp_qry_sec_agent_check_mode(pSecAgentCheckMode, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQrySecAgentTradeInfo(
     this: *mut ::std::os::raw::c_void,
@@ -784,6 +847,7 @@ pub unsafe extern "C" fn RustCtpOnRspQrySecAgentTradeInfo(
     x.on_rsp_qry_sec_agent_trade_info(pSecAgentTradeInfo, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryOptionInstrTradeCost(
     this: *mut ::std::os::raw::c_void,
@@ -796,6 +860,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOptionInstrTradeCost(
     x.on_rsp_qry_option_instr_trade_cost(pOptionInstrTradeCost, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryOptionInstrCommRate(
     this: *mut ::std::os::raw::c_void,
@@ -808,6 +873,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOptionInstrCommRate(
     x.on_rsp_qry_option_instr_comm_rate(pOptionInstrCommRate, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryExecOrder(
     this: *mut ::std::os::raw::c_void,
@@ -820,6 +886,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryExecOrder(
     x.on_rsp_qry_exec_order(pExecOrder, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryForQuote(
     this: *mut ::std::os::raw::c_void,
@@ -832,6 +899,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryForQuote(
     x.on_rsp_qry_for_quote(pForQuote, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryQuote(
     this: *mut ::std::os::raw::c_void,
@@ -844,6 +912,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryQuote(
     x.on_rsp_qry_quote(pQuote, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryOptionSelfClose(
     this: *mut ::std::os::raw::c_void,
@@ -856,6 +925,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryOptionSelfClose(
     x.on_rsp_qry_option_self_close(pOptionSelfClose, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryInvestUnit(
     this: *mut ::std::os::raw::c_void,
@@ -868,6 +938,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryInvestUnit(
     x.on_rsp_qry_invest_unit(pInvestUnit, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryCombInstrumentGuard(
     this: *mut ::std::os::raw::c_void,
@@ -880,6 +951,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryCombInstrumentGuard(
     x.on_rsp_qry_comb_instrument_guard(pCombInstrumentGuard, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryCombAction(
     this: *mut ::std::os::raw::c_void,
@@ -892,6 +964,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryCombAction(
     x.on_rsp_qry_comb_action(pCombAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryTransferSerial(
     this: *mut ::std::os::raw::c_void,
@@ -904,6 +977,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTransferSerial(
     x.on_rsp_qry_transfer_serial(pTransferSerial, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryAccountregister(
     this: *mut ::std::os::raw::c_void,
@@ -916,6 +990,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryAccountregister(
     x.on_rsp_qry_accountregister(pAccountregister, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspError(
     this: *mut ::std::os::raw::c_void,
@@ -927,6 +1002,7 @@ pub unsafe extern "C" fn RustCtpOnRspError(
     x.on_rsp_error(pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnOrder(
     this: *mut ::std::os::raw::c_void,
@@ -936,6 +1012,7 @@ pub unsafe extern "C" fn RustCtpOnRtnOrder(
     x.on_rtn_order(pOrder);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnTrade(
     this: *mut ::std::os::raw::c_void,
@@ -945,6 +1022,7 @@ pub unsafe extern "C" fn RustCtpOnRtnTrade(
     x.on_rtn_trade(pTrade);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnOrderInsert(
     this: *mut ::std::os::raw::c_void,
@@ -955,6 +1033,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOrderInsert(
     x.on_err_rtn_order_insert(pInputOrder, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -965,6 +1044,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOrderAction(
     x.on_err_rtn_order_action(pOrderAction, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnInstrumentStatus(
     this: *mut ::std::os::raw::c_void,
@@ -974,6 +1054,7 @@ pub unsafe extern "C" fn RustCtpOnRtnInstrumentStatus(
     x.on_rtn_instrument_status(pInstrumentStatus);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnBulletin(
     this: *mut ::std::os::raw::c_void,
@@ -983,6 +1064,7 @@ pub unsafe extern "C" fn RustCtpOnRtnBulletin(
     x.on_rtn_bulletin(pBulletin);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnTradingNotice(
     this: *mut ::std::os::raw::c_void,
@@ -992,6 +1074,7 @@ pub unsafe extern "C" fn RustCtpOnRtnTradingNotice(
     x.on_rtn_trading_notice(pTradingNoticeInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnErrorConditionalOrder(
     this: *mut ::std::os::raw::c_void,
@@ -1001,6 +1084,7 @@ pub unsafe extern "C" fn RustCtpOnRtnErrorConditionalOrder(
     x.on_rtn_error_conditional_order(pErrorConditionalOrder);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnExecOrder(
     this: *mut ::std::os::raw::c_void,
@@ -1010,6 +1094,7 @@ pub unsafe extern "C" fn RustCtpOnRtnExecOrder(
     x.on_rtn_exec_order(pExecOrder);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnExecOrderInsert(
     this: *mut ::std::os::raw::c_void,
@@ -1020,6 +1105,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnExecOrderInsert(
     x.on_err_rtn_exec_order_insert(pInputExecOrder, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnExecOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -1030,6 +1116,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnExecOrderAction(
     x.on_err_rtn_exec_order_action(pExecOrderAction, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnForQuoteInsert(
     this: *mut ::std::os::raw::c_void,
@@ -1040,6 +1127,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnForQuoteInsert(
     x.on_err_rtn_for_quote_insert(pInputForQuote, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnQuote(
     this: *mut ::std::os::raw::c_void,
@@ -1049,6 +1137,7 @@ pub unsafe extern "C" fn RustCtpOnRtnQuote(
     x.on_rtn_quote(pQuote);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnQuoteInsert(
     this: *mut ::std::os::raw::c_void,
@@ -1059,6 +1148,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQuoteInsert(
     x.on_err_rtn_quote_insert(pInputQuote, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnQuoteAction(
     this: *mut ::std::os::raw::c_void,
@@ -1069,6 +1159,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQuoteAction(
     x.on_err_rtn_quote_action(pQuoteAction, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
@@ -1078,6 +1169,7 @@ pub unsafe extern "C" fn RustCtpOnRtnForQuoteRsp(
     x.on_rtn_for_quote_rsp(pForQuoteRsp);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnCFMMCTradingAccountToken(
     this: *mut ::std::os::raw::c_void,
@@ -1087,6 +1179,7 @@ pub unsafe extern "C" fn RustCtpOnRtnCFMMCTradingAccountToken(
     x.on_rtn_c_f_m_m_c_trading_account_token(pCFMMCTradingAccountToken);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnBatchOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -1097,6 +1190,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnBatchOrderAction(
     x.on_err_rtn_batch_order_action(pBatchOrderAction, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnOptionSelfClose(
     this: *mut ::std::os::raw::c_void,
@@ -1106,6 +1200,7 @@ pub unsafe extern "C" fn RustCtpOnRtnOptionSelfClose(
     x.on_rtn_option_self_close(pOptionSelfClose);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnOptionSelfCloseInsert(
     this: *mut ::std::os::raw::c_void,
@@ -1116,6 +1211,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOptionSelfCloseInsert(
     x.on_err_rtn_option_self_close_insert(pInputOptionSelfClose, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnOptionSelfCloseAction(
     this: *mut ::std::os::raw::c_void,
@@ -1126,6 +1222,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnOptionSelfCloseAction(
     x.on_err_rtn_option_self_close_action(pOptionSelfCloseAction, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnCombAction(
     this: *mut ::std::os::raw::c_void,
@@ -1135,6 +1232,7 @@ pub unsafe extern "C" fn RustCtpOnRtnCombAction(
     x.on_rtn_comb_action(pCombAction);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnCombActionInsert(
     this: *mut ::std::os::raw::c_void,
@@ -1145,6 +1243,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnCombActionInsert(
     x.on_err_rtn_comb_action_insert(pInputCombAction, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryContractBank(
     this: *mut ::std::os::raw::c_void,
@@ -1157,6 +1256,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryContractBank(
     x.on_rsp_qry_contract_bank(pContractBank, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryParkedOrder(
     this: *mut ::std::os::raw::c_void,
@@ -1169,6 +1269,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryParkedOrder(
     x.on_rsp_qry_parked_order(pParkedOrder, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryParkedOrderAction(
     this: *mut ::std::os::raw::c_void,
@@ -1181,6 +1282,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryParkedOrderAction(
     x.on_rsp_qry_parked_order_action(pParkedOrderAction, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryTradingNotice(
     this: *mut ::std::os::raw::c_void,
@@ -1193,6 +1295,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryTradingNotice(
     x.on_rsp_qry_trading_notice(pTradingNotice, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryBrokerTradingParams(
     this: *mut ::std::os::raw::c_void,
@@ -1205,6 +1308,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryBrokerTradingParams(
     x.on_rsp_qry_broker_trading_params(pBrokerTradingParams, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQryBrokerTradingAlgos(
     this: *mut ::std::os::raw::c_void,
@@ -1217,6 +1321,7 @@ pub unsafe extern "C" fn RustCtpOnRspQryBrokerTradingAlgos(
     x.on_rsp_qry_broker_trading_algos(pBrokerTradingAlgos, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQueryCFMMCTradingAccountToken(
     this: *mut ::std::os::raw::c_void,
@@ -1234,6 +1339,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryCFMMCTradingAccountToken(
     );
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByBank(
     this: *mut ::std::os::raw::c_void,
@@ -1243,6 +1349,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByBank(
     x.on_rtn_from_bank_to_future_by_bank(pRspTransfer);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByBank(
     this: *mut ::std::os::raw::c_void,
@@ -1252,6 +1359,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByBank(
     x.on_rtn_from_future_to_bank_by_bank(pRspTransfer);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByBank(
     this: *mut ::std::os::raw::c_void,
@@ -1261,6 +1369,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByBank(
     x.on_rtn_repeal_from_bank_to_future_by_bank(pRspRepeal);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByBank(
     this: *mut ::std::os::raw::c_void,
@@ -1270,6 +1379,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByBank(
     x.on_rtn_repeal_from_future_to_bank_by_bank(pRspRepeal);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1279,6 +1389,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromBankToFutureByFuture(
     x.on_rtn_from_bank_to_future_by_future(pRspTransfer);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1288,6 +1399,7 @@ pub unsafe extern "C" fn RustCtpOnRtnFromFutureToBankByFuture(
     x.on_rtn_from_future_to_bank_by_future(pRspTransfer);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFutureManual(
     this: *mut ::std::os::raw::c_void,
@@ -1297,6 +1409,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFutureManual(
     x.on_rtn_repeal_from_bank_to_future_by_future_manual(pRspRepeal);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByFutureManual(
     this: *mut ::std::os::raw::c_void,
@@ -1306,6 +1419,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByFutureManual(
     x.on_rtn_repeal_from_future_to_bank_by_future_manual(pRspRepeal);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnQueryBankBalanceByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1315,6 +1429,7 @@ pub unsafe extern "C" fn RustCtpOnRtnQueryBankBalanceByFuture(
     x.on_rtn_query_bank_balance_by_future(pNotifyQueryAccount);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnBankToFutureByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1325,6 +1440,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnBankToFutureByFuture(
     x.on_err_rtn_bank_to_future_by_future(pReqTransfer, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnFutureToBankByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1335,6 +1451,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnFutureToBankByFuture(
     x.on_err_rtn_future_to_bank_by_future(pReqTransfer, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnRepealBankToFutureByFutureManual(
     this: *mut ::std::os::raw::c_void,
@@ -1345,6 +1462,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnRepealBankToFutureByFutureManual(
     x.on_err_rtn_repeal_bank_to_future_by_future_manual(pReqRepeal, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnRepealFutureToBankByFutureManual(
     this: *mut ::std::os::raw::c_void,
@@ -1355,6 +1473,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnRepealFutureToBankByFutureManual(
     x.on_err_rtn_repeal_future_to_bank_by_future_manual(pReqRepeal, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnErrRtnQueryBankBalanceByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1365,6 +1484,7 @@ pub unsafe extern "C" fn RustCtpOnErrRtnQueryBankBalanceByFuture(
     x.on_err_rtn_query_bank_balance_by_future(pReqQueryAccount, pRspInfo);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1374,6 +1494,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromBankToFutureByFuture(
     x.on_rtn_repeal_from_bank_to_future_by_future(pRspRepeal);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1383,6 +1504,7 @@ pub unsafe extern "C" fn RustCtpOnRtnRepealFromFutureToBankByFuture(
     x.on_rtn_repeal_from_future_to_bank_by_future(pRspRepeal);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspFromBankToFutureByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1395,6 +1517,7 @@ pub unsafe extern "C" fn RustCtpOnRspFromBankToFutureByFuture(
     x.on_rsp_from_bank_to_future_by_future(pReqTransfer, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspFromFutureToBankByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1407,6 +1530,7 @@ pub unsafe extern "C" fn RustCtpOnRspFromFutureToBankByFuture(
     x.on_rsp_from_future_to_bank_by_future(pReqTransfer, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRspQueryBankAccountMoneyByFuture(
     this: *mut ::std::os::raw::c_void,
@@ -1419,6 +1543,7 @@ pub unsafe extern "C" fn RustCtpOnRspQueryBankAccountMoneyByFuture(
     x.on_rsp_query_bank_account_money_by_future(pReqQueryAccount, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnOpenAccountByBank(
     this: *mut ::std::os::raw::c_void,
@@ -1428,6 +1553,7 @@ pub unsafe extern "C" fn RustCtpOnRtnOpenAccountByBank(
     x.on_rtn_open_account_by_bank(pOpenAccount);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnCancelAccountByBank(
     this: *mut ::std::os::raw::c_void,
@@ -1437,6 +1563,7 @@ pub unsafe extern "C" fn RustCtpOnRtnCancelAccountByBank(
     x.on_rtn_cancel_account_by_bank(pCancelAccount);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpOnRtnChangeAccountByBank(
     this: *mut ::std::os::raw::c_void,
@@ -2196,7 +2323,8 @@ pub trait TdCallApi {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {}
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2672,9 +2800,7 @@ impl TdCallApi for CallDataCollector {
                 // println!(">>> Order failed, id: {} msg: {}", e.id, e.msg);
             }
         }
-        if bIsLast{
-
-        }
+        if bIsLast {}
     }
 
     fn on_rsp_order_action(
@@ -2772,7 +2898,7 @@ impl TdCallApi for CallDataCollector {
                     volume: (*pTrade).Volume as f64,
                     tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
                 },
-                idx
+                idx,
             )
         };
         // 这里控制接收order data的策略index
@@ -2811,13 +2937,14 @@ impl TdCallApi for CallDataCollector {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
+    ) {
+    }
 
     fn on_err_rtn_order_action(
         &mut self,
         pOrderAction: *mut CThostFtdcOrderActionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
-    ) -> () {
+    ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
@@ -2857,8 +2984,7 @@ impl TdCallApi for CallDataCollector {
         }
 
         if bIsLast {
-            let mut blocker = self.blocker.take().unwrap();
-            blocker.0.step4.unblock();
+            self.blocker.take().unwrap().0.step4.unblock();
         }
     }
 }
@@ -3051,7 +3177,11 @@ impl TdApi {
     pub fn req_instrument(&mut self) {
         self.request_id += 1;
         unsafe {
-            RustCtpCallReqQryInstrument(self.trader_api, Box::into_raw(Box::new(CThostFtdcQryInstrumentField::default())), self.request_id);
+            RustCtpCallReqQryInstrument(
+                self.trader_api,
+                Box::into_raw(Box::new(CThostFtdcQryInstrumentField::default())),
+                self.request_id,
+            );
         }
     }
 
@@ -3161,7 +3291,12 @@ impl Interface for TdApi {
     fn cancel_order(&mut self, req: CancelRequest) {
         self.request_id += 1;
         let exchange = req.exchange;
-        let data = req.order_id.split("_").into_iter().map(|x| x.to_string()).collect::<Vec<String>>();
+        let data = req
+            .order_id
+            .split('_')
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
         let form = self.login_info();
         let action = CThostFtdcInputOrderActionField {
             InstrumentID: req.symbol.to_c_slice(),

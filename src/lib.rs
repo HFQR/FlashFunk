@@ -13,7 +13,10 @@ pub mod interface;
 pub mod structs;
 pub(crate) mod util;
 
-pub use ac::{Ac, IntoStrategy};
+pub mod prelude {
+    pub use crate::ac::{Ac, IntoStrategy};
+    pub use crate::app::ContextTrait;
+}
 
 fn get_interface_path(path: &str) -> PathBuf {
     let px = format!("{}/HFQ/{}", var("HOME").unwrap(), path);

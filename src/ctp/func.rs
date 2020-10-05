@@ -104,12 +104,14 @@ unsafe fn get_quote_spi<'a>(spi: *mut c_void) -> &'a mut dyn QuoteApi {
 ///  5. 当行情到来时候，c++ 会直接调用c函数
 ///  6.c函数这个时候已经被重写掉， 然后他会执行rust里面的代码
 ///
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnFrontConnected(this: *mut ::std::os::raw::c_void) {
     let x = get_quote_spi(this);
     x.on_front_connected();
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnFrontDisconnected(
     this: *mut ::std::os::raw::c_void,
@@ -119,6 +121,7 @@ pub unsafe extern "C" fn QuoteSpi_OnFrontDisconnected(
     x.on_front_disconnected(DisconnectionReason::from(nReason));
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnHeartBeatWarning(
     this: *mut ::std::os::raw::c_void,
@@ -127,6 +130,7 @@ pub unsafe extern "C" fn QuoteSpi_OnHeartBeatWarning(
     let x = get_quote_spi(this);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUserLogin(
     this: *mut ::std::os::raw::c_void,
@@ -139,6 +143,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUserLogin(
     x.on_rsp_user_login(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUserLogout(
     this: *mut ::std::os::raw::c_void,
@@ -163,6 +168,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUserLogout(
 //     println!("查询多个合约的回报  此处还没实现方法噢")
 // }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspError(
     this: *mut ::std::os::raw::c_void,
@@ -174,6 +180,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspError(
     x.on_rsp_error(pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspSubMarketData(
     this: *mut ::std::os::raw::c_void,
@@ -186,6 +193,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspSubMarketData(
     x.on_rsp_sub_market_data(pSpecificInstrument, pRspInfo, nRequestID, bIsLast)
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUnSubMarketData(
     this: *mut ::std::os::raw::c_void,
@@ -198,6 +206,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUnSubMarketData(
     x.on_rsp_un_sub_market_data(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspSubForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
@@ -210,6 +219,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspSubForQuoteRsp(
     x.on_rsp_sub_for_quote_rsp(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRspUnSubForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
@@ -222,6 +232,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRspUnSubForQuoteRsp(
     x.on_rsp_un_sub_for_quote_rsp(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRtnDepthMarketData(
     this: *mut ::std::os::raw::c_void,
@@ -231,6 +242,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRtnDepthMarketData(
     x.on_rtn_depth_market_data(pDepthMarketData);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_OnRtnForQuoteRsp(
     this: *mut ::std::os::raw::c_void,
@@ -240,6 +252,7 @@ pub unsafe extern "C" fn QuoteSpi_OnRtnForQuoteRsp(
     x.on_rtn_for_quote_rsp(pForQuoteRsp);
 }
 
+/// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn QuoteSpi_Rust_Destructor(spi: *mut c_void) {
     let spi = spi as *mut Box<dyn QuoteApi>;

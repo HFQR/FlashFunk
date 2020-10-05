@@ -225,7 +225,7 @@ impl MdApi {
             CThostFtdcMdApi_ReqUserLogin(
                 self.market_api,
                 &mut CThostFtdcReqUserLoginField::default(),
-                self.request_id.clone(),
+                self.request_id,
             )
         };
     }
@@ -309,11 +309,7 @@ impl Interface for MdApi {
             let code = CString::new(*symbol).unwrap();
             let mut c = code.into_raw();
             unsafe {
-                CThostFtdcMdApi_SubscribeMarketData(
-                    self.market_api,
-                    &mut c,
-                    self.request_id.clone(),
-                )
+                CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, self.request_id)
             };
         });
     }

@@ -1,21 +1,19 @@
 use core::fmt::{Debug, Formatter, Result as FmtResult};
 
-use std::borrow::{Cow, Borrow, BorrowMut};
-use crate::util::hash::HashMap;
-use std::hash::Hash;
+use std::borrow::Cow;
 
 use super::interface::Interface;
 use crate::ac::{IntoStrategy, __Strategy};
 use crate::account::Account;
+use crate::constants::{Exchange, Status};
 use crate::ctp::md_api::MdApi;
 use crate::ctp::td_api::TdApi;
 use crate::structs::{
-    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest,
-    PositionData, SubscribeRequest, TickData, TradeData,
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
+    SubscribeRequest, TickData, TradeData,
 };
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
-use crate::constants::{Status, Exchange};
-use crossbeam_queue::spsc::Producer;
+use crate::util::hash::HashMap;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。
@@ -186,7 +184,7 @@ impl<'a> CtpBuilder<'a> {
         let mut md_api = MdApi::new(id, pwd, path, symbols);
         let mut td_api = TdApi::new("".parse().unwrap());
 
-        let login_form = self.login_form.into();
+        let login_form = self.login_form;
 
         // 连接
         md_api.connect(&login_form, s_md);
@@ -197,9 +195,7 @@ impl<'a> CtpBuilder<'a> {
         td_api.connect(&login_form, s_td);
 
         // 启动策略工人线程。
-        workers
-            .into_iter()
-            .for_each(|worker| worker.start());
+        workers.into_iter().for_each(|worker| worker.start());
 
         // 此处策略消费端会阻塞线程并发送消息给td_api。
         c_st.block_handle(td_api);
@@ -236,7 +232,7 @@ fn prepare_channels<'a>(
     let mut groups: Vec<Vec<usize>> = Vec::new();
 
     sts.into_iter().enumerate().for_each(|(st_index, st)| {
-        st.symbols().into_iter().for_each(|symbol| {
+        st.symbols().iter().for_each(|symbol| {
             symbols
                 .iter()
                 .enumerate()
@@ -312,24 +308,150 @@ struct StrategyWorker {
     pub p_st: Sender<StrategyMessage>,
 }
 
-pub struct StrategyWorkerContext<'a> {
+// pub struct StrategyWorkerContext<'a> {
+//     order_map: HashMap<String, OrderData>,
+//     sender: &'a Sender<StrategyMessage>,
+//     contract_map: HashMap<String, ContractData>,
+//     exchange_map: HashMap<String, Exchange>,
+// }
+//
+// impl StrategyWorkerContext<'_> {
+//     pub fn new(sender: &Sender<StrategyMessage>) -> StrategyWorkerContext {
+//         StrategyWorkerContext {
+//             order_map: Default::default(),
+//             sender,
+//             contract_map: Default::default(),
+//             exchange_map: Default::default(),
+//         }
+//     }
+//
+//     pub fn add_order(&mut self, order: OrderData) {
+//         self.order_map.insert(order.orderid.clone().unwrap(), order);
+//     }
+//
+//     pub fn get_active_orders(&mut self) -> Vec<&OrderData> {
+//         self.order_map
+//             .iter()
+//             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
+//             .map(|(_, v)| v)
+//             .collect()
+//     }
+//
+//     pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
+//         self.order_map.get(order_id)
+//     }
+//
+//     pub fn get_active_ids(&mut self) -> Vec<&str> {
+//         self.order_map
+//             .iter()
+//             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
+//             .map(|(i, _)| i.as_str())
+//             .collect()
+//     }
+//
+//     pub fn get_order_ids(&mut self) -> Vec<&str> {
+//         self.order_map.iter().map(|x| x.0.as_str()).collect()
+//     }
+//
+//     pub fn send(&mut self, message: StrategyMessage) {
+//         self.sender.send(message);
+//     }
+// }
+
+impl StrategyWorker {
+    fn new(
+        st: __Strategy,
+        c_md: Receiver<MdApiMessage>,
+        c_td: Receiver<TdApiMessage>,
+        p_st: Sender<StrategyMessage>,
+    ) -> Self {
+        Self {
+            st,
+            c_md,
+            c_td,
+            p_st,
+        }
+    }
+
+    // 初次启动
+    fn start(mut self) {
+        std::thread::spawn(move || self._start());
+    }
+
+    fn _start(&mut self) {
+        // worker上下文. 保存order_id和其对应的exchange
+        let mut ctx = new_context(&self.p_st);
+        loop {
+            // 接收md_api的消息并处理。
+            match self.c_md.recv() {
+                Ok(msg) => match msg {
+                    // tick会返回订单vec，我们转发至td api
+                    MdApiMessage::TickData(data) => {
+                        // self.st.on_tick(&data).into_iter().for_each(|mut m| {
+                        //     self.p_st.send(m);
+                        // })
+                        self.st.on_tick(&data, &mut ctx)
+                    }
+                    _ => {}
+                },
+                Err(_) => (),
+            }
+            // 接收td_api的消息并处理。
+            match self.c_td.recv() {
+                Ok(msg) => match msg {
+                    TdApiMessage::OrderData(data) => {
+                        // 可以在这里插入信息至ctx
+                        // 目前所有order都会被加入map，需要过滤我们建立的单子。
+                        // 目前没有删除机制，此insert会泄露内存。
+                        // fixme: 針對於當前的order需要和on_tick一樣 返回消息轉發給td_api,實現追單補單等邏輯
+                        //  self.st.on_order(&data).into_iter().for_each() ...
+                        ctx.add_order(data.clone());
+                        self.st.on_order(&data, &mut ctx);
+                    }
+                    TdApiMessage::TradeData(data) => self.st.on_trade(&data, &mut ctx),
+                    TdApiMessage::AccountData(data) => self.st.on_account(&data, &mut ctx),
+                    TdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
+                    TdApiMessage::ContractData(data) => {
+                        ctx.1
+                            .exchange_map
+                            .insert(data.symbol.clone(), data.exchange.unwrap());
+                        self.st.on_contract(&data, &mut ctx);
+                    }
+                },
+                Err(_) => (),
+            }
+        }
+    }
+}
+
+impl Drop for StrategyWorker {
+    fn drop(&mut self) {
+        // worker退出时如果线程panic则恢复运行
+        if std::thread::panicking() {
+            self._start();
+        }
+    }
+}
+
+pub type StrategyWorkerContext<'a> = (&'a Sender<StrategyMessage>, StrategyWorkerContextInner);
+
+fn new_context(sender: &Sender<StrategyMessage>) -> StrategyWorkerContext {
+    let inner = StrategyWorkerContextInner {
+        order_map: Default::default(),
+        contract_map: Default::default(),
+        exchange_map: Default::default(),
+    };
+
+    (sender, inner)
+}
+
+pub struct StrategyWorkerContextInner {
     order_map: HashMap<String, OrderData>,
-    sender: &'a Sender<StrategyMessage>,
     contract_map: HashMap<String, ContractData>,
     exchange_map: HashMap<String, Exchange>,
 }
 
-
-impl StrategyWorkerContext<'_> {
-    pub fn new(sender: &mut Sender<StrategyMessage>) -> StrategyWorkerContext {
-        StrategyWorkerContext {
-            order_map: Default::default(),
-            sender,
-            contract_map: Default::default(),
-            exchange_map: Default::default(),
-        }
-    }
-
+impl StrategyWorkerContextInner {
     pub fn add_order(&mut self, order: OrderData) {
         self.order_map.insert(order.orderid.clone().unwrap(), order);
     }
@@ -357,83 +479,56 @@ impl StrategyWorkerContext<'_> {
     pub fn get_order_ids(&mut self) -> Vec<&str> {
         self.order_map.iter().map(|x| x.0.as_str()).collect()
     }
-
-
-    pub fn send(&mut self, message: StrategyMessage) {
-        self.sender.send(message);
-    }
 }
 
-impl StrategyWorker {
-    fn new(
-        st: __Strategy,
-        c_md: Receiver<MdApiMessage>,
-        c_td: Receiver<TdApiMessage>,
-        p_st: Sender<StrategyMessage>,
-    ) -> Self {
-        Self {
-            st,
-            c_md,
-            c_td,
-            p_st,
-        }
-    }
+pub trait ContextTrait {
+    fn enter<F>(&mut self, f: F)
+    where
+        F: FnOnce(&Sender<StrategyMessage>, &mut StrategyWorkerContextInner);
 
-    // 初次启动
-    fn start(mut self) {
-        std::thread::spawn(move || self._start());
-    }
+    fn send(&self, m: impl Into<StrategyMessage>);
 
-    fn _start(&mut self) {
-        // worker上下文. 保存order_id和其对应的exchange
-        let mut ctx = StrategyWorkerContext::new(self.p_st.borrow_mut());
-        loop {
-            // 接收md_api的消息并处理。
-            match self.c_md.recv() {
-                Ok(msg) => match msg {
-                    // tick会返回订单vec，我们转发至td api
-                    MdApiMessage::TickData(data) => {
-                        // self.st.on_tick(&data).into_iter().for_each(|mut m| {
-                        //     self.p_st.send(m);
-                        // })
-                        self.st.on_tick(&data, &mut ctx)
-                    }
-                    _ => {}
-                },
-                Err(_) => (),
-            }
-            // 接收td_api的消息并处理。
-            match self.c_td.recv() {
-                Ok(msg) => match msg {
-                    // meta 是 session id 和 front id
-                    TdApiMessage::OrderData(data) => {
-                        // 可以在这里插入信息至ctx
-                        // 目前所有order都会被加入map，需要过滤我们建立的单子。
-                        // 目前没有删除机制，此insert会泄露内存。
-                        // fixme: 針對於當前的order需要和on_tick一樣 返回消息轉發給td_api,實現追單補單等邏輯
-                        //  self.st.on_order(&data).into_iter().for_each() ...
-                        ctx.add_order(data.clone());
-                        self.st.on_order(&data, &mut ctx);
-                    }
-                    TdApiMessage::TradeData(data) => self.st.on_trade(&data, &mut ctx),
-                    TdApiMessage::AccountData(data) => self.st.on_account(&data, &mut ctx),
-                    TdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
-                    TdApiMessage::ContractData(data) => {
-                        ctx.exchange_map.insert(data.symbol.clone(), *data.exchange.as_ref().unwrap());
-                        self.st.on_contract(&data, &mut ctx);
-                    }
-                },
-                Err(_) => (),
-            }
-        }
-    }
+    fn add_order(&mut self, order: OrderData);
+
+    fn get_active_orders(&mut self) -> Vec<&OrderData>;
+
+    fn get_order(&mut self, order_id: &str) -> Option<&OrderData>;
+
+    fn get_active_ids(&mut self) -> Vec<&str>;
+
+    fn get_order_ids(&mut self) -> Vec<&str>;
 }
 
-impl Drop for StrategyWorker {
-    fn drop(&mut self) {
-        // worker退出时如果线程panic则恢复运行
-        if std::thread::panicking() {
-            self._start();
-        }
+impl ContextTrait for StrategyWorkerContext<'_> {
+    fn enter<F>(&mut self, f: F)
+    where
+        F: FnOnce(&Sender<StrategyMessage>, &mut StrategyWorkerContextInner),
+    {
+        let (sender, inner) = self;
+        f(*sender, inner);
+    }
+
+    fn send(&self, m: impl Into<StrategyMessage>) {
+        self.0.send(m.into());
+    }
+
+    fn add_order(&mut self, order: OrderData) {
+        self.1.add_order(order);
+    }
+
+    fn get_active_orders(&mut self) -> Vec<&OrderData> {
+        self.1.get_active_orders()
+    }
+
+    fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
+        self.1.get_order(order_id)
+    }
+
+    fn get_active_ids(&mut self) -> Vec<&str> {
+        self.1.get_active_ids()
+    }
+
+    fn get_order_ids(&mut self) -> Vec<&str> {
+        self.1.get_order_ids()
     }
 }

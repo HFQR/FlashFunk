@@ -20,7 +20,7 @@ pub fn to_i8_arrary(string: String) -> Vec<i8> {
     CString::new(string)
         .unwrap()
         .as_bytes()
-        .into_iter()
+        .iter()
         .map(|x| *x as i8)
         .collect()
 }

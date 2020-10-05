@@ -1,14 +1,13 @@
 #![allow(dead_code, unused_variables)]
 
-use crate::util::hash::HashMap;
-
-use crate::constants::{Direction, Offset};
-use crate::structs::{DailyResult, OrderData, Params, TickData, TradeData};
-use std::borrow::{Borrow, Cow};
-
-use crate::structs::PositionData;
+use std::borrow::Cow;
 
 use chrono::{Date, Utc};
+
+use crate::constants::{Direction, Offset};
+use crate::structs::PositionData;
+use crate::structs::{DailyResult, OrderData, Params, TickData, TradeData};
+use crate::util::hash::HashMap;
 
 pub trait PositionManager {
     fn get_all_positions(&mut self) -> Vec<PositionData>;
@@ -86,7 +85,7 @@ impl Account {
         self.close_profit
             .values()
             .into_iter()
-            .map(|x| x.clone())
+            .copied()
             .collect::<Vec<f64>>()
             .iter()
             .sum()
@@ -134,7 +133,7 @@ impl Account {
                     Direction::SHORT => {
                         (data.price - 0.0) * data.volume * self.get_size_map(&symbol)
                     }
-                    Direction::NET => 0.0,
+                    _ => 0.0,
                 };
                 if let Some(t) = self.close_profit.get(&symbol) {
                     let sum = close_profit + *t;
@@ -147,38 +146,30 @@ impl Account {
     }
     /// return size by passed symbol
     fn get_size_map(&mut self, symbol: &str) -> f64 {
-        self.size_map.get(symbol).unwrap_or(0.0.borrow()).clone()
+        self.size_map.get(symbol).copied().unwrap_or(0.0)
     }
     /// return commission_ration by passed symbol
     fn get_commission_ratio(&mut self, symbol: &str) -> f64 {
-        self.commission_ratio
-            .get(symbol)
-            .unwrap_or(0.0.borrow())
-            .clone()
+        self.commission_ratio.get(symbol).copied().unwrap_or(0.0)
     }
     /// return margin_ratio by passed symbol
     fn get_margin_ratio(&mut self, symbol: &str) -> f64 {
-        self.margin_ratio
-            .get(symbol)
-            .unwrap_or(0.0.borrow())
-            .clone()
+        self.margin_ratio.get(symbol).copied().unwrap_or(0.0)
     }
     /// update order
     /// 1.add frozen fee if open
     /// 2.add margin_frozen if open
     pub fn update_order(&mut self, data: OrderData) {
         let symbol: String = data.symbol.clone();
-        let commission_ratio = self.get_commission_ratio(&symbol).clone();
+        let commission_ratio = self.get_commission_ratio(&symbol);
         self.frozen_fee
             .insert(symbol.clone(), commission_ratio * data.volume * data.price);
         match data.offset {
             Offset::OPEN => {
                 // Add Margin frozen
                 let ratio = self.get_margin_ratio(&symbol);
-                self.margin_frozen_container.insert(
-                    data.orderid.unwrap().clone(),
-                    data.volume * data.price * ratio,
-                );
+                self.margin_frozen_container
+                    .insert(data.orderid.unwrap(), data.volume * data.price * ratio);
             }
             _ => {}
         }
@@ -197,7 +188,7 @@ impl Account {
             .iter()
             .map(|x| {
                 let real_price = self.get_real_price(x.symbol.as_str());
-                match x.direction.as_ref().unwrap() {
+                match x.direction.unwrap() {
                     Direction::LONG => {
                         if x.yd_volume.eq(&0.0) {
                             x.volume * (real_price - x.price) * self.get_size_map(x.symbol.as_str())
@@ -205,8 +196,8 @@ impl Account {
                             let today = x.volume - x.yd_volume;
                             today * (real_price - x.price) * self.get_size_map(x.symbol.as_str())
                                 + x.yd_volume
-                                * (real_price - self.get_pre_price(x.symbol.as_str()))
-                                * self.get_size_map(x.symbol.as_str())
+                                    * (real_price - self.get_pre_price(x.symbol.as_str()))
+                                    * self.get_size_map(x.symbol.as_str())
                         }
                     }
                     Direction::SHORT => {
@@ -216,11 +207,11 @@ impl Account {
                             let today = x.volume - x.yd_volume;
                             today * (x.price - real_price) * self.get_size_map(x.symbol.as_str())
                                 + x.yd_volume
-                                * (self.get_pre_price(x.symbol.as_str()) - real_price)
-                                * self.get_size_map(x.symbol.as_str())
+                                    * (self.get_pre_price(x.symbol.as_str()) - real_price)
+                                    * self.get_size_map(x.symbol.as_str())
                         }
                     }
-                    Direction::NET => panic!("暂不支持"),
+                    _ => panic!("暂不支持"),
                 }
             })
             .collect::<Vec<f64>>()
@@ -229,11 +220,11 @@ impl Account {
     }
     /// 获取实时价格
     fn get_real_price(&mut self, symbol: &str) -> f64 {
-        self.price_mapping.get(symbol).unwrap_or(&0.0).clone()
+        *self.price_mapping.get(symbol).unwrap_or(&0.0)
     }
     /// 获取昨日收盘价
     fn get_pre_price(&mut self, symbol: &str) -> f64 {
-        self.pre_close.get(symbol).unwrap_or(&0.0).clone()
+        *self.pre_close.get(symbol).unwrap_or(&0.0)
     }
     ///  get the margin of position for the account
     pub fn margin(&mut self) -> f64 {
@@ -270,7 +261,7 @@ impl Account {
         self.margin_frozen_container
             .values()
             .into_iter()
-            .map(|x| x.clone())
+            .copied()
             .collect::<Vec<f64>>()
             .iter()
             .sum()

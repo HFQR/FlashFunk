@@ -1,9 +1,8 @@
 use core::ops::{Deref, DerefMut};
 
-use crate::app::{StrategyWorkerContext};
+use crate::app::StrategyWorkerContext;
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::structs::{AccountData, ContractData, OrderData, PositionData, TickData, TradeData};
-use crate::util::hash::HashMap;
 
 pub trait IntoStrategy: Sized + Send + Ac + 'static {
     fn into_str(self) -> __Strategy {
