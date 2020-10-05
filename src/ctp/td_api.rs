@@ -2769,6 +2769,19 @@ impl<'a> TdCallApi for CallDataCollector<'a> {
             }
         }
     }
+
+    fn on_err_rtn_order_action(
+        &mut self,
+        pOrderAction: *mut CThostFtdcOrderActionField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+    ) -> () {
+        match get_rsp_info(pRspInfo) {
+            Ok(t) => {}
+            Err(e) => {
+                println!(">>> Order Action Err, id: {} msg: {}", e.id, e.msg);
+            }
+        };
+    }
 }
 
 unsafe impl Send for TdApi {}

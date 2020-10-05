@@ -20,11 +20,29 @@ struct Quote {
     bid_volume: f64,
     ask_volume: f64,
     thread: f64,
+    last_price: f64,
 }
 
 impl Quote {
+    pub fn new() -> Quote {
+        Quote {
+            ask: 0.0,
+            bid: 0.0,
+            bid_volume: 0.0,
+            ask_volume: 0.0,
+            thread: 0.0,
+            last_price: 0.0,
+        }
+    }
     /// 計算盤口信息
-    pub fn update_tick(&mut self) {}
+    pub fn update_tick(&mut self, tick: &TickData) {
+        if tick.ask_price(0) != self.ask && tick.bid_price(0) != self.bid {
+            println!("price changed at {}", tick.last_price - self.last_price);
+            self.bid = tick.bid_price(0);
+            self.ask = tick.ask_price(0);
+            self.last_price = tick.last_price;
+        };
+    }
 }
 
 #[derive(Strategy)]
@@ -32,7 +50,7 @@ impl Quote {
 #[symbol("rb2101")]
 struct Strategy {
     order_manager: OrderManager,
-    is_send: bool,
+    quote: Quote,
 }
 
 impl Ac for Strategy {
@@ -48,19 +66,23 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-        println!("行情 : {}", tick.last_price);
-        res.push(req.into());
-        for order in self.order_manager.get_active_orders() {
-            ;
-            res.push(
-                CancelRequest {
-                    order_id: order.orderid.as_ref().unwrap().to_string(),
-                    exchange: Exchange::SHFE,
-                    symbol: order.symbol.to_string(),
-                }
-                    .into(),
-            );
-        }
+        println!("行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}", tick.last_price,
+                 tick.bid_price(0), tick.ask_price(0), tick.bid_volume(0), tick.ask_volume(0));
+
+        self.quote.update_tick(tick);
+
+        // res.push(req.into());
+        // for order in self.order_manager.get_active_orders() {
+        //     ;
+        //     res.push(
+        //         CancelRequest {
+        //             order_id: order.orderid.as_ref().unwrap().to_string(),
+        //             exchange: Exchange::SHFE,
+        //             symbol: order.symbol.to_string(),
+        //         }
+        //             .into(),
+        //     );
+        // }
         res
     }
 
@@ -83,7 +105,7 @@ fn main() {
         .production_info("");
     let strategy_1 = Strategy {
         order_manager: OrderManager::new(),
-        is_send: false,
+        quote: Quote::new(),
     };
     CtpbeeR::new("ctpbee")
         .strategies(vec![strategy_1.into_str()])
