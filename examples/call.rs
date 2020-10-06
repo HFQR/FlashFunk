@@ -1,8 +1,9 @@
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
 use chrono::Local;
-use flashfunk::app::{CtpbeeR, StrategyMessage, StrategyWorkerContext};
+use flashfunk::app::{CtpbeeR, StrategyMessage};
 use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
+use flashfunk::context::Context;
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
@@ -52,7 +53,7 @@ struct Strategy {
 }
 
 impl Ac for Strategy {
-    fn on_tick(&mut self, tick: &TickData, ctx: &mut StrategyWorkerContext) {
+    fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         let req = OrderRequest {
             symbol: "rb2101".to_string(),
             exchange: Exchange::SHFE,
@@ -71,11 +72,10 @@ impl Ac for Strategy {
             tick.bid_volume(0),
             tick.ask_volume(0)
         );
-
+        println!("{:?}", ctx.get_active_ids());
         self.quote.update_tick(tick);
-        // ctx.send(req.into());
-
-        // 当我们需要同时引用上下文的不同状态时，我们可以使用Context::enter方法
+        // ctx.send(req);
+        // // 当我们需要同时引用上下文的不同状态时，我们可以使用Context::enter方法
         ctx.enter(|sender, ctx| {
             ctx.get_active_orders().iter().for_each(|f| {
                 let order = CancelRequest {
@@ -83,28 +83,9 @@ impl Ac for Strategy {
                     exchange: Exchange::SHFE,
                     symbol: f.symbol.to_string(),
                 };
-
                 sender.send(order);
             });
         });
-
-        let cancel_reqs: Vec<StrategyMessage> = ctx
-            .get_active_orders()
-            .iter()
-            .map(|f| {
-                CancelRequest {
-                    order_id: f.orderid.clone().unwrap(),
-                    exchange: Exchange::SHFE,
-                    symbol: f.symbol.to_string(),
-                }
-                .into()
-            })
-            .collect();
-
-        for order in cancel_reqs {
-            ctx.send(order);
-        }
-        println!("{:?}", ctx.get_active_ids());
     }
 }
 

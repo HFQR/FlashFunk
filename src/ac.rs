@@ -1,7 +1,6 @@
 use core::ops::{Deref, DerefMut};
 
-use crate::app::StrategyWorkerContext;
-use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
+use crate::context::Context;
 use crate::structs::{AccountData, ContractData, OrderData, PositionData, TickData, TradeData};
 
 pub trait IntoStrategy: Sized + Send + Ac + 'static {
@@ -46,17 +45,17 @@ impl DerefMut for __Strategy {
 
 #[allow(unused_variables)]
 pub trait Ac {
-    fn on_tick(&mut self, tick: &TickData, ctx: &mut StrategyWorkerContext);
+    fn on_tick(&mut self, tick: &TickData, ctx: &mut Context);
 
-    fn on_contract(&mut self, contract: &ContractData, ctx: &mut StrategyWorkerContext) {}
+    fn on_contract(&mut self, contract: &ContractData, ctx: &mut Context) {}
 
-    fn on_position(&mut self, position: &PositionData, ctx: &mut StrategyWorkerContext) {}
+    fn on_position(&mut self, position: &PositionData, ctx: &mut Context) {}
 
-    fn on_trade(&mut self, trade: &TradeData, ctx: &mut StrategyWorkerContext) {}
+    fn on_trade(&mut self, trade: &TradeData, ctx: &mut Context) {}
 
-    fn on_order(&mut self, order: &OrderData, ctx: &mut StrategyWorkerContext) {}
+    fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {}
 
-    fn on_account(&mut self, account: &AccountData, ctx: &mut StrategyWorkerContext) {}
+    fn on_account(&mut self, account: &AccountData, ctx: &mut Context) {}
 
-    fn on_realtime(&mut self, ctx: &mut StrategyWorkerContext) {}
+    fn on_realtime(&mut self, ctx: &mut Context) {}
 }

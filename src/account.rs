@@ -1,8 +1,7 @@
 #![allow(dead_code, unused_variables)]
 
-use std::borrow::Cow;
-
 use chrono::{Date, Utc};
+use std::borrow::Cow;
 
 use crate::constants::{Direction, Offset};
 use crate::structs::PositionData;

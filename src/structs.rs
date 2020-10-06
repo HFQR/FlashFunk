@@ -157,6 +157,26 @@ impl Default for PositionData {
     }
 }
 
+/// Position Data
+/// fixme 針對於與這種數據做數組優化
+#[derive(Clone, Debug, Default)]
+pub struct Position {
+    pub symbol: String,
+    pub exchange: Option<Exchange>,
+    pub long_volume: f64,
+    pub short_volume: f64,
+    pub long_frozen: f64,
+    pub short_frozen: f64,
+    pub long_price: f64,
+    pub short_price: f64,
+    pub long_pnl: f64,
+    pub short_pnl: f64,
+    pub long_yd_volume: f64,
+    pub short_yd_volume: f64,
+    pub long_available: f64,
+    pub short_available: f64,
+}
+
 /// Account Data
 #[derive(Clone, Debug)]
 pub struct AccountData {
@@ -164,6 +184,17 @@ pub struct AccountData {
     pub balance: f64,
     pub frozen: f64,
     pub date: Date<Utc>,
+}
+
+impl Default for AccountData {
+    fn default() -> Self {
+        AccountData {
+            accountid: "".to_string(),
+            balance: 0.0,
+            frozen: 0.0,
+            date: Utc::today(),
+        }
+    }
 }
 
 /// Contract Data
@@ -343,3 +374,5 @@ impl LoginForm {
         &self.production_info
     }
 }
+
+pub struct QueryRequest {}

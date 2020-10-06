@@ -5,14 +5,15 @@ use std::borrow::Cow;
 use super::interface::Interface;
 use crate::ac::{IntoStrategy, __Strategy};
 use crate::account::Account;
-use crate::constants::{Exchange, Status};
 use crate::ctp::md_api::MdApi;
 use crate::ctp::td_api::TdApi;
 use crate::structs::{
     AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
-    SubscribeRequest, TickData, TradeData,
+    QueryRequest, SubscribeRequest, TickData, TradeData,
 };
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
+
+use crate::context::{new_context, ContextTrait};
 use crate::util::hash::HashMap;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
@@ -117,6 +118,7 @@ impl From<ContractData> for TdApiMessage {
 pub enum StrategyMessage {
     OrderRequest(OrderRequest),
     CancelRequest(CancelRequest),
+    QueryReq(QueryRequest),
 }
 
 impl From<OrderRequest> for StrategyMessage {
@@ -128,6 +130,12 @@ impl From<OrderRequest> for StrategyMessage {
 impl From<CancelRequest> for StrategyMessage {
     fn from(data: CancelRequest) -> Self {
         Self::CancelRequest(data)
+    }
+}
+
+impl From<QueryRequest> for StrategyMessage {
+    fn from(data: QueryRequest) -> Self {
+        Self::QueryReq(data)
     }
 }
 
@@ -296,6 +304,7 @@ impl StrategyDispatcher {
                     StrategyMessage::CancelRequest(req) => {
                         td_api.cancel_order(req);
                     }
+                    _ => {}
                 });
         }
     }
@@ -307,56 +316,6 @@ struct StrategyWorker {
     c_td: Receiver<TdApiMessage>,
     pub p_st: Sender<StrategyMessage>,
 }
-
-// pub struct StrategyWorkerContext<'a> {
-//     order_map: HashMap<String, OrderData>,
-//     sender: &'a Sender<StrategyMessage>,
-//     contract_map: HashMap<String, ContractData>,
-//     exchange_map: HashMap<String, Exchange>,
-// }
-//
-// impl StrategyWorkerContext<'_> {
-//     pub fn new(sender: &Sender<StrategyMessage>) -> StrategyWorkerContext {
-//         StrategyWorkerContext {
-//             order_map: Default::default(),
-//             sender,
-//             contract_map: Default::default(),
-//             exchange_map: Default::default(),
-//         }
-//     }
-//
-//     pub fn add_order(&mut self, order: OrderData) {
-//         self.order_map.insert(order.orderid.clone().unwrap(), order);
-//     }
-//
-//     pub fn get_active_orders(&mut self) -> Vec<&OrderData> {
-//         self.order_map
-//             .iter()
-//             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
-//             .map(|(_, v)| v)
-//             .collect()
-//     }
-//
-//     pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
-//         self.order_map.get(order_id)
-//     }
-//
-//     pub fn get_active_ids(&mut self) -> Vec<&str> {
-//         self.order_map
-//             .iter()
-//             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
-//             .map(|(i, _)| i.as_str())
-//             .collect()
-//     }
-//
-//     pub fn get_order_ids(&mut self) -> Vec<&str> {
-//         self.order_map.iter().map(|x| x.0.as_str()).collect()
-//     }
-//
-//     pub fn send(&mut self, message: StrategyMessage) {
-//         self.sender.send(message);
-//     }
-// }
 
 impl StrategyWorker {
     fn new(
@@ -413,8 +372,7 @@ impl StrategyWorker {
                     TdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
                     TdApiMessage::ContractData(data) => {
                         ctx.1
-                            .exchange_map
-                            .insert(data.symbol.clone(), data.exchange.unwrap());
+                            .insert_exchange(data.symbol.as_str(), &data.exchange.unwrap());
                         self.st.on_contract(&data, &mut ctx);
                     }
                 },
@@ -430,105 +388,5 @@ impl Drop for StrategyWorker {
         if std::thread::panicking() {
             self._start();
         }
-    }
-}
-
-pub type StrategyWorkerContext<'a> = (&'a Sender<StrategyMessage>, StrategyWorkerContextInner);
-
-fn new_context(sender: &Sender<StrategyMessage>) -> StrategyWorkerContext {
-    let inner = StrategyWorkerContextInner {
-        order_map: Default::default(),
-        contract_map: Default::default(),
-        exchange_map: Default::default(),
-    };
-
-    (sender, inner)
-}
-
-pub struct StrategyWorkerContextInner {
-    order_map: HashMap<String, OrderData>,
-    contract_map: HashMap<String, ContractData>,
-    exchange_map: HashMap<String, Exchange>,
-}
-
-impl StrategyWorkerContextInner {
-    pub fn add_order(&mut self, order: OrderData) {
-        self.order_map.insert(order.orderid.clone().unwrap(), order);
-    }
-
-    pub fn get_active_orders(&mut self) -> Vec<&OrderData> {
-        self.order_map
-            .iter()
-            .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
-            .map(|(_, v)| v)
-            .collect()
-    }
-
-    pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
-        self.order_map.get(order_id)
-    }
-
-    pub fn get_active_ids(&mut self) -> Vec<&str> {
-        self.order_map
-            .iter()
-            .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
-            .map(|(i, _)| i.as_str())
-            .collect()
-    }
-
-    pub fn get_order_ids(&mut self) -> Vec<&str> {
-        self.order_map.iter().map(|x| x.0.as_str()).collect()
-    }
-}
-
-pub trait ContextTrait {
-    fn enter<F>(&mut self, f: F)
-    where
-        F: FnOnce(&Sender<StrategyMessage>, &mut StrategyWorkerContextInner);
-
-    fn send(&self, m: impl Into<StrategyMessage>);
-
-    fn add_order(&mut self, order: OrderData);
-
-    fn get_active_orders(&mut self) -> Vec<&OrderData>;
-
-    fn get_order(&mut self, order_id: &str) -> Option<&OrderData>;
-
-    fn get_active_ids(&mut self) -> Vec<&str>;
-
-    fn get_order_ids(&mut self) -> Vec<&str>;
-}
-
-impl ContextTrait for StrategyWorkerContext<'_> {
-    fn enter<F>(&mut self, f: F)
-    where
-        F: FnOnce(&Sender<StrategyMessage>, &mut StrategyWorkerContextInner),
-    {
-        let (sender, inner) = self;
-        f(*sender, inner);
-    }
-
-    fn send(&self, m: impl Into<StrategyMessage>) {
-        self.0.send(m.into());
-    }
-
-    fn add_order(&mut self, order: OrderData) {
-        self.1.add_order(order);
-    }
-
-    fn get_active_orders(&mut self) -> Vec<&OrderData> {
-        self.1.get_active_orders()
-    }
-
-    fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
-        self.1.get_order(order_id)
-    }
-
-    fn get_active_ids(&mut self) -> Vec<&str> {
-        self.1.get_active_ids()
-    }
-
-    fn get_order_ids(&mut self) -> Vec<&str> {
-        self.1.get_order_ids()
     }
 }
