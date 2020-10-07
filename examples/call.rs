@@ -72,12 +72,12 @@ impl Ac for Strategy {
             tick.bid_volume(0),
             tick.ask_volume(0)
         );
-        println!("{:?}", ctx.get_active_ids());
+        println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
         self.quote.update_tick(tick);
         // ctx.send(req);
         // // 当我们需要同时引用上下文的不同状态时，我们可以使用Context::enter方法
         ctx.enter(|sender, ctx| {
-            ctx.get_active_orders().iter().for_each(|f| {
+            ctx.get_active_orders().for_each(|f| {
                 let order = CancelRequest {
                     order_id: f.orderid.clone().unwrap(),
                     exchange: Exchange::SHFE,
@@ -102,7 +102,7 @@ fn main() {
     let strategy_1 = Strategy {
         quote: Quote::new(),
     };
-    CtpbeeR::new("ctpbee")
+    CtpbeeR::builder("ctpbee")
         .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")

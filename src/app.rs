@@ -29,7 +29,7 @@ pub struct CtpbeeR {
 }
 
 impl CtpbeeR {
-    pub fn new<'a>(name: impl Into<Cow<'a, str>>) -> CtpBuilder<'a> {
+    pub fn builder<'a>(name: impl Into<Cow<'a, str>>) -> CtpBuilder<'a> {
         CtpBuilder {
             name: name.into(),
             id: Default::default(),
@@ -182,7 +182,7 @@ impl<'a> CtpBuilder<'a> {
     pub fn start(mut self) {
         // 准备所有策略工人，并返回对应的通道制造（消费）端 和订阅symbols集合
         // * 策略已被此函数消费无法再次调用。
-        let (symbols, workers, s_md, s_td, c_st) = prepare_channels(&mut self);
+        let (symbols, workers, s_md, s_td, c_st) = prepare_worker_channel(&mut self);
 
         let id = self.id.into();
         let pwd = self.pwd.into();
@@ -210,8 +210,8 @@ impl<'a> CtpBuilder<'a> {
     }
 }
 
-fn prepare_channels<'a>(
-    builder: &mut CtpBuilder<'a>,
+fn prepare_worker_channel(
+    builder: &mut CtpBuilder<'_>,
 ) -> (
     Vec<&'static str>,
     Vec<StrategyWorker>,
@@ -345,12 +345,7 @@ impl StrategyWorker {
             match self.c_md.recv() {
                 Ok(msg) => match msg {
                     // tick会返回订单vec，我们转发至td api
-                    MdApiMessage::TickData(data) => {
-                        // self.st.on_tick(&data).into_iter().for_each(|mut m| {
-                        //     self.p_st.send(m);
-                        // })
-                        self.st.on_tick(&data, &mut ctx)
-                    }
+                    MdApiMessage::TickData(data) => self.st.on_tick(&data, &mut ctx),
                     _ => {}
                 },
                 Err(_) => (),
@@ -362,8 +357,6 @@ impl StrategyWorker {
                         // 可以在这里插入信息至ctx
                         // 目前所有order都会被加入map，需要过滤我们建立的单子。
                         // 目前没有删除机制，此insert会泄露内存。
-                        // fixme: 針對於當前的order需要和on_tick一樣 返回消息轉發給td_api,實現追單補單等邏輯
-                        //  self.st.on_order(&data).into_iter().for_each() ...
                         ctx.add_order(data.clone());
                         self.st.on_order(&data, &mut ctx);
                     }
@@ -372,7 +365,7 @@ impl StrategyWorker {
                     TdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
                     TdApiMessage::ContractData(data) => {
                         ctx.1
-                            .insert_exchange(data.symbol.as_str(), &data.exchange.unwrap());
+                            .insert_exchange(data.symbol.as_str(), data.exchange.unwrap());
                         self.st.on_contract(&data, &mut ctx);
                     }
                 },
