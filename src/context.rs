@@ -67,12 +67,6 @@ impl StrategyWorkerContextInner {
     pub fn get_position(&mut self, symbol: &str) -> &Position {
         // fixme: a bad implementation why not have get_or_insert()?
         //  code review need
-        let p = self.position_map.get(symbol);
-        if p.is_none() {
-            let mut r = Position::default();
-            r.symbol = symbol.to_string();
-            self.position_map.insert(symbol.to_string(), r);
-        };
         self.position_map.get(symbol).unwrap()
     }
     pub fn get_account(&mut self) -> &AccountData {
@@ -86,12 +80,6 @@ impl StrategyWorkerContextInner {
     pub fn insert_position(&mut self, position_data: &PositionData) {
         // should promise the position_data's direction has bee set
         // fixme: should provide a more effective way to insert and update tick price
-
-        if !self.position_map.contains_key(position_data.symbol.as_str()) {
-            let mut p = Position::default();
-            p.symbol = position_data.symbol.clone();
-            self.position_map.insert(position_data.symbol.clone(), p);
-        }
         match position_data.direction.unwrap() {
             Direction::LONG => {
                 let pos = self.position_map.get_mut(position_data.symbol.as_str()).unwrap();
@@ -118,8 +106,8 @@ impl StrategyWorkerContextInner {
     pub fn insert_order(&mut self, order: &OrderData) {
         // fix an complex calulation
         // if
-
     }
+
 }
 
 pub trait ContextTrait {
@@ -149,9 +137,11 @@ pub trait ContextTrait {
 
     fn update_position_by_price(&mut self, price: f64);
 
-    fn insert_position(&mut self, position_data: &PositionData);
+    fn update_position_by_pos(&mut self, position_data: &PositionData);
 
     fn insert_order(&mut self, order: &OrderData);
+
+    fn init_pos(&mut self, symbol: &str);
 }
 
 impl ContextTrait for Context<'_> {
@@ -207,11 +197,15 @@ impl ContextTrait for Context<'_> {
         unimplemented!()
     }
 
-    fn insert_position(&mut self, position_data: &PositionData) {
+    fn update_position_by_pos(&mut self, position_data: &PositionData) {
         self.1.insert_position(position_data);
     }
 
     fn insert_order(&mut self, order: &OrderData) {
         self.1.insert_order(order);
+    }
+
+    fn init_pos(&mut self, symbol: &str) {
+        self.1.ini
     }
 }

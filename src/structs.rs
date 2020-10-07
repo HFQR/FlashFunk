@@ -161,7 +161,7 @@ impl Default for PositionData {
 /// fixme 針對於與這種數據做數組優化
 #[derive(Clone, Debug, Default)]
 pub struct Position {
-    pub symbol: String,
+    pub symbol: &'static str,
     pub exchange: Option<Exchange>,
     pub long_volume: f64,
     pub short_volume: f64,
@@ -175,6 +175,27 @@ pub struct Position {
     pub short_yd_volume: f64,
     pub long_available: f64,
     pub short_available: f64,
+}
+
+impl Position {
+    pub(crate) fn new_with_symbol(symbol: &'static str) -> Self {
+        Self {
+            symbol,
+            exchange: None,
+            long_volume: 0.0,
+            short_volume: 0.0,
+            long_frozen: 0.0,
+            short_frozen: 0.0,
+            long_price: 0.0,
+            short_price: 0.0,
+            long_pnl: 0.0,
+            short_pnl: 0.0,
+            long_yd_volume: 0.0,
+            short_yd_volume: 0.0,
+            long_available: 0.0,
+            short_available: 0.0,
+        }
+    }
 }
 
 /// Account Data
