@@ -1,9 +1,10 @@
+use std::borrow::Cow;
+
 use crate::app::StrategyMessage;
-use crate::constants::{Direction, Exchange, Status, Offset};
+use crate::constants::{Direction, Exchange, Offset, Status};
 use crate::structs::{AccountData, ContractData, OrderData, Position, PositionData};
 use crate::util::channel::Sender;
 use crate::util::hash::HashMap;
-use std::borrow::{BorrowMut};
 
 pub type Context<'a> = (&'a Sender<StrategyMessage>, ContextInner);
 
@@ -23,7 +24,7 @@ pub struct ContextInner {
     order_map: HashMap<String, OrderData>,
     contract_map: HashMap<String, ContractData>,
     exchange_map: HashMap<String, Exchange>,
-    position_map: HashMap<&'static str, Position>,
+    position_map: HashMap<Cow<'static, str>, Position>,
     account: AccountData,
 }
 
@@ -32,7 +33,7 @@ impl ContextInner {
         self.order_map.insert(order.orderid.clone().unwrap(), order);
     }
 
-    pub fn get_active_orders(&mut self) -> impl Iterator<Item=&OrderData> {
+    pub fn get_active_orders(&mut self) -> impl Iterator<Item = &OrderData> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
@@ -43,14 +44,14 @@ impl ContextInner {
         self.order_map.get(order_id)
     }
 
-    pub fn get_active_ids(&mut self) -> impl Iterator<Item=&str> {
+    pub fn get_active_ids(&mut self) -> impl Iterator<Item = &str> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(i, _)| i.as_str())
     }
 
-    pub fn get_order_ids(&mut self) -> impl Iterator<Item=&str> {
+    pub fn get_order_ids(&mut self) -> impl Iterator<Item = &str> {
         self.order_map.iter().map(|(i, _)| i.as_str())
     }
 
@@ -61,10 +62,10 @@ impl ContextInner {
     pub fn get_contract(&mut self, symbol: &str) -> Option<&ContractData> {
         self.contract_map.get(symbol)
     }
-    pub fn position_mut(&mut self, symbol: &'static str) -> &mut Position {
+    pub fn position_mut(&mut self, symbol: &str) -> &mut Position {
         self.position_map
-            .entry(symbol)
-            .or_insert_with(|| Position::new_with_symbol(symbol)).borrow_mut()
+            .entry(Cow::Owned(symbol.to_owned()))
+            .or_insert_with(|| Position::new_with_symbol(symbol))
     }
 
     pub fn get_account(&mut self) -> &AccountData {
@@ -79,7 +80,7 @@ impl ContextInner {
         match position_data.direction.unwrap() {
             Direction::LONG => {
                 self.position_map
-                    .get_mut(position_data.symbol)
+                    .get_mut(position_data.symbol.as_ref())
                     .map(|p| {
                         p.long_volume = position_data.volume;
                         p.long_price = position_data.price;
@@ -90,9 +91,9 @@ impl ContextInner {
                     })
                     .unwrap_or_else(|| {
                         self.position_map.insert(
-                            position_data.symbol,
+                            position_data.symbol.clone(),
                             Position::new_with_long(
-                                position_data.symbol,
+                                position_data.symbol.as_ref(),
                                 position_data.volume,
                                 position_data.price,
                                 position_data.available,
@@ -105,7 +106,7 @@ impl ContextInner {
             }
             Direction::SHORT => {
                 self.position_map
-                    .get_mut(position_data.symbol)
+                    .get_mut(position_data.symbol.as_ref())
                     .map(|p| {
                         p.short_volume = position_data.volume;
                         p.short_price = position_data.price;
@@ -116,9 +117,9 @@ impl ContextInner {
                     })
                     .unwrap_or_else(|| {
                         self.position_map.insert(
-                            position_data.symbol,
+                            position_data.symbol.clone(),
                             Position::new_with_short(
-                                position_data.symbol,
+                                position_data.symbol.as_ref(),
                                 position_data.volume,
                                 position_data.price,
                                 position_data.available,
@@ -155,7 +156,9 @@ impl ContextInner {
             &Direction::LONG => {
                 match order.offset {
                     Offset::OPEN => {
-                        pos.long_price = ((pos.long_price) * pos.long_volume + order.price * order.traded) / (pos.long_volume + order.traded);
+                        pos.long_price = ((pos.long_price) * pos.long_volume
+                            + order.price * order.traded)
+                            / (pos.long_volume + order.traded);
                         pos.long_volume += order.traded;
                     }
                     Offset::CLOSETODAY => {
@@ -163,7 +166,9 @@ impl ContextInner {
                             pos.long_volume = 0.0;
                             pos.long_price = 0.0;
                         } else if order.traded < pos.long_volume {
-                            pos.long_price = (pos.long_price * pos.long_volume - order.price * order.volume) / (pos.long_volume - order.traded);
+                            pos.long_price = (pos.long_price * pos.long_volume
+                                - order.price * order.volume)
+                                / (pos.long_volume - order.traded);
                             pos.long_volume = pos.long_volume - order.traded;
                         }
                     }
@@ -174,8 +179,12 @@ impl ContextInner {
                             pos.long_yd_volume = 0.0;
                             pos.long_price = 0.0;
                             pos.long_volume = pos.long_volume - order.traded;
-                        } else if order.traded < pos.long_volume && order.traded <= pos.long_yd_volume {
-                            pos.long_price = (pos.long_price * pos.long_volume - order.traded * order.price) / (pos.long_volume - order.traded);
+                        } else if order.traded < pos.long_volume
+                            && order.traded <= pos.long_yd_volume
+                        {
+                            pos.long_price = (pos.long_price * pos.long_volume
+                                - order.traded * order.price)
+                                / (pos.long_volume - order.traded);
                             pos.long_yd_volume -= order.traded;
                             pos.long_volume -= order.traded;
                         }
@@ -191,20 +200,20 @@ impl ContextInner {
 
 pub trait ContextTrait {
     fn enter<F>(&mut self, f: F)
-        where
-            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
+    where
+        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
 
     fn send(&self, m: impl Into<StrategyMessage>);
 
     fn add_order(&mut self, order: OrderData);
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_>;
+    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item = &OrderData> + '_>;
 
     fn get_order(&mut self, order_id: &str) -> Option<&OrderData>;
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
+    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_>;
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
+    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_>;
 
     fn get_exchange(&mut self, symbol: &str) -> Option<&Exchange>;
 
@@ -223,8 +232,8 @@ pub trait ContextTrait {
 
 impl ContextTrait for Context<'_> {
     fn enter<F>(&mut self, f: F)
-        where
-            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
+    where
+        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
     {
         let (sender, inner) = self;
         f(*sender, inner);
@@ -238,7 +247,7 @@ impl ContextTrait for Context<'_> {
         self.1.add_order(order);
     }
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_> {
+    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item = &OrderData> + '_> {
         Box::new(self.1.get_active_orders())
     }
 
@@ -246,11 +255,11 @@ impl ContextTrait for Context<'_> {
         self.1.get_order(order_id)
     }
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
+    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_> {
         Box::new(self.1.get_active_ids())
     }
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
+    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_> {
         Box::new(self.1.get_order_ids())
     }
 

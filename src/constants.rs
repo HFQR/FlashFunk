@@ -3,13 +3,13 @@
 
 bitflags! {
     /// Direction of order/trade/position.
-    pub struct Direction: u8 {
+    pub struct Direction: usize {
         /// 多
         const LONG =    0;
         /// 净
-        const NET =     1;
+        const NET =     0b_0001_0000_0000;
         /// 空
-        const SHORT =   2;
+        const SHORT =   0b_0010_0000_0000;
     }
 }
 
@@ -31,7 +31,7 @@ bitflags! {
 
 bitflags! {
     /// 状态
-    pub struct Status: u8 {
+    pub struct Status: usize {
         // 重要: default类型需要为 Status::INIT
         const INIT =        0b_0000_0001;
         const SUBMITTING =  0b_0000_0010;
@@ -40,6 +40,7 @@ bitflags! {
         const ALLTRADED =   0b_0001_0000;
         const CANCELLED =   0b_0010_0000;
         const REJECTED =    0b_0100_0000;
+
         const ACTIVE_IN = Self::NOTTRADED.bits | Self::SUBMITTING.bits | Self::PARTTRADED.bits;
     }
 }

@@ -186,28 +186,28 @@ impl Account {
         self.get_all_positions()
             .iter()
             .map(|x| {
-                let real_price = self.get_real_price(x.symbol);
+                let real_price = self.get_real_price(x.symbol.as_ref());
                 match x.direction.unwrap() {
                     Direction::LONG => {
                         if x.yd_volume.eq(&0.0) {
-                            x.volume * (real_price - x.price) * self.get_size_map(x.symbol)
+                            x.volume * (real_price - x.price) * self.get_size_map(x.symbol.as_ref())
                         } else {
                             let today = x.volume - x.yd_volume;
-                            today * (real_price - x.price) * self.get_size_map(x.symbol)
+                            today * (real_price - x.price) * self.get_size_map(x.symbol.as_ref())
                                 + x.yd_volume
-                                    * (real_price - self.get_pre_price(x.symbol))
-                                    * self.get_size_map(x.symbol)
+                                    * (real_price - self.get_pre_price(x.symbol.as_ref()))
+                                    * self.get_size_map(x.symbol.as_ref())
                         }
                     }
                     Direction::SHORT => {
                         if x.yd_volume.eq(&0.0) {
-                            x.volume * (x.price - real_price) * self.get_size_map(x.symbol)
+                            x.volume * (x.price - real_price) * self.get_size_map(x.symbol.as_ref())
                         } else {
                             let today = x.volume - x.yd_volume;
-                            today * (x.price - real_price) * self.get_size_map(x.symbol)
+                            today * (x.price - real_price) * self.get_size_map(x.symbol.as_ref())
                                 + x.yd_volume
-                                    * (self.get_pre_price(x.symbol) - real_price)
-                                    * self.get_size_map(x.symbol)
+                                    * (self.get_pre_price(x.symbol.as_ref()) - real_price)
+                                    * self.get_size_map(x.symbol.as_ref())
                         }
                     }
                     _ => panic!("暂不支持"),
@@ -232,10 +232,11 @@ impl Account {
         self.get_all_positions()
             .into_iter()
             .fold(0.0, |mut rs, pos| {
+                let symbol = pos.symbol.as_ref();
                 rs += pos.price
                     * pos.volume
-                    * self.get_margin_ratio(pos.symbol)
-                    * self.get_size_map(pos.symbol);
+                    * self.get_margin_ratio(symbol)
+                    * self.get_size_map(symbol);
 
                 rs
             })
