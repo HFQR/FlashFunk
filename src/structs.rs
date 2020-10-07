@@ -90,13 +90,6 @@ pub struct OrderData {
     pub status: Status,
 }
 
-#[derive(Copy, Clone)]
-pub struct OrderMeta {
-    pub exchange: Exchange,
-    pub session_id: i32,
-    pub front_id: i32,
-}
-
 /// Trade Data
 #[derive(Clone, Debug)]
 pub struct TradeData {
@@ -130,7 +123,7 @@ impl Default for TradeData {
 /// Position Data
 #[derive(Clone, Debug)]
 pub struct PositionData {
-    pub symbol: String,
+    pub symbol: &'static str,
     pub exchange: Option<Exchange>,
     pub direction: Option<Direction>,
     pub volume: f64,
@@ -144,7 +137,7 @@ pub struct PositionData {
 impl Default for PositionData {
     fn default() -> PositionData {
         PositionData {
-            symbol: "".to_string(),
+            symbol: "",
             exchange: None,
             direction: None,
             volume: 0.0,
@@ -161,7 +154,7 @@ impl Default for PositionData {
 /// fixme 針對於與這種數據做數組優化
 #[derive(Clone, Debug, Default)]
 pub struct Position {
-    pub symbol: String,
+    pub symbol: &'static str,
     pub exchange: Option<Exchange>,
     pub long_volume: f64,
     pub short_volume: f64,
@@ -175,6 +168,81 @@ pub struct Position {
     pub short_yd_volume: f64,
     pub long_available: f64,
     pub short_available: f64,
+}
+
+impl Position {
+    pub(crate) fn new_with_symbol(symbol: &'static str) -> Self {
+        Self {
+            symbol,
+            exchange: None,
+            long_volume: 0.0,
+            short_volume: 0.0,
+            long_frozen: 0.0,
+            short_frozen: 0.0,
+            long_price: 0.0,
+            short_price: 0.0,
+            long_pnl: 0.0,
+            short_pnl: 0.0,
+            long_yd_volume: 0.0,
+            short_yd_volume: 0.0,
+            long_available: 0.0,
+            short_available: 0.0,
+        }
+    }
+
+    pub(crate) fn new_with_long(
+        symbol: &'static str,
+        long_volume: f64,
+        long_price: f64,
+        long_available: f64,
+        long_frozen: f64,
+        long_yd_volume: f64,
+        long_pnl: f64,
+    ) -> Self {
+        Self {
+            symbol,
+            exchange: None,
+            long_volume,
+            short_volume: 0.0,
+            long_frozen,
+            short_frozen: 0.0,
+            long_price,
+            short_price: 0.0,
+            long_pnl,
+            short_pnl: 0.0,
+            long_yd_volume,
+            short_yd_volume: 0.0,
+            long_available,
+            short_available: 0.0,
+        }
+    }
+
+    pub(crate) fn new_with_short(
+        symbol: &'static str,
+        short_volume: f64,
+        short_price: f64,
+        short_available: f64,
+        short_frozen: f64,
+        short_yd_volume: f64,
+        short_pnl: f64,
+    ) -> Self {
+        Self {
+            symbol,
+            exchange: None,
+            long_volume: 0.0,
+            short_volume,
+            long_frozen: 0.0,
+            short_frozen,
+            long_price: 0.0,
+            short_price,
+            long_pnl: 0.0,
+            short_pnl,
+            long_yd_volume: 0.0,
+            short_yd_volume,
+            long_available: 0.0,
+            short_available,
+        }
+    }
 }
 
 /// Account Data

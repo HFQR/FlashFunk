@@ -12,9 +12,7 @@ use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{
-    CancelRequest, ContractData, LoginForm, OrderData, OrderMeta, OrderRequest, TradeData,
-};
+use crate::structs::{CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, TradeData};
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use bitflags::_core::sync::atomic::AtomicI32;
