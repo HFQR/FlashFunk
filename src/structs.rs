@@ -243,6 +243,14 @@ impl Position {
             short_available,
         }
     }
+
+    pub fn long_today_volume(&mut self) -> f64 {
+        self.long_volume - self.long_yd_volume
+    }
+
+    pub fn short_today_volume(&mut self) -> f64 {
+        self.short_volume - self.short_yd_volume
+    }
 }
 
 /// Account Data

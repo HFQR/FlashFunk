@@ -2,7 +2,7 @@
 
 use crate::structs::{CancelRequest, LoginForm, OrderRequest};
 
-/// 用户登录接口,包含用户的\
+/// 用户登录接口,包含用户的
 pub trait Interface {
     type Sender;
     /// 发单

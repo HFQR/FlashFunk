@@ -60,32 +60,59 @@ impl Ac for Strategy {
             direction: Direction::LONG,
             order_type: OrderType::LIMIT,
             volume: 1.0,
-            price: tick.last_price - 20.0,
+            price: tick.last_price + 1.0,
             offset: Offset::OPEN,
             reference: None,
         };
-        println!(
-            "行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}",
-            tick.last_price,
-            tick.bid_price(0),
-            tick.ask_price(0),
-            tick.bid_volume(0),
-            tick.ask_volume(0)
-        );
-        println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
+        // println!(
+        //     "行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}",
+        //     tick.last_price,
+        //     tick.bid_price(0),
+        //     tick.ask_price(0),
+        //     tick.bid_volume(0),
+        //     tick.ask_volume(0)
+        // );
+        // print the active order's id
+        // println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
+
+        // get the pos infomation
+        let pos = ctx.get_position("rb2101");
+        println!("{:?}", pos);
+
+        // send  a close position request
+        if pos.long_volume != 0.0 {
+            let req = OrderRequest {
+                symbol: "rb2101".to_string(),
+                exchange: Exchange::SHFE,
+                direction: Direction::SHORT,
+                order_type: OrderType::LIMIT,
+                volume: pos.long_volume.clone(),
+                price: tick.last_price - 2.0,
+                offset: Offset::CLOSETODAY,
+                reference: None,
+            };
+            // ctx.send(req);
+        }
         self.quote.update_tick(tick);
+
+        // send order reuqest right now
         // ctx.send(req);
+
         // // 当我们需要同时引用上下文的不同状态时，我们可以使用Context::enter方法
-        ctx.enter(|sender, ctx| {
-            ctx.get_active_orders().for_each(|f| {
-                let order = CancelRequest {
-                    order_id: f.orderid.clone().unwrap(),
-                    exchange: Exchange::SHFE,
-                    symbol: f.symbol.to_string(),
-                };
-                sender.send(order);
-            });
-        });
+        // ctx.enter(|sender, ctx| {
+        //     ctx.get_active_orders().for_each(|f| {
+        //         let order = CancelRequest {
+        //             order_id: f.orderid.clone().unwrap(),
+        //             exchange: Exchange::SHFE,
+        //             symbol: f.symbol.to_string(),
+        //         };
+        //         sender.send(order);
+        //     });
+        // });
+    }
+
+    fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
+        println!("{:?}", order);
     }
 }
 

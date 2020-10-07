@@ -358,6 +358,7 @@ impl StrategyWorker {
                         // 目前所有order都会被加入map，需要过滤我们建立的单子。
                         // 目前没有删除机制，此insert会泄露内存。
                         ctx.add_order(data.clone());
+                        ctx.insert_order(&data);
                         self.st.on_order(&data, &mut ctx);
                     }
                     TdApiMessage::TradeData(data) => self.st.on_trade(&data, &mut ctx),
