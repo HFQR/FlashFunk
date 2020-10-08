@@ -7,9 +7,8 @@
     unused_imports
 )]
 
-use super::*;
+pub(crate) mod func;
+pub(crate) mod sys;
 
-pub mod func;
 pub mod md_api;
-pub mod sys;
 pub mod td_api;

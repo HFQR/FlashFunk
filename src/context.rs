@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use crate::app::StrategyMessage;
 use crate::constants::{Direction, Exchange, Offset, Status};
 use crate::structs::{AccountData, ContractData, OrderData, Position, PositionData};
+use crate::types::message::StrategyMessage;
 use crate::util::channel::Sender;
 use crate::util::hash::HashMap;
 
@@ -154,8 +154,8 @@ impl ContextInner {
     fn update_trade(&mut self, order: &OrderData) {
         // should check the update logic
         let mut pos = self.position_mut(order.symbol.as_str());
-        match order.direction.as_ref().unwrap() {
-            &Direction::LONG => {
+        match order.direction.unwrap() {
+            Direction::LONG => {
                 match order.offset {
                     Offset::OPEN => {
                         pos.long_price = ((pos.long_price) * pos.long_volume
@@ -211,7 +211,7 @@ impl ContextInner {
                     _ => {}
                 }
             }
-            &Direction::SHORT => {
+            Direction::SHORT => {
                 match order.offset {
                     Offset::OPEN => {
                         pos.short_price = ((pos.short_price) * pos.short_volume

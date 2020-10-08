@@ -8,18 +8,20 @@ use std::os::raw::{c_char, c_int};
 
 use chrono::{Date, NaiveDateTime, Utc};
 
-use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, TradeData, PositionData};
+use crate::structs::{
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
+    TradeData,
+};
+use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
+use crate::util::hash::HashMap;
 use bitflags::_core::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use crate::util::hash::HashMap;
-
 
 const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
 const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
@@ -2325,7 +2327,8 @@ pub trait TdCallApi {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {}
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2797,7 +2800,8 @@ impl TdCallApi for CallDataCollector {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {}
+    ) {
+    }
 
     fn on_rsp_order_action(
         &mut self,
@@ -2933,7 +2937,8 @@ impl TdCallApi for CallDataCollector {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
+    ) {
+    }
 
     fn on_err_rtn_order_action(
         &mut self,
@@ -2988,7 +2993,8 @@ impl TdCallApi for CallDataCollector {
         pTradingAccount: *mut CThostFtdcTradingAccountField,
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
-        bIsLast: bool) {
+        bIsLast: bool,
+    ) {
         unsafe {
             match get_rsp_info(pRspInfo) {
                 Ok(t) => {
@@ -3021,7 +3027,6 @@ impl TdCallApi for CallDataCollector {
     ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
-
                 unsafe {
                     let symbol = slice_to_string(&(*pInvestorPosition).InstrumentID);
                     let open_cost = (*pInvestorPosition).OpenCost;
@@ -3030,20 +3035,21 @@ impl TdCallApi for CallDataCollector {
                     let volume = (*pInvestorPosition).Position;
                     let profit = (*pInvestorPosition).PositionProfit;
                     let frozen = (*pInvestorPosition).ShortFrozen + (*pInvestorPosition).LongFrozen;
-                    let pos = self.pos.entry(Cow::from(symbol.clone())).or_insert_with(|| {
-                        match direction {
+                    let pos = self
+                        .pos
+                        .entry(Cow::from(symbol.clone()))
+                        .or_insert_with(|| match direction {
                             Direction::SHORT => PositionData::new_with_short(&symbol),
                             Direction::LONG => PositionData::new_with_long(&symbol),
-                            _ => {
-                                panic!("bad direction")
-                            }
-                        }
-                    });
+                            _ => panic!("bad direction"),
+                        });
                     // todo: collect the position info and send it to the core
                     // cal logic should be provide
                 }
                 if bIsLast {
-                    self.pos.iter().for_each(|(k, v)| self.sender.send_all(v.to_owned()));
+                    self.pos
+                        .iter()
+                        .for_each(|(k, v)| self.sender.send_all(v.to_owned()));
                     self.pos.clear();
                 }
             }
@@ -3051,7 +3057,6 @@ impl TdCallApi for CallDataCollector {
         }
     }
 }
-
 
 fn get_order_type(order: OrderType) -> c_char {
     match order {
@@ -3166,7 +3171,6 @@ impl From<i8> for Direction {
         }
     }
 }
-
 
 impl TdApi {
     pub(crate) fn new(path: String) -> TdApi {

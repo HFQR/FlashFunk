@@ -3,20 +3,26 @@ extern crate bitflags;
 
 use std::env::var;
 use std::path::PathBuf;
+
+mod app;
+mod builder;
+mod context;
+mod util;
+mod worker;
+
 pub mod ac;
 pub mod account;
-pub mod app;
 pub mod constants;
-pub mod context;
 pub mod ctp;
 pub mod interface;
 pub mod structs;
-
-pub(crate) mod util;
+pub mod types;
 
 pub mod prelude {
     pub use crate::ac::{Ac, IntoStrategy};
-    pub use crate::context::ContextTrait;
+    pub use crate::app::CtpbeeR;
+    pub use crate::context::{Context, ContextTrait};
+    pub use crate::types::message::StrategyMessage;
 }
 
 fn get_interface_path(path: &str) -> PathBuf {

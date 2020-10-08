@@ -1,17 +1,16 @@
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
+use std::fmt::Pointer;
+use std::thread;
+
 use chrono::Local;
-use flashfunk::app::{CtpbeeR, StrategyMessage};
 use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
-use flashfunk::context::Context;
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
 use flashfunk::prelude::*;
 use flashfunk::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TickData};
 use flashfunk_codegen::Strategy;
-use std::fmt::Pointer;
-use std::thread;
 
 /// 價格
 struct Quote {

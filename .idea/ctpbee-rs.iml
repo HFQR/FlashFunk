@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/benches" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/examples/call/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/flashfunk-codegen/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/flashfunk-ctp/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/examples/call/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
