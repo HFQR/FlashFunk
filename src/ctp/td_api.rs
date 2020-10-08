@@ -12,16 +12,18 @@ use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{
-    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, TradeData,
-};
+use crate::structs::{AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, TradeData, PositionData};
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use bitflags::_core::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use crate::util::hash::HashMap;
 
-/// et the api instance  for the TdCallApi
+
+const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
+const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
+
 unsafe fn get_trader_spi<'a>(spi: *mut c_void) -> &'a mut dyn TdCallApi {
     &mut **(spi as *mut *mut dyn TdCallApi)
 }
@@ -2692,6 +2694,7 @@ pub struct CallDataCollector {
     connect_status: bool,
     sender: GroupSender<TdApiMessage>,
     blocker: Option<TdApiBlocker>,
+    pos: HashMap<Cow<'static, str>, PositionData>,
 }
 
 struct TdApiBlockerInner {
@@ -2985,8 +2988,7 @@ impl TdCallApi for CallDataCollector {
         pTradingAccount: *mut CThostFtdcTradingAccountField,
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
-        bIsLast: bool,
-    ) {
+        bIsLast: bool) {
         unsafe {
             match get_rsp_info(pRspInfo) {
                 Ok(t) => {
@@ -3019,14 +3021,37 @@ impl TdCallApi for CallDataCollector {
     ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
-                // todo: collect the position info and send it to the core
+
+                unsafe {
+                    let symbol = slice_to_string(&(*pInvestorPosition).InstrumentID);
+                    let open_cost = (*pInvestorPosition).OpenCost;
+                    let direction = Direction::from((*pInvestorPosition).PosiDirection);
+                    let td_pos = (*pInvestorPosition).TodayPosition;
+                    let volume = (*pInvestorPosition).Position;
+                    let profit = (*pInvestorPosition).PositionProfit;
+                    let frozen = (*pInvestorPosition).ShortFrozen + (*pInvestorPosition).LongFrozen;
+                    let pos = self.pos.entry(Cow::from(symbol.clone())).or_insert_with(|| {
+                        match direction {
+                            Direction::SHORT => PositionData::new_with_short(&symbol),
+                            Direction::LONG => PositionData::new_with_long(&symbol),
+                            _ => {
+                                panic!("bad direction")
+                            }
+                        }
+                    });
+                    // todo: collect the position info and send it to the core
+                    // cal logic should be provide
+                }
+                if bIsLast {
+                    self.pos.iter().for_each(|(k, v)| self.sender.send_all(v.to_owned()));
+                    self.pos.clear();
+                }
             }
             Err(e) => {}
         }
     }
 }
 
-unsafe impl Send for TdApi {}
 
 fn get_order_type(order: OrderType) -> c_char {
     match order {
@@ -3115,21 +3140,6 @@ impl From<i8> for OrderType {
     }
 }
 
-// impl From<i8> for Status {
-//     fn from(i: i8) -> Self {
-//         match i as u8 {
-//             THOST_FTDC_OAS_Submitted => Self::SUBMITTING,
-//             THOST_FTDC_OAS_Accepted => Self::SUBMITTING,
-//             THOST_FTDC_OAS_Rejected => Self::REJECTED,
-//             THOST_FTDC_OST_NoTradeQueueing => Status::NOTTRADED,
-//             THOST_FTDC_OST_PartTradedQueueing => Status::PARTTRADED,
-//             THOST_FTDC_OST_AllTraded => Status::ALLTRADED,
-//             THOST_FTDC_OST_Canceled => Status::CANCELLED,
-//             _ => panic!("ctp do not support this status"),
-//         }
-//     }
-// }
-
 impl From<i8> for Status {
     fn from(i: i8) -> Self {
         match i as u8 {
@@ -3150,10 +3160,13 @@ impl From<i8> for Direction {
         match i as u8 {
             THOST_FTDC_D_Buy => Self::LONG,
             THOST_FTDC_D_Sell => Self::SHORT,
-            _ => panic!("ctp do not support other direction"),
+            POS_LONG => Self::LONG,
+            POS_SHORT => Self::SHORT,
+            _ => panic!("ctp do not support other direction {}", i),
         }
     }
 }
+
 
 impl TdApi {
     pub(crate) fn new(path: String) -> TdApi {
@@ -3245,6 +3258,7 @@ impl TdApi {
             connect_status: false,
             sender,
             blocker: Some(blocker),
+            pos: Default::default(),
         };
         // rust object
         let trait_object_box: Box<Box<dyn TdCallApi>> = Box::new(Box::new(collector));

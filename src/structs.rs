@@ -134,6 +134,35 @@ pub struct PositionData {
     pub available: f64,
 }
 
+impl PositionData {
+    pub fn new_with_long(symbol: &str) -> Self {
+        PositionData {
+            symbol: Cow::Owned(symbol.to_owned()),
+            exchange: None,
+            direction: Option::from(Direction::LONG),
+            volume: 0.0,
+            frozen: 0.0,
+            price: 0.0,
+            pnl: 0.0,
+            yd_volume: 0.0,
+            available: 0.0,
+        }
+    }
+    pub fn new_with_short(symbol: &str) -> Self {
+        PositionData {
+            symbol: Cow::Owned(symbol.to_owned()),
+            exchange: None,
+            direction: Option::from(Direction::SHORT),
+            volume: 0.0,
+            frozen: 0.0,
+            price: 0.0,
+            pnl: 0.0,
+            yd_volume: 0.0,
+            available: 0.0,
+        }
+    }
+}
+
 impl Default for PositionData {
     fn default() -> PositionData {
         PositionData {
