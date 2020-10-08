@@ -291,7 +291,9 @@ impl StrategyDispatcher {
     }
 
     fn block_handle(&self, mut td_api: TdApi) {
+        let mut r = true;
         loop {
+            let micro = chrono::Local::now().timestamp_subsec_micros();
             self.receiver
                 .iter()
                 .enumerate()
@@ -306,6 +308,13 @@ impl StrategyDispatcher {
                     }
                     _ => {}
                 });
+            if micro == 0 && r {
+                td_api.req_position();
+                r = false;
+            } else if micro == 0 && !r {
+                td_api.req_account();
+                r = true;
+            }
         }
     }
 }
@@ -362,7 +371,10 @@ impl StrategyWorker {
                         self.st.on_order(&data, &mut ctx);
                     }
                     TdApiMessage::TradeData(data) => self.st.on_trade(&data, &mut ctx),
-                    TdApiMessage::AccountData(data) => self.st.on_account(&data, &mut ctx),
+                    TdApiMessage::AccountData(data) => {
+                        ctx.update_account(&data);
+                        self.st.on_account(&data, &mut ctx)
+                    }
                     TdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
                     TdApiMessage::ContractData(data) => {
                         ctx.1

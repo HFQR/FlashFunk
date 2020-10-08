@@ -37,7 +37,6 @@ impl Quote {
     /// 計算盤口信息
     pub fn update_tick(&mut self, tick: &TickData) {
         if tick.ask_price(0) != self.ask && tick.bid_price(0) != self.bid {
-            println!("price changed at {}", tick.last_price - self.last_price);
             self.bid = tick.bid_price(0);
             self.ask = tick.ask_price(0);
             self.last_price = tick.last_price;
@@ -77,7 +76,6 @@ impl Ac for Strategy {
 
         // get the pos infomation
         let pos = ctx.get_position("rb2101");
-        println!("{:?}", pos);
 
         // send  a close position request
         if pos.long_volume != 0.0 {
@@ -94,6 +92,9 @@ impl Ac for Strategy {
             // ctx.send(req);
         }
         self.quote.update_tick(tick);
+
+        let acc = ctx.get_account();
+        println!("{:?}", acc);
 
         // send order reuqest right now
         // ctx.send(req);
@@ -112,7 +113,7 @@ impl Ac for Strategy {
     }
 
     fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
-        println!("{:?}", order);
+        // println!("{:?}", order);
     }
 }
 

@@ -6,13 +6,15 @@ use std::cmp::max;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 
-use chrono::NaiveDateTime;
+use chrono::{Date, NaiveDateTime, Utc};
 
 use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, TradeData};
+use crate::structs::{
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, TradeData,
+};
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use bitflags::_core::sync::atomic::AtomicI32;
@@ -2321,8 +2323,7 @@ pub trait TdCallApi {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
-    }
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {}
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2700,6 +2701,7 @@ struct TdApiBlockerInner {
     step2: Blocker,
     step3: Blocker,
     step4: Blocker,
+    step5: Blocker,
 }
 
 struct TdApiBlocker(Arc<TdApiBlockerInner>);
@@ -2719,6 +2721,7 @@ impl TdApiBlocker {
             step2: Default::default(),
             step3: Default::default(),
             step4: Default::default(),
+            step5: Default::default(),
         }))
     }
 }
@@ -2791,15 +2794,7 @@ impl TdCallApi for CallDataCollector {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {
-        match get_rsp_info(pRspInfo) {
-            Ok(t) => {}
-            Err(e) => {
-                // println!(">>> Order failed, id: {} msg: {}", e.id, e.msg);
-            }
-        }
-        if bIsLast {}
-    }
+    ) {}
 
     fn on_rsp_order_action(
         &mut self,
@@ -2935,8 +2930,7 @@ impl TdCallApi for CallDataCollector {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {
-    }
+    ) {}
 
     fn on_err_rtn_order_action(
         &mut self,
@@ -2982,7 +2976,52 @@ impl TdCallApi for CallDataCollector {
         }
 
         if bIsLast {
-            self.blocker.take().unwrap().0.step4.unblock();
+            self.blocker.as_ref().unwrap().0.step4.unblock();
+        }
+    }
+
+    fn on_rsp_qry_trading_account(
+        &mut self,
+        pTradingAccount: *mut CThostFtdcTradingAccountField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) {
+        unsafe {
+            match get_rsp_info(pRspInfo) {
+                Ok(t) => {
+                    let account_data = AccountData {
+                        accountid: slice_to_string(&(*pTradingAccount).AccountID),
+                        balance: (*pTradingAccount).Balance,
+                        frozen: (*pTradingAccount).FrozenMargin
+                            + (*pTradingAccount).FrozenCash
+                            + (*pTradingAccount).FrozenCommission,
+                        date: Utc::today(),
+                    };
+                    self.sender.send_all(account_data);
+                }
+                Err(e) => {
+                    println!(">>> Account Query Err, id: {} msg: {}", e.id, e.msg);
+                }
+            };
+        }
+        if self.blocker.is_some() {
+            self.blocker.take().unwrap().0.step5.unblock();
+        }
+    }
+
+    fn on_rsp_qry_investor_position(
+        &mut self,
+        pInvestorPosition: *mut CThostFtdcInvestorPositionField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) {
+        match get_rsp_info(pRspInfo) {
+            Ok(t) => {
+                // todo: collect the position info and send it to the core
+            }
+            Err(e) => {}
         }
     }
 }
@@ -3238,6 +3277,34 @@ impl TdApi {
             );
         }
     }
+
+    pub fn req_account(&mut self) {
+        self.request_id += 1;
+        unsafe {
+            RustCtpCallReqQryTradingAccount(
+                self.trader_api,
+                Box::into_raw(Box::new(CThostFtdcQryTradingAccountField::default())),
+                self.request_id,
+            );
+        }
+    }
+
+    pub fn req_position(&mut self) {
+        self.request_id += 1;
+        let login_info = self.login_info.as_ref().unwrap();
+        unsafe {
+            let req = CThostFtdcQryInvestorPositionField {
+                BrokerID: login_info._broke_id().to_c_slice(),
+                InvestorID: login_info._user_id().to_c_slice(),
+                ..CThostFtdcQryInvestorPositionField::default()
+            };
+            RustCtpCallReqQryInvestorPosition(
+                self.trader_api,
+                Box::into_raw(Box::new(req)),
+                self.request_id,
+            );
+        }
+    }
 }
 
 impl Drop for TdApi {
@@ -3348,7 +3415,15 @@ impl Interface for TdApi {
         self.req_settle();
 
         self.req_instrument();
+        self.req_position();
+
+        //阻塞等待合約查詢完畢
         blocker.0.step4.block();
+        // println!("第四步解封");
+
+        self.req_account();
+        // 阻塞等待賬戶查詢完畢
+        blocker.0.step5.block();
     }
 
     fn subscribe(&mut self) {

@@ -99,5 +99,6 @@ bitflags! {
         const SSE =     7;
         const SZSE =    8;
         const WXE =     9;
+        const ACTIVE_TODAY_EXCHANGE = Self::SHFE.bits | Self::INE.bits;
     }
 }
