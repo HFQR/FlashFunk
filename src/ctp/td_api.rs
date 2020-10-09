@@ -8,18 +8,20 @@ use std::os::raw::{c_char, c_int};
 
 use chrono::{Date, NaiveDateTime, Utc};
 
-use crate::app::{CtpbeeR, TdApiMessage};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, TradeData, PositionData};
+use crate::structs::{
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
+    TradeData,
+};
+use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
+use crate::util::hash::HashMap;
 use bitflags::_core::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use crate::util::hash::HashMap;
-
 
 const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
 const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
@@ -2695,6 +2697,8 @@ pub struct CallDataCollector {
     sender: GroupSender<TdApiMessage>,
     blocker: Option<TdApiBlocker>,
     pos: HashMap<Cow<'static, str>, PositionData>,
+    size_map: HashMap<Cow<'static, str>, f64>,
+    exchange_map: HashMap<Cow<'static, str>, Exchange>,
 }
 
 struct TdApiBlockerInner {
@@ -2975,6 +2979,9 @@ impl TdCallApi for CallDataCollector {
                 option_portfolio: None,
                 option_index: None,
             };
+
+            self.size_map.insert(Cow::from(contract.symbol.clone()), contract.size.clone());
+            self.exchange_map.insert(Cow::from(contract.symbol.clone()), contract.exchange.as_ref().unwrap().clone());
             self.sender.send_all(contract);
         }
 
@@ -2988,7 +2995,8 @@ impl TdCallApi for CallDataCollector {
         pTradingAccount: *mut CThostFtdcTradingAccountField,
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
-        bIsLast: bool) {
+        bIsLast: bool,
+    ) {
         unsafe {
             match get_rsp_info(pRspInfo) {
                 Ok(t) => {
@@ -3026,21 +3034,30 @@ impl TdCallApi for CallDataCollector {
                     let open_cost = (*pInvestorPosition).OpenCost;
                     let direction = Direction::from((*pInvestorPosition).PosiDirection);
                     let td_pos = (*pInvestorPosition).TodayPosition;
-                    let volume = (*pInvestorPosition).Position;
+                    let volume = (*pInvestorPosition).Position as f64;
                     let profit = (*pInvestorPosition).PositionProfit;
                     let frozen = (*pInvestorPosition).ShortFrozen + (*pInvestorPosition).LongFrozen;
-                    let pos = self.pos.entry(Cow::from(symbol.clone())).or_insert_with(|| {
-                        match direction {
+                    let key = format!("{}_{}", symbol, (*pInvestorPosition).PosiDirection);
+                    let pos = self
+                        .pos
+                        .entry(Cow::from(key))
+                        .or_insert_with(|| match direction {
                             Direction::SHORT => PositionData::new_with_short(&symbol),
                             Direction::LONG => PositionData::new_with_long(&symbol),
-                            _ => { panic!("bad direction") }
-                        }
-                    });
+                            _ => panic!("bad direction"),
+                        });
+                    println!("eeeee");
                     // todo: collect the position info and send it to the core
                     // cal logic should be provide
+                    let size = self.size_map.get(symbol.as_str()).unwrap();
+                    pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
+                    pos.volume += volume;
+                    pos.pnl += profit;
                 }
                 if bIsLast {
-                    self.pos.iter().for_each(|(k, v)| self.sender.send_all(v.to_owned()));
+                    self.pos
+                        .iter()
+                        .for_each(|(k, v)| self.sender.send_all(v.to_owned()));
                     self.pos.clear();
                 }
             }
@@ -3048,7 +3065,6 @@ impl TdCallApi for CallDataCollector {
         }
     }
 }
-
 
 fn get_order_type(order: OrderType) -> c_char {
     match order {
@@ -3164,7 +3180,6 @@ impl From<i8> for Direction {
     }
 }
 
-
 impl TdApi {
     pub(crate) fn new(path: String) -> TdApi {
         let p = CString::new(path).unwrap();
@@ -3256,6 +3271,8 @@ impl TdApi {
             sender,
             blocker: Some(blocker),
             pos: Default::default(),
+            size_map: Default::default(),
+            exchange_map: Default::default(),
         };
         // rust object
         let trait_object_box: Box<Box<dyn TdCallApi>> = Box::new(Box::new(collector));

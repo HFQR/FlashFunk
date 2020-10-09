@@ -10,8 +10,6 @@ use chrono::{DateTime, Local, NaiveDateTime};
 use encoding::all::GB18030;
 use encoding::{DecoderTrap, Encoding};
 
-use super::interface::Interface;
-use crate::app::{CtpbeeR, MdApiMessage};
 use crate::ctp::func::QuoteApi;
 use crate::ctp::sys::{
     slice_to_string, CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField,
@@ -23,7 +21,9 @@ use crate::ctp::sys::{
     DisconnectionReason, QuoteSpi, QuoteSpi_Destructor, TThostFtdcErrorIDType,
     TThostFtdcRequestIDType,
 };
+use crate::interface::Interface;
 use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
+use crate::types::message::MdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use std::sync::Arc;

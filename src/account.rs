@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_variables)]
-
 use chrono::{Date, Utc};
 use std::borrow::Cow;
 
@@ -9,11 +7,11 @@ use crate::structs::{DailyResult, OrderData, Params, TickData, TradeData};
 use crate::util::hash::HashMap;
 
 pub trait PositionManager {
-    fn get_all_positions(&mut self) -> Vec<PositionData>;
+    fn get_all_positions(&self) -> Vec<PositionData>;
 }
 
 impl PositionManager for Account {
-    fn get_all_positions(&mut self) -> Vec<PositionData> {
+    fn get_all_positions(&self) -> Vec<PositionData> {
         vec![]
     }
 }
@@ -62,32 +60,26 @@ impl Account {
         }
     }
 
-    pub fn balance(&mut self) -> f64 {
+    pub fn balance(&self) -> f64 {
         self.available() + self.margin()
     }
-    pub fn available(&mut self) -> f64 {
+    pub fn available(&self) -> f64 {
         self.pre_balance + self.float_pnl() + self.get_close_profit_sum()
             - self.get_frozen_fee_sum()
             - self.get_fee_sum()
             - self.margin()
             - self.frozen_margin()
     }
-    pub fn get_fee_sum(&mut self) -> f64 {
+    pub fn get_fee_sum(&self) -> f64 {
         self.fee.values().into_iter().sum()
     }
 
-    pub fn get_frozen_fee_sum(&mut self) -> f64 {
+    pub fn get_frozen_fee_sum(&self) -> f64 {
         self.frozen_fee.values().into_iter().sum()
     }
 
-    pub fn get_close_profit_sum(&mut self) -> f64 {
-        self.close_profit
-            .values()
-            .into_iter()
-            .copied()
-            .collect::<Vec<f64>>()
-            .iter()
-            .sum()
+    pub fn get_close_profit_sum(&self) -> f64 {
+        self.close_profit.values().into_iter().copied().sum()
     }
     /// update trade
     /// 1. add fee to actual fee
@@ -101,25 +93,26 @@ impl Account {
 
         // Check the orderid if has been frozen
         if let Some(order_id) = &data.orderid {
-            if self.frozen_fee.contains_key(order_id) {
-                self.frozen_fee.remove(order_id);
-            }
+            // remove会先查找再删除
+            self.frozen_fee.remove(order_id);
+            // if self.frozen_fee.contains_key(order_id) {
+            //     self.frozen_fee.remove(order_id);
+            // }
         }
         // insert fee to fact
-        if let Some(t) = self.fee.get(symbol.as_ref()) {
-            let sum = commision + *t;
-            self.fee.insert(symbol.clone(), sum);
-        } else {
-            self.fee.insert(symbol.clone(), commision);
+        match self.fee.get_mut(symbol.as_ref()) {
+            Some(t) => *t += commision,
+            None => {
+                let _ = self.fee.insert(symbol.clone(), commision);
+            }
         }
+
         // update margin_frozen if open else add close_profit for close action
         match data.offset.unwrap() {
             Offset::OPEN => {
                 self.count += 1.0;
                 if let Some(order_id) = &data.orderid {
-                    if self.margin_frozen_container.contains_key(order_id) {
-                        self.margin_frozen_container.remove(order_id);
-                    }
+                    self.margin_frozen_container.remove(order_id);
                 }
             }
             _ => {
@@ -134,35 +127,35 @@ impl Account {
                     }
                     _ => 0.0,
                 };
-                if let Some(t) = self.close_profit.get(&symbol) {
-                    let sum = close_profit + *t;
-                    self.close_profit.insert(symbol.clone(), sum);
-                } else {
-                    self.close_profit.insert(symbol.clone(), close_profit);
+
+                match self.close_profit.get_mut(symbol.as_ref()) {
+                    Some(t) => *t += close_profit,
+                    None => {
+                        let _ = self.close_profit.insert(symbol.clone(), close_profit);
+                    }
                 }
             }
         }
     }
     /// return size by passed symbol
-    fn get_size_map(&mut self, symbol: &str) -> f64 {
+    fn get_size_map(&self, symbol: &str) -> f64 {
         self.size_map.get(symbol).copied().unwrap_or(0.0)
     }
     /// return commission_ration by passed symbol
-    fn get_commission_ratio(&mut self, symbol: &str) -> f64 {
+    fn get_commission_ratio(&self, symbol: &str) -> f64 {
         self.commission_ratio.get(symbol).copied().unwrap_or(0.0)
     }
     /// return margin_ratio by passed symbol
-    fn get_margin_ratio(&mut self, symbol: &str) -> f64 {
+    fn get_margin_ratio(&self, symbol: &str) -> f64 {
         self.margin_ratio.get(symbol).copied().unwrap_or(0.0)
     }
     /// update order
     /// 1.add frozen fee if open
     /// 2.add margin_frozen if open
     pub fn update_order(&mut self, data: OrderData) {
-        let symbol: String = data.symbol.clone();
+        let symbol = data.symbol.as_str();
         let commission_ratio = self.get_commission_ratio(&symbol);
-        self.frozen_fee
-            .insert(symbol.clone(), commission_ratio * data.volume * data.price);
+
         match data.offset {
             Offset::OPEN => {
                 // Add Margin frozen
@@ -172,6 +165,9 @@ impl Account {
             }
             _ => {}
         }
+
+        self.frozen_fee
+            .insert(data.symbol, commission_ratio * data.volume * data.price);
     }
     /// update position by tick
     /// refresh pnl in time
@@ -182,7 +178,7 @@ impl Account {
     /// so the most important things is to calculate the float pnl. It should be regard as a  import things
     /// And we should use replace the price  with pre_close_price  for yd `position`, and `price` for today volume,
     /// so we had to maintain the pre_close and real_price both in looper or realtime trade
-    pub fn float_pnl(&mut self) -> f64 {
+    pub fn float_pnl(&self) -> f64 {
         self.get_all_positions()
             .iter()
             .map(|x| {
@@ -213,20 +209,18 @@ impl Account {
                     _ => panic!("暂不支持"),
                 }
             })
-            .collect::<Vec<f64>>()
-            .iter()
             .sum()
     }
     /// 获取实时价格
-    fn get_real_price(&mut self, symbol: &str) -> f64 {
+    fn get_real_price(&self, symbol: &str) -> f64 {
         *self.price_mapping.get(symbol).unwrap_or(&0.0)
     }
     /// 获取昨日收盘价
-    fn get_pre_price(&mut self, symbol: &str) -> f64 {
+    fn get_pre_price(&self, symbol: &str) -> f64 {
         *self.pre_close.get(symbol).unwrap_or(&0.0)
     }
     ///  get the margin of position for the account
-    pub fn margin(&mut self) -> f64 {
+    pub fn margin(&self) -> f64 {
         let rs = 0.0;
 
         self.get_all_positions()
@@ -257,17 +251,15 @@ impl Account {
         unimplemented!()
     }
     /// get the frozen , when day,end ,it will zero
-    pub fn frozen_margin(&mut self) -> f64 {
+    pub fn frozen_margin(&self) -> f64 {
         self.margin_frozen_container
             .values()
             .into_iter()
             .copied()
-            .collect::<Vec<f64>>()
-            .iter()
             .sum()
     }
     /// generator a Account object named DailyResult, it will be written into database
-    fn generate_self(&mut self) -> DailyResult {
+    fn generate_self(&self) -> DailyResult {
         DailyResult {
             available: self.available(),
             balance: self.balance(),

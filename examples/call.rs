@@ -1,17 +1,16 @@
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
+use std::fmt::Pointer;
+use std::thread;
+
 use chrono::Local;
-use flashfunk::app::{CtpbeeR, StrategyMessage};
 use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
-use flashfunk::context::Context;
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
 use flashfunk::prelude::*;
 use flashfunk::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TickData};
 use flashfunk_codegen::Strategy;
-use std::fmt::Pointer;
-use std::thread;
 
 /// 價格
 struct Quote {
@@ -46,7 +45,7 @@ impl Quote {
 
 #[derive(Strategy)]
 #[name("阿呆")]
-#[symbol("rb2101")]
+#[symbol("ag2101")]
 struct Strategy {
     quote: Quote,
 }
@@ -54,7 +53,7 @@ struct Strategy {
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         let req = OrderRequest {
-            symbol: "rb2101".to_string(),
+            symbol: "ag2101".to_string(),
             exchange: Exchange::SHFE,
             direction: Direction::LONG,
             order_type: OrderType::LIMIT,
@@ -75,12 +74,14 @@ impl Ac for Strategy {
         // println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
 
         // get the pos infomation
-        let pos = ctx.get_position("rb2101");
+        let pos = ctx.get_position("ag2101");
+
+        println!("{:?}", pos);
 
         // send  a close position request
         if pos.long_volume != 0.0 {
             let req = OrderRequest {
-                symbol: "rb2101".to_string(),
+                symbol: "ag2101".to_string(),
                 exchange: Exchange::SHFE,
                 direction: Direction::SHORT,
                 order_type: OrderType::LIMIT,
@@ -94,7 +95,7 @@ impl Ac for Strategy {
         self.quote.update_tick(tick);
 
         let acc = ctx.get_account();
-        println!("{:?}", acc);
+        // println!("{:?}", acc);
 
         // send order reuqest right now
         // ctx.send(req);
@@ -123,8 +124,8 @@ fn main() {
         .password("wi1015..")
         .broke_id("9999")
         .app_id("simnow_client_test")
-        .md_address("tcp://180.168.146.187:10131")
-        .td_address("tcp://180.168.146.187:10130")
+        .md_address("tcp://218.202.237.33:10112")
+        .td_address("tcp://218.202.237.33:10102")
         .auth_code("0000000000000000")
         .production_info("");
     let strategy_1 = Strategy {
