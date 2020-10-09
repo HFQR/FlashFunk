@@ -3021,7 +3021,6 @@ impl TdCallApi for CallDataCollector {
     ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
-
                 unsafe {
                     let symbol = slice_to_string(&(*pInvestorPosition).InstrumentID);
                     let open_cost = (*pInvestorPosition).OpenCost;
@@ -3034,9 +3033,7 @@ impl TdCallApi for CallDataCollector {
                         match direction {
                             Direction::SHORT => PositionData::new_with_short(&symbol),
                             Direction::LONG => PositionData::new_with_long(&symbol),
-                            _ => {
-                                panic!("bad direction")
-                            }
+                            _ => { panic!("bad direction") }
                         }
                     });
                     // todo: collect the position info and send it to the core
