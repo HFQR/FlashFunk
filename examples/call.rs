@@ -45,7 +45,7 @@ impl Quote {
 
 #[derive(Strategy)]
 #[name("阿呆")]
-#[symbol("ag2101")]
+#[symbol("ag2012")]
 struct Strategy {
     quote: Quote,
 }
@@ -53,7 +53,7 @@ struct Strategy {
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         let req = OrderRequest {
-            symbol: "ag2101".to_string(),
+            symbol: "ag2012".to_string(),
             exchange: Exchange::SHFE,
             direction: Direction::LONG,
             order_type: OrderType::LIMIT,
@@ -74,14 +74,14 @@ impl Ac for Strategy {
         // println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
 
         // get the pos infomation
-        let pos = ctx.get_position("ag2101");
+        let pos = ctx.get_position("ag2012");
 
         println!("{:?}", pos);
 
         // send  a close position request
         if pos.long_volume != 0.0 {
             let req = OrderRequest {
-                symbol: "ag2101".to_string(),
+                symbol: "ag2012".to_string(),
                 exchange: Exchange::SHFE,
                 direction: Direction::SHORT,
                 order_type: OrderType::LIMIT,

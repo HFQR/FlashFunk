@@ -44,14 +44,13 @@ impl MainWorker {
 
             if Instant::now().duration_since(now) >= INTERVAL {
                 if r {
-                    println!("好像不會觸發");
                     td_api.req_position();
                 } else {
                     td_api.req_account();
                 }
                 r = !r;
+                now = Instant::now();
             }
-            now = Instant::now();
         }
     }
 }
@@ -113,7 +112,10 @@ impl StrategyWorker {
                         ctx.update_account(&data);
                         self.st.on_account(&data, &mut ctx)
                     }
-                    TdApiMessage::PositionData(data) => self.st.on_position(&data, &mut ctx),
+                    TdApiMessage::PositionData(data) => {
+                        ctx.update_position_by_pos(&data);
+                        self.st.on_position(&data, &mut ctx);
+                    }
                     TdApiMessage::ContractData(data) => {
                         ctx.1
                             .insert_exchange(data.symbol.as_str(), data.exchange.unwrap());

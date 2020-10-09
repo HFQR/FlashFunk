@@ -2869,7 +2869,7 @@ impl TdCallApi for CallDataCollector {
             10000000usize => {
                 // Fixme: 如果不帶idx send_all or ignore it ?
                 // println!("broadcast message");
-                // self.api.producer.send_all(order)
+                // self.sender.send_to(order, 0);
             }
             _ => {
                 self.sender.send_to(order, idx);
@@ -2980,8 +2980,12 @@ impl TdCallApi for CallDataCollector {
                 option_index: None,
             };
 
-            self.size_map.insert(Cow::from(contract.symbol.clone()), contract.size.clone());
-            self.exchange_map.insert(Cow::from(contract.symbol.clone()), contract.exchange.as_ref().unwrap().clone());
+            self.size_map
+                .insert(Cow::from(contract.symbol.clone()), contract.size.clone());
+            self.exchange_map.insert(
+                Cow::from(contract.symbol.clone()),
+                contract.exchange.as_ref().unwrap().clone(),
+            );
             self.sender.send_all(contract);
         }
 
@@ -3033,11 +3037,14 @@ impl TdCallApi for CallDataCollector {
                     let symbol = slice_to_string(&(*pInvestorPosition).InstrumentID);
                     let open_cost = (*pInvestorPosition).OpenCost;
                     let direction = Direction::from((*pInvestorPosition).PosiDirection);
-                    let td_pos = (*pInvestorPosition).TodayPosition;
+                    let exchange = self.exchange_map.get(symbol.as_str()).unwrap();
+                    let td_pos = (*pInvestorPosition).TodayPosition as f64;
                     let volume = (*pInvestorPosition).Position as f64;
+                    let yd_pos = (*pInvestorPosition).YdPosition as f64;
                     let profit = (*pInvestorPosition).PositionProfit;
                     let frozen = (*pInvestorPosition).ShortFrozen + (*pInvestorPosition).LongFrozen;
                     let key = format!("{}_{}", symbol, (*pInvestorPosition).PosiDirection);
+
                     let pos = self
                         .pos
                         .entry(Cow::from(key))
@@ -3046,14 +3053,26 @@ impl TdCallApi for CallDataCollector {
                             Direction::LONG => PositionData::new_with_long(&symbol),
                             _ => panic!("bad direction"),
                         });
-                    println!("eeeee");
-                    // todo: collect the position info and send it to the core
-                    // cal logic should be provide
+                    // according to the exchange  to setup the yd position
+                    match exchange {
+                        &Exchange::SHFE => {
+                            if yd_pos != 0.0 && td_pos == 0.0 {
+                                pos.yd_volume = volume;
+                            }
+                        }
+                        _ => {
+                            pos.yd_volume = volume - td_pos;
+                        }
+                    }
                     let size = self.size_map.get(symbol.as_str()).unwrap();
+                    // pos.exchange = Some(*exchange);
                     pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
                     pos.volume += volume;
                     pos.pnl += profit;
+                    println!("{:?}", exchange);
+                    println!("{:?}", pos);
                 }
+                // if is the last data that been pushed,  take them and sent it the core
                 if bIsLast {
                     self.pos
                         .iter()
