@@ -88,17 +88,18 @@ bitflags! {
 bitflags! {
     /// 交易所
     /// 暫時只支持國內期貨交易
-    pub struct Exchange: u8 {
-        const CFETS =   0;
-        const CFFEX =   1;
-        const CZCE =    2;
-        const DCE =     3;
-        const INE =     4;
-        const SGE =     5;
-        const SHFE =    6;
-        const SSE =     7;
-        const SZSE =    8;
-        const WXE =     9;
-        const ACTIVE_TODAY_EXCHANGE = Self::SHFE.bits | Self::INE.bits;
+    pub struct Exchange: u16 {
+     // 重要: default类型需要为 Status::INIT
+        const INIT =     0b_0000_0001;
+        const CFETS =    0b_0000_0010;
+        const CFFEX =    0b_0000_0100;
+        const CZCE =     0b_0000_1000;
+        const DCE =      0b_0001_0000;
+        const INE =      0b_0010_0000;
+        const SGE =      0b_0100_0000;
+        const SHFE =     0b_1000_0000;
+        const SSE =      0b_0001_0000_0000;
+        const SZSE =     0b_0010_0000_0000;
+        const WXE =      0b_0100_0000_0000;
     }
 }

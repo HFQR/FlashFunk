@@ -174,24 +174,22 @@ impl ContextInner {
                             pos.short_volume -= order.traded;
                         }
                     }
-                    Offset::CLOSE => {
-                        match order.exchange {
-                            Exchange::ACTIVE_TODAY_EXCHANGE => {
-                                //
-                                pos.short_yd_volume -= order.traded;
-                                pos.short_price = (pos.short_price * pos.short_volume
-                                    - order.traded * order.price)
-                                    / (pos.short_volume - order.traded);
-                                pos.short_volume -= order.traded;
-                            }
-                            _ => {
-                                pos.short_price = (pos.short_price * pos.short_volume
-                                    - order.traded * order.price)
-                                    / (pos.short_volume - order.traded);
-                                pos.short_volume -= order.traded;
-                            }
+                    Offset::CLOSE => match order.exchange {
+                        Exchange::SHFE | Exchange::INE => {
+                            pos.short_yd_volume -= order.traded;
+                            pos.short_price = (pos.short_price * pos.short_volume
+                                - order.traded * order.price)
+                                / (pos.short_volume - order.traded);
+                            pos.short_volume -= order.traded;
                         }
-                    }
+
+                        _ => {
+                            pos.short_price = (pos.short_price * pos.short_volume
+                                - order.traded * order.price)
+                                / (pos.short_volume - order.traded);
+                            pos.short_volume -= order.traded;
+                        }
+                    },
                     Offset::CLOSEYESTERDAY => {
                         // 平昨數量剛好等於昨倉數量
                         if order.traded == pos.short_volume {
@@ -232,7 +230,7 @@ impl ContextInner {
                     }
                     Offset::CLOSE => {
                         match order.exchange {
-                            Exchange::ACTIVE_TODAY_EXCHANGE => {
+                            Exchange::SHFE | Exchange::INE => {
                                 //
                                 pos.long_yd_volume -= order.traded;
                                 pos.long_price = (pos.long_price * pos.short_volume
