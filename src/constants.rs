@@ -101,5 +101,6 @@ bitflags! {
         const SSE =      0b_0001_0000_0000;
         const SZSE =     0b_0010_0000_0000;
         const WXE =      0b_0100_0000_0000;
+        const ACTIVE_TODAY = Self::SHFE.bits | Self::INE.bits;
     }
 }

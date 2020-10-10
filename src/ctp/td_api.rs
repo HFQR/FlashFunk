@@ -3054,8 +3054,8 @@ impl TdCallApi for CallDataCollector {
                             _ => panic!("bad direction"),
                         });
                     // according to the exchange  to setup the yd position
-                    match exchange {
-                        &Exchange::SHFE => {
+                    match *exchange {
+                        Exchange::SHFE => {
                             if yd_pos != 0.0 && td_pos == 0.0 {
                                 pos.yd_volume = volume;
                             }

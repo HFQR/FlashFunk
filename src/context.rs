@@ -33,7 +33,7 @@ impl ContextInner {
         self.order_map.insert(order.orderid.clone().unwrap(), order);
     }
 
-    pub fn get_active_orders(&mut self) -> impl Iterator<Item = &OrderData> {
+    pub fn get_active_orders(&mut self) -> impl Iterator<Item=&OrderData> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
@@ -44,14 +44,14 @@ impl ContextInner {
         self.order_map.get(order_id)
     }
 
-    pub fn get_active_ids(&mut self) -> impl Iterator<Item = &str> {
+    pub fn get_active_ids(&mut self) -> impl Iterator<Item=&str> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(i, _)| i.as_str())
     }
 
-    pub fn get_order_ids(&mut self) -> impl Iterator<Item = &str> {
+    pub fn get_order_ids(&mut self) -> impl Iterator<Item=&str> {
         self.order_map.iter().map(|(i, _)| i.as_str())
     }
 
@@ -175,7 +175,7 @@ impl ContextInner {
                         }
                     }
                     Offset::CLOSE => match order.exchange {
-                        Exchange::SHFE | Exchange::INE => {
+                        Exchange::ACTIVE_TODAY => {
                             pos.short_yd_volume -= order.traded;
                             pos.short_price = (pos.short_price * pos.short_volume
                                 - order.traded * order.price)
@@ -230,7 +230,7 @@ impl ContextInner {
                     }
                     Offset::CLOSE => {
                         match order.exchange {
-                            Exchange::SHFE | Exchange::INE => {
+                            Exchange::ACTIVE_TODAY => {
                                 //
                                 pos.long_yd_volume -= order.traded;
                                 pos.long_price = (pos.long_price * pos.short_volume
@@ -277,20 +277,20 @@ impl ContextInner {
 
 pub trait ContextTrait {
     fn enter<F>(&mut self, f: F)
-    where
-        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
+        where
+            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
 
     fn send(&self, m: impl Into<StrategyMessage>);
 
     fn add_order(&mut self, order: OrderData);
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item = &OrderData> + '_>;
+    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_>;
 
     fn get_order(&mut self, order_id: &str) -> Option<&OrderData>;
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_>;
+    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_>;
+    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
 
     fn get_exchange(&mut self, symbol: &str) -> Option<&Exchange>;
 
@@ -305,14 +305,12 @@ pub trait ContextTrait {
     fn update_position_by_price(&mut self, price: f64);
 
     fn update_position_by_pos(&mut self, position_data: &PositionData);
-
-    fn insert_order(&mut self, order: &OrderData);
 }
 
 impl ContextTrait for Context<'_> {
     fn enter<F>(&mut self, f: F)
-    where
-        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
+        where
+            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
     {
         let (sender, inner) = self;
         f(*sender, inner);
@@ -323,10 +321,11 @@ impl ContextTrait for Context<'_> {
     }
 
     fn add_order(&mut self, order: OrderData) {
+        self.1.insert_order(&order);
         self.1.add_order(order);
     }
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item = &OrderData> + '_> {
+    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_> {
         Box::new(self.1.get_active_orders())
     }
 
@@ -334,11 +333,11 @@ impl ContextTrait for Context<'_> {
         self.1.get_order(order_id)
     }
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_> {
+    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
         Box::new(self.1.get_active_ids())
     }
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_> {
+    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
         Box::new(self.1.get_order_ids())
     }
 
@@ -368,9 +367,5 @@ impl ContextTrait for Context<'_> {
 
     fn update_position_by_pos(&mut self, position_data: &PositionData) {
         self.1.insert_position(position_data);
-    }
-
-    fn insert_order(&mut self, order: &OrderData) {
-        self.1.insert_order(order);
     }
 }

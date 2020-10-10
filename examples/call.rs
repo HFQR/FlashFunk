@@ -72,7 +72,6 @@ impl Ac for Strategy {
         // );
         // print the active order's id
         // println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
-
         // get the pos infomation
         let pos = ctx.get_position("ag2012");
 
