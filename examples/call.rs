@@ -9,7 +9,7 @@ use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
 use flashfunk::prelude::*;
-use flashfunk::structs::{CancelRequest, LoginForm, OrderData, OrderRequest, TickData};
+use flashfunk::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
 use flashfunk_codegen::Strategy;
 
 /// 價格
@@ -62,6 +62,11 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
+
+        let mut x = Generator::new("rb2101.SHFE".to_string(), 32);
+        x.update_tick(tick, |x, v| {
+            ctx.send(req);
+        });
         // println!(
         //     "行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}",
         //     tick.last_price,

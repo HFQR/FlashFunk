@@ -4,9 +4,10 @@
 
 use std::borrow::Cow;
 
-use chrono::{Date, DateTime, NaiveDateTime, Utc};
+use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 
 use crate::constants::*;
+use bitflags::_core::cmp::{max, min};
 
 /// Tick Data
 #[derive(Clone)]
@@ -481,3 +482,86 @@ impl LoginForm {
 }
 
 pub struct QueryRequest {}
+
+pub struct Bar {
+    pub high: f64,
+    pub volume: f64,
+    pub amount: f64,
+    pub low: f64,
+    pub open: f64,
+    pub close: f64,
+    pub datetime: NaiveDateTime,
+    pub symbol: String,
+    pub frq_sec: i32,
+}
+
+impl Bar {
+    pub fn new(symbol: String, frq: i32, navie: NaiveDateTime, open: f64) -> Self {
+        Bar {
+            high: 0.0,
+            volume: 0.0,
+            amount: 0.0,
+            low: 0.0,
+            open,
+            close: 0.0,
+            datetime: navie,
+            symbol,
+            frq_sec: frq,
+        }
+    }
+}
+
+pub struct Generator {
+    symbol: String,
+    last: Option<Bar>,
+    frq: i32,
+}
+
+impl Generator {
+    pub fn new(symbol: String, frq: i32) -> Self {
+        Generator {
+            symbol,
+            last: None,
+            frq,
+        }
+    }
+
+    pub fn update_tick<F>(&mut self, tick: &TickData, f: F)
+    where
+        F: FnOnce(&mut Self, Bar),
+    {
+        let time = *tick.datetime.as_ref().unwrap();
+        if self.last.is_none() {
+            self.last = Some(Bar::new(
+                self.symbol.clone(),
+                self.frq,
+                time,
+                tick.last_price,
+            ));
+            return;
+        }
+        let bar = self.last.as_mut().unwrap();
+        if time.second() - bar.datetime.second() >= self.frq as u32 {
+            let x = self.last.take().unwrap();
+            f(self, x);
+            self.last = Some(Bar::new(
+                self.symbol.clone(),
+                self.frq,
+                time,
+                tick.last_price,
+            ));
+        } else {
+            bar.close = tick.last_price;
+            bar.high = Generator::max(tick.last_price, bar.high);
+            bar.low = Generator::min(tick.last_price, tick.low_price);
+        }
+    }
+
+    fn max(i: f64, v: f64) -> f64 {
+        max((i * 10000.0) as i32, (v * 10000.0) as i32) as f64 / 10000.0
+    }
+
+    fn min(i: f64, v: f64) -> f64 {
+        min((i * 10000.0) as i32, (v * 10000.0) as i32) as f64 / 10000.0
+    }
+}

@@ -2327,7 +2327,8 @@ pub trait TdCallApi {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {}
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2801,7 +2802,8 @@ impl TdCallApi for CallDataCollector {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {}
+    ) {
+    }
 
     fn on_rsp_order_action(
         &mut self,
@@ -2937,7 +2939,8 @@ impl TdCallApi for CallDataCollector {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
+    ) {
+    }
 
     fn on_err_rtn_order_action(
         &mut self,
