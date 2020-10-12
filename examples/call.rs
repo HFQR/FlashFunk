@@ -81,7 +81,6 @@ impl Ac for Strategy {
         let pos = ctx.get_position("ag2012");
 
         println!("{:?}", pos);
-
         // send  a close position request
         if pos.long_volume != 0.0 {
             let req = OrderRequest {
