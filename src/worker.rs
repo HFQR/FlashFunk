@@ -1,3 +1,4 @@
+use core::marker::PhantomData;
 use core::time::Duration;
 
 use std::time::Instant;
@@ -12,16 +13,23 @@ use crate::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
 
 // 主线程工人。阻塞主线程，接收策略消息并发起api的回调。
-struct MainWorker {
+struct MainWorker<Interface> {
     receiver: Vec<Receiver<StrategyMessage>>,
+    _i: PhantomData<Interface>,
 }
 
-impl MainWorker {
+impl<I, M> MainWorker<I>
+where
+    I: Interface<Message = M>,
+{
     fn new(receiver: Vec<Receiver<StrategyMessage>>) -> Self {
-        Self { receiver }
+        Self {
+            receiver,
+            _i: PhantomData,
+        }
     }
 
-    fn block_handle(&self, mut td_api: TdApi) {
+    fn block_handle(&self, mut interface: I) {
         const INTERVAL: Duration = Duration::from_secs(1);
 
         let mut r = true;
@@ -34,19 +42,19 @@ impl MainWorker {
                 // 此处idx为策略通道的index，可以交给回调用以确认回程消息的策略
                 .for_each(|(idx, msg)| match msg {
                     StrategyMessage::OrderRequest(req) => {
-                        td_api.send_order(idx, req);
+                        interface.send_order(idx, req);
                     }
                     StrategyMessage::CancelRequest(req) => {
-                        td_api.cancel_order(req);
+                        interface.cancel_order(req);
                     }
                     _ => {}
                 });
 
-            if Instant::now().duration_since(now) >= INTERVAL {
+            if Instant::now().duration_since(now) > INTERVAL {
                 if r {
-                    td_api.req_position();
+                    interface.req_position();
                 } else {
-                    td_api.req_account();
+                    interface.req_account();
                 }
                 r = !r;
                 now = Instant::now();
@@ -88,40 +96,38 @@ impl StrategyWorker {
         let mut ctx = new_context(&self.p_st);
         loop {
             // 接收md_api的消息并处理。
-            match self.c_md.recv() {
-                Ok(msg) => match msg {
-                    // tick会返回订单vec，我们转发至td api
-                    MdApiMessage::TickData(data) => self.st.on_tick(&data, &mut ctx),
-                    _ => {}
-                },
-                Err(_) => (),
+            if let Ok(msg) = self.c_md.recv() {
+                match msg {
+                    MdApiMessage::TickData(ref data) => self.st.on_tick(data, &mut ctx),
+                    MdApiMessage::SubscribeRequest(_req) => unimplemented!(),
+                }
             }
+
             // 接收td_api的消息并处理。
-            match self.c_td.recv() {
-                Ok(msg) => match msg {
+            if let Ok(msg) = self.c_td.recv() {
+                match msg {
                     TdApiMessage::OrderData(data) => {
                         // 可以在这里插入信息至ctx
                         // 目前所有order都会被加入map，需要过滤我们建立的单子。
                         // 目前没有删除机制，此insert会泄露内存。
-                        ctx.add_order(data.clone());
                         self.st.on_order(&data, &mut ctx);
+                        ctx.add_order(data);
                     }
-                    TdApiMessage::TradeData(data) => self.st.on_trade(&data, &mut ctx),
-                    TdApiMessage::AccountData(data) => {
-                        ctx.update_account(&data);
-                        self.st.on_account(&data, &mut ctx)
+                    TdApiMessage::TradeData(ref data) => self.st.on_trade(data, &mut ctx),
+                    TdApiMessage::AccountData(ref data) => {
+                        ctx.update_account(data);
+                        self.st.on_account(data, &mut ctx)
                     }
-                    TdApiMessage::PositionData(data) => {
-                        ctx.update_position_by_pos(&data);
-                        self.st.on_position(&data, &mut ctx);
+                    TdApiMessage::PositionData(ref data) => {
+                        ctx.update_position_by_pos(data);
+                        self.st.on_position(data, &mut ctx);
                     }
-                    TdApiMessage::ContractData(data) => {
+                    TdApiMessage::ContractData(ref data) => {
                         ctx.1
                             .insert_exchange(data.symbol.as_str(), data.exchange.unwrap());
                         self.st.on_contract(&data, &mut ctx);
                     }
-                },
-                Err(_) => (),
+                }
             }
         }
     }
@@ -137,7 +143,12 @@ impl Drop for StrategyWorker {
 }
 
 // 为builder建立工人并启动
-pub(crate) fn start_workers(mut builder: CtpBuilder<'_>) {
+pub(crate) fn start_workers<I, I2>(mut builder: CtpBuilder<'_, I, I2>)
+where
+    // ToDo: 消息类型应该由构造器CtpBuilder传入
+    I: Interface<Message = MdApiMessage>,
+    I2: Interface<Message = TdApiMessage>,
+{
     // 准备所有策略工人，并返回对应的通道制造（消费）端 和订阅symbols集合
     // * 策略已被此函数消费无法再次调用。
     let (symbols, workers, s_md, s_td, c_st) = prepare_worker_channel(&mut builder);
@@ -147,8 +158,8 @@ pub(crate) fn start_workers(mut builder: CtpBuilder<'_>) {
     let path = builder.path.into();
 
     // 构造api
-    let mut md_api = MdApi::new(id, pwd, path, symbols);
-    let mut td_api = TdApi::new("".parse().unwrap());
+    let mut md_api = I::new(id, pwd, path, symbols);
+    let mut td_api = I2::new("".to_string(), "".to_string(), "".parse().unwrap(), vec![]);
 
     let login_form = builder.login_form;
 
@@ -172,15 +183,19 @@ pub(crate) fn start_workers(mut builder: CtpBuilder<'_>) {
 const MESSAGE_LIMIT: usize = 1024usize;
 
 // 帮助函数
-fn prepare_worker_channel(
-    builder: &mut CtpBuilder<'_>,
+fn prepare_worker_channel<I, I2>(
+    builder: &mut CtpBuilder<'_, I, I2>,
 ) -> (
     Vec<&'static str>,
     Vec<StrategyWorker>,
     GroupSender<MdApiMessage>,
     GroupSender<TdApiMessage>,
-    MainWorker,
-) {
+    MainWorker<I2>,
+)
+where
+    I: Interface<Message = MdApiMessage>,
+    I2: Interface<Message = TdApiMessage>,
+{
     let sts = std::mem::take(&mut builder.strategy);
 
     let cap = sts.len();

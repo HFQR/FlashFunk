@@ -179,25 +179,6 @@ unsafe impl Send for MdApi {}
 ///
 /// 实现行情API的一些主动基准调用方法
 impl MdApi {
-    pub(crate) fn new(id: String, pwd: String, path: String, symbols: Vec<&'static str>) -> Self {
-        let ids = CString::new(id).unwrap();
-        let pwds = CString::new(pwd).unwrap();
-        let paths = CString::new(path).unwrap();
-        let flow_path_ptr = paths.as_ptr();
-        // 创建了行情对象
-        let api = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
-        MdApi {
-            user_id: ids,
-            password: pwds,
-            path: paths,
-            market_api: api,
-            market_spi: None,
-            login_info: None,
-            request_id: 0,
-            symbols,
-        }
-    }
-
     /// 初始化调用
     pub fn init(&mut self) -> bool {
         unsafe { CThostFtdcMdApi_Init(self.market_api) };
@@ -269,16 +250,28 @@ impl MdApi {
 }
 
 impl Interface for MdApi {
-    type Sender = GroupSender<MdApiMessage>;
-    fn send_order(&mut self, _: usize, _: OrderRequest) {
-        unimplemented!("行情接口无此功能")
+    type Message = MdApiMessage;
+
+    fn new(id: String, pwd: String, path: String, symbols: Vec<&'static str>) -> Self {
+        let ids = CString::new(id).unwrap();
+        let pwds = CString::new(pwd).unwrap();
+        let paths = CString::new(path).unwrap();
+        let flow_path_ptr = paths.as_ptr();
+        // 创建了行情对象
+        let api = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
+        MdApi {
+            user_id: ids,
+            password: pwds,
+            path: paths,
+            market_api: api,
+            market_spi: None,
+            login_info: None,
+            request_id: 0,
+            symbols,
+        }
     }
 
-    fn cancel_order(&mut self, req: CancelRequest) {
-        unimplemented!("行情接口无此功能")
-    }
-
-    fn connect(&mut self, req: &LoginForm, sender: Self::Sender) {
+    fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {
         // 建立一个线程阻塞器
         let blocker = MdApiBlocker::new();
 
@@ -312,14 +305,6 @@ impl Interface for MdApi {
                 CThostFtdcMdApi_SubscribeMarketData(self.market_api, &mut c, self.request_id)
             };
         });
-    }
-
-    fn unsubscribe(&mut self, symbol: String) {
-        unimplemented!()
-    }
-
-    fn exit(&mut self) {
-        unimplemented!()
     }
 }
 
