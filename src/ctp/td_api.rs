@@ -3201,22 +3201,6 @@ impl From<i8> for Direction {
 }
 
 impl TdApi {
-    pub(crate) fn new(path: String) -> TdApi {
-        let p = CString::new(path).unwrap();
-        let flow_path_ptr = p.as_ptr();
-        let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
-        TdApi {
-            order_ref: 0,
-            path: p,
-            trader_api: api,
-            trader_spi: None,
-            login_info: None,
-            request_id: 0,
-            front_id: 0,
-            session_id: 0,
-        }
-    }
-
     pub fn auth(&mut self) {
         self.request_id += 1;
         let form = self.login_info();
@@ -3325,34 +3309,6 @@ impl TdApi {
             );
         }
     }
-
-    pub fn req_account(&mut self) {
-        self.request_id += 1;
-        unsafe {
-            RustCtpCallReqQryTradingAccount(
-                self.trader_api,
-                Box::into_raw(Box::new(CThostFtdcQryTradingAccountField::default())),
-                self.request_id,
-            );
-        }
-    }
-
-    pub fn req_position(&mut self) {
-        self.request_id += 1;
-        let login_info = self.login_info.as_ref().unwrap();
-        unsafe {
-            let req = CThostFtdcQryInvestorPositionField {
-                BrokerID: login_info._broke_id().to_c_slice(),
-                InvestorID: login_info._user_id().to_c_slice(),
-                ..CThostFtdcQryInvestorPositionField::default()
-            };
-            RustCtpCallReqQryInvestorPosition(
-                self.trader_api,
-                Box::into_raw(Box::new(req)),
-                self.request_id,
-            );
-        }
-    }
 }
 
 impl Drop for TdApi {
@@ -3360,7 +3316,23 @@ impl Drop for TdApi {
 }
 
 impl Interface for TdApi {
-    type Sender = GroupSender<TdApiMessage>;
+    type Message = TdApiMessage;
+
+    fn new(id: String, pwd: String, path: String, symbols: Vec<&'static str>) -> TdApi {
+        let p = CString::new(path).unwrap();
+        let flow_path_ptr = p.as_ptr();
+        let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
+        TdApi {
+            order_ref: 0,
+            path: p,
+            trader_api: api,
+            trader_spi: None,
+            login_info: None,
+            request_id: 0,
+            front_id: 0,
+            session_id: 0,
+        }
+    }
 
     fn send_order(&mut self, idx: usize, order: OrderRequest) {
         self.request_id += 1;
@@ -3431,7 +3403,7 @@ impl Interface for TdApi {
         }
     }
 
-    fn connect(&mut self, req: &LoginForm, sender: Self::Sender) {
+    fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {
         // 建立线程阻塞器
         let blocker = TdApiBlocker::new();
 
@@ -3474,15 +3446,31 @@ impl Interface for TdApi {
         blocker.0.step5.block();
     }
 
-    fn subscribe(&mut self) {
-        unimplemented!("This API is not allowed in Trade")
+    fn req_account(&mut self) {
+        self.request_id += 1;
+        unsafe {
+            RustCtpCallReqQryTradingAccount(
+                self.trader_api,
+                Box::into_raw(Box::new(CThostFtdcQryTradingAccountField::default())),
+                self.request_id,
+            );
+        }
     }
 
-    fn unsubscribe(&mut self, symbol: String) {
-        unimplemented!("This API is not allowed in Trade")
-    }
-
-    fn exit(&mut self) {
-        unimplemented!()
+    fn req_position(&mut self) {
+        self.request_id += 1;
+        let login_info = self.login_info.as_ref().unwrap();
+        unsafe {
+            let req = CThostFtdcQryInvestorPositionField {
+                BrokerID: login_info._broke_id().to_c_slice(),
+                InvestorID: login_info._user_id().to_c_slice(),
+                ..CThostFtdcQryInvestorPositionField::default()
+            };
+            RustCtpCallReqQryInvestorPosition(
+                self.trader_api,
+                Box::into_raw(Box::new(req)),
+                self.request_id,
+            );
+        }
     }
 }

@@ -1,9 +1,12 @@
 use core::fmt::{Debug, Formatter, Result as FmtResult};
+use core::marker::PhantomData;
 
 use std::borrow::Cow;
 
 use crate::account::Account;
 use crate::builder::CtpBuilder;
+use crate::interface::Interface;
+use crate::types::message::{MdApiMessage, TdApiMessage};
 use crate::util::hash::HashMap;
 
 /// ctpbee核心运行器
@@ -15,7 +18,11 @@ pub struct CtpbeeR {
 }
 
 impl CtpbeeR {
-    pub fn builder<'a>(name: impl Into<Cow<'a, str>>) -> CtpBuilder<'a> {
+    // Interface类型需要作为类型提示传入. N类型可以为自动推导
+    pub fn builder<'a, I, I2, N>(name: N) -> CtpBuilder<'a, I, I2>
+    where
+        N: Into<Cow<'a, str>>,
+    {
         CtpBuilder {
             name: name.into(),
             id: Default::default(),
@@ -23,6 +30,8 @@ impl CtpbeeR {
             path: Default::default(),
             strategy: vec![],
             login_form: Default::default(),
+            _i: PhantomData,
+            _i2: PhantomData,
         }
     }
 

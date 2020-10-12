@@ -10,6 +10,7 @@ use flashfunk::ctp::td_api::TdApi;
 use flashfunk::interface::Interface;
 use flashfunk::prelude::*;
 use flashfunk::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
+use flashfunk::types::message::TdApiMessage;
 use flashfunk_codegen::Strategy;
 
 /// 價格
@@ -134,7 +135,7 @@ fn main() {
     let strategy_1 = Strategy {
         quote: Quote::new(),
     };
-    CtpbeeR::builder("ctpbee")
+    CtpbeeR::builder::<MdApi, TdApi, _>("ctpbee")
         .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")

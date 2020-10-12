@@ -1,19 +1,29 @@
+use core::marker::PhantomData;
+
 use std::borrow::Cow;
 
 use crate::ac::{IntoStrategy, __Strategy};
+use crate::interface::Interface;
 use crate::structs::LoginForm;
+use crate::types::message::{MdApiMessage, TdApiMessage};
 use crate::worker::start_workers;
 
-pub struct CtpBuilder<'a> {
+pub struct CtpBuilder<'a, Interface, Interface2> {
     pub(crate) name: Cow<'a, str>,
     pub(crate) id: Cow<'a, str>,
     pub(crate) pwd: Cow<'a, str>,
     pub(crate) path: Cow<'a, str>,
     pub(crate) strategy: Vec<__Strategy>,
     pub(crate) login_form: LoginForm,
+    pub(crate) _i: PhantomData<Interface>,
+    pub(crate) _i2: PhantomData<Interface2>,
 }
 
-impl<'a> CtpBuilder<'a> {
+impl<'a, I, I2> CtpBuilder<'a, I, I2>
+where
+    I: Interface<Message = MdApiMessage>,
+    I2: Interface<Message = TdApiMessage>,
+{
     pub fn id(mut self, id: impl Into<Cow<'a, str>>) -> Self {
         self.id = id.into();
         self
