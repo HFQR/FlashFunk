@@ -63,11 +63,10 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-
-        let mut x = Generator::new("rb2101.SHFE".to_string(), 32);
-        x.update_tick(tick, |x, v| {
-            ctx.send(req);
-        });
+        // let mut x = Generator::new("rb2101.SHFE".to_string(), 32);
+        // x.update_tick(tick, |x, v| {
+        //     ctx.send(req);
+        // });
         // println!(
         //     "行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}",
         //     tick.last_price,
@@ -79,23 +78,50 @@ impl Ac for Strategy {
         // print the active order's id
         // println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
         // get the pos infomation
-        let pos = ctx.get_position("ag2012");
-
-        println!("{:?}", pos);
-        // send  a close position request
-        if pos.long_volume != 0.0 {
-            let req = OrderRequest {
-                symbol: "ag2012".to_string(),
-                exchange: Exchange::SHFE,
-                direction: Direction::SHORT,
-                order_type: OrderType::LIMIT,
-                volume: pos.long_volume.clone(),
-                price: tick.last_price - 2.0,
-                offset: Offset::CLOSETODAY,
-                reference: None,
-            };
-            // ctx.send(req);
+        let orders = ctx.get_active_orders();
+        let mut is_send_long = false;
+        let mut is_send_short = false;
+        for x in orders {
+            if x.direction.as_ref().unwrap() == &Direction::LONG {
+                is_send_long = true;
+            } else {
+                is_send_short = true
+            }
         }
+
+        ctx.enter(|x, v| {
+            let pos = v.position_mut("ag2012");
+            println!("pos: {} long_volume: {}, short_volume:{}", pos.symbol, pos.long_volume, pos.short_volume);
+            if pos.short_volume != 0.0 && is_send_long == false {
+                let req = OrderRequest {
+                    symbol: "ag2012".to_string(),
+                    exchange: Exchange::SHFE,
+                    direction: Direction::LONG,
+                    order_type: OrderType::LIMIT,
+                    volume: pos.short_volume.clone(),
+                    price: tick.last_price + 5.0,
+                    offset: Offset::CLOSETODAY,
+                    reference: None,
+                };
+                println!("開始瞭解長頭持倉 ----- ");
+                x.send(req);
+            }
+
+            if pos.long_volume != 0.0 && is_send_short == false {
+                let req = OrderRequest {
+                    symbol: "ag2012".to_string(),
+                    exchange: Exchange::SHFE,
+                    direction: Direction::SHORT,
+                    order_type: OrderType::LIMIT,
+                    volume: pos.long_volume.clone(),
+                    price: tick.last_price - 3.0,
+                    offset: Offset::CLOSETODAY,
+                    reference: None,
+                };
+                println!("開始瞭解長頭持倉 ----- ");
+                x.send(req);
+            }
+        });
         self.quote.update_tick(tick);
 
         let acc = ctx.get_account();
@@ -118,7 +144,7 @@ impl Ac for Strategy {
     }
 
     fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
-        // println!("{:?}", order);
+        println!("Order 回報: {:?}", order);
     }
 }
 
