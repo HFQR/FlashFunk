@@ -11,16 +11,7 @@ use encoding::all::GB18030;
 use encoding::{DecoderTrap, Encoding};
 
 use crate::ctp::func::QuoteApi;
-use crate::ctp::sys::{
-    slice_to_string, CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField,
-    CThostFtdcForQuoteRspField, CThostFtdcMdApi, CThostFtdcMdApi_GetTradingDay,
-    CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_RegisterSpi,
-    CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData, CThostFtdcMdSpi,
-    CThostFtdcReqUserLoginField, CThostFtdcRspInfoField, CThostFtdcRspUserLoginField,
-    CThostFtdcSpecificInstrumentField, CThostFtdcTraderApi, CThostFtdcUserLogoutField,
-    DisconnectionReason, QuoteSpi, QuoteSpi_Destructor, TThostFtdcErrorIDType,
-    TThostFtdcRequestIDType,
-};
+use crate::ctp::sys::{slice_to_string, CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField, CThostFtdcMdApi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData, CThostFtdcMdSpi, CThostFtdcReqUserLoginField, CThostFtdcRspInfoField, CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField, CThostFtdcTraderApi, CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi, QuoteSpi_Destructor, TThostFtdcErrorIDType, TThostFtdcRequestIDType, another_slice_to_string, check_slice_to_string};
 use crate::interface::Interface;
 use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::types::message::MdApiMessage;
@@ -100,21 +91,20 @@ impl QuoteApi for DataCollector<'_> {
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
         unsafe {
             let instant = Instant::now();
-            let symbol = slice_to_string(&(*pDepthMarketData).InstrumentID);
+            let symbol = another_slice_to_string(&(*pDepthMarketData).InstrumentID);
             let index = self.symbols.iter().enumerate().find_map(|(i, s)| {
-                if *s == symbol.as_str() {
+                if symbol.starts_with(*s) {
                     Some(i)
                 } else {
                     None
                 }
             });
-
             if let Some(i) = index {
                 let msg = {
                     let datetime = format!(
                         "{} {}.{}",
-                        slice_to_string(&(*pDepthMarketData).ActionDay),
-                        slice_to_string(&(*pDepthMarketData).UpdateTime),
+                        check_slice_to_string(&(*pDepthMarketData).ActionDay),
+                        check_slice_to_string(&(*pDepthMarketData).UpdateTime),
                         (*pDepthMarketData).UpdateMillisec as i32 * 1000
                     );
                     let naive =
@@ -163,7 +153,7 @@ impl QuoteApi for DataCollector<'_> {
                             (*pDepthMarketData).AskVolume4 as f64,
                             (*pDepthMarketData).AskVolume5 as f64,
                         ],
-                        instant,
+                        ..TickData::default()
                     }
                 };
 

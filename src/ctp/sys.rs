@@ -106,10 +106,19 @@ pub fn zh_cstr_to_str(v: &[u8]) -> Cow<str> {
     }
 }
 
-/// todo: 下面有问题描述
+pub fn another_slice_to_string(v: &[i8]) -> String {
+    let r = v.iter().map(|x| *x as u8).collect::<Vec<u8>>();
+    unsafe { String::from_utf8_unchecked(r) }
+}
+
+pub fn check_slice_to_string(v: &[i8]) -> String {
+    let r = v.split(|x| *x == 0i8).next().unwrap().iter().map(|x| *x as u8).collect::<Vec<u8>>();
+    unsafe { String::from_utf8_unchecked(r) }
+}
+
 pub fn slice_to_string(v: &[i8]) -> String {
-    let x: Vec<u8> = v.to_vec().iter().map(|x| *x as u8).collect();
-    zh_cstr_to_str(x.as_slice()).to_string()
+    let r = v.iter().map(|x| *x as u8).collect::<Vec<u8>>();
+    zh_cstr_to_str(&*r).to_string()
 }
 
 pub trait ToCSlice<T> {

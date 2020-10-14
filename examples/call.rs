@@ -55,31 +55,32 @@ struct Strategy {
 
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
-        let req = OrderRequest {
-            symbol: "ag2012".to_string(),
-            exchange: Exchange::SHFE,
-            direction: Direction::LONG,
-            order_type: OrderType::LIMIT,
-            volume: 1.0,
-            price: tick.last_price + 1.0,
-            offset: Offset::OPEN,
-            reference: None,
-        };
-
-        let orders = ctx.get_active_orders();
-        let mut is_send_long = false;
-        let mut is_send_short = false;
-        for x in orders {
-            if x.direction.as_ref().unwrap() == &Direction::LONG {
-                is_send_long = true;
-            } else {
-                is_send_short = true
-            }
-        }
-
+        // let req = OrderRequest {
+        //     symbol: "ag2012".to_string(),
+        //     exchange: Exchange::SHFE,
+        //     direction: Direction::LONG,
+        //     order_type: OrderType::LIMIT,
+        //     volume: 1.0,
+        //     price: tick.last_price + 1.0,
+        //     offset: Offset::OPEN,
+        //     reference: None,
+        // };
+        //
+        // let orders = ctx.get_active_orders();
+        // let mut is_send_long = false;
+        // let mut is_send_short = false;
+        // for x in orders {
+        //     if x.direction.as_ref().unwrap() == &Direction::LONG {
+        //         is_send_long = true;
+        //     } else {
+        //         is_send_short = true
+        //     }
+        // }
+        //
+        let is_send_long = true;
+        let is_send_short = true;
         ctx.enter(|x, v| {
             let pos = v.position_mut("ag2012");
-            println!("pos: {} long_volume: {}, short_volume:{}", pos.symbol, pos.long_volume, pos.short_volume);
             if pos.short_volume != 0.0 && is_send_long == false {
                 let req = OrderRequest {
                     symbol: "ag2012".to_string(),
@@ -91,7 +92,6 @@ impl Ac for Strategy {
                     offset: Offset::CLOSETODAY,
                     reference: None,
                 };
-                println!("CLOSE SHORT POSITION  ----- ");
                 x.send(req);
             }
 
@@ -106,19 +106,20 @@ impl Ac for Strategy {
                     offset: Offset::CLOSETODAY,
                     reference: None,
                 };
-                println!("CLOSE LONG POSITION  ----- ");
                 x.send(req);
             }
         });
-        self.quote.update_tick(tick);
-
-        let acc = ctx.get_account();
+        // self.quote.update_tick(tick);
+        //
+        // let acc = ctx.get_account();
         // println!("{:?}", acc);
-
         self.gap += 1;
-        self.dup += tick.instant.elapsed().as_nanos();
-        if self.gap % 10 == 0 {
-            println!("Single transmission delay： {}", self.dup / self.gap);
+        if self.gap > 10 {
+            // self.dup += tick.instant.elapsed().as_nanos();
+            // if self.gap % 10 == 0 {
+            //     println!("Single transmission delay： {}， gap:{}", self.dup / (self.gap - 10), self.gap - 10);
+            // }
+            println!("dur: {}", tick.instant.elapsed().as_nanos());
         }
     }
 
@@ -129,12 +130,12 @@ impl Ac for Strategy {
 
 fn main() {
     let login_form = LoginForm::new()
-        .user_id("170874")
-        .password("wi1015..")
+        .user_id("089131")
+        .password("350888")
         .broke_id("9999")
         .app_id("simnow_client_test")
-        .md_address("tcp://218.202.237.33:10112")
-        .td_address("tcp://218.202.237.33:10102")
+        .md_address("tcp://180.168.146.187:10131")
+        .td_address("tcp://180.168.146.187:10130")
         .auth_code("0000000000000000")
         .production_info("");
     let strategy_1 = Strategy {
