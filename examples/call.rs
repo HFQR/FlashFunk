@@ -49,8 +49,8 @@ impl Quote {
 #[symbol("ag2012")]
 struct Strategy {
     quote: Quote,
-    gap: i32,
-    dup: i32,
+    gap: u128,
+    dup: u128,
 }
 
 impl Ac for Strategy {
