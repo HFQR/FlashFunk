@@ -8,6 +8,7 @@ use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 
 use crate::constants::*;
 use bitflags::_core::cmp::{max, min};
+use std::time::Instant;
 
 /// Tick Data
 #[derive(Clone)]
@@ -30,6 +31,7 @@ pub struct TickData {
     pub ask_price: [f64; 5],
     pub bid_volume: [f64; 5],
     pub ask_volume: [f64; 5],
+    pub instant: Instant,
 }
 
 impl Default for TickData {
@@ -53,6 +55,7 @@ impl Default for TickData {
             ask_price: [0.0; 5],
             bid_volume: [0.0; 5],
             ask_volume: [0.0; 5],
+            instant: Instant::now(),
         }
     }
 }
@@ -527,8 +530,8 @@ impl Generator {
     }
 
     pub fn update_tick<F>(&mut self, tick: &TickData, f: F)
-    where
-        F: FnOnce(&mut Self, Bar),
+        where
+            F: FnOnce(&mut Self, Bar),
     {
         let time = *tick.datetime.as_ref().unwrap();
         if self.last.is_none() {

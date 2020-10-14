@@ -27,6 +27,7 @@ use crate::types::message::MdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use std::sync::Arc;
+use std::time::Instant;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -98,6 +99,7 @@ impl QuoteApi for DataCollector<'_> {
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
         unsafe {
+            let instant = Instant::now();
             let symbol = slice_to_string(&(*pDepthMarketData).InstrumentID);
             let index = self.symbols.iter().enumerate().find_map(|(i, s)| {
                 if *s == symbol.as_str() {
@@ -161,6 +163,7 @@ impl QuoteApi for DataCollector<'_> {
                             (*pDepthMarketData).AskVolume4 as f64,
                             (*pDepthMarketData).AskVolume5 as f64,
                         ],
+                        instant,
                     }
                 };
 

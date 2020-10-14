@@ -49,6 +49,8 @@ impl Quote {
 #[symbol("ag2012")]
 struct Strategy {
     quote: Quote,
+    gap: i32,
+    dup: i32,
 }
 
 impl Ac for Strategy {
@@ -63,21 +65,7 @@ impl Ac for Strategy {
             offset: Offset::OPEN,
             reference: None,
         };
-        // let mut x = Generator::new("rb2101.SHFE".to_string(), 32);
-        // x.update_tick(tick, |x, v| {
-        //     ctx.send(req);
-        // });
-        // println!(
-        //     "行情 : {} 買一:{}  賣一:{} 買一量: {} 賣一量:{}",
-        //     tick.last_price,
-        //     tick.bid_price(0),
-        //     tick.ask_price(0),
-        //     tick.bid_volume(0),
-        //     tick.ask_volume(0)
-        // );
-        // print the active order's id
-        // println!("{:?}", ctx.get_active_ids().collect::<Vec<_>>());
-        // get the pos infomation
+
         let orders = ctx.get_active_orders();
         let mut is_send_long = false;
         let mut is_send_short = false;
@@ -103,7 +91,7 @@ impl Ac for Strategy {
                     offset: Offset::CLOSETODAY,
                     reference: None,
                 };
-                println!("開始瞭解長頭持倉 ----- ");
+                println!("CLOSE SHORT POSITION  ----- ");
                 x.send(req);
             }
 
@@ -118,7 +106,7 @@ impl Ac for Strategy {
                     offset: Offset::CLOSETODAY,
                     reference: None,
                 };
-                println!("開始瞭解長頭持倉 ----- ");
+                println!("CLOSE LONG POSITION  ----- ");
                 x.send(req);
             }
         });
@@ -127,20 +115,11 @@ impl Ac for Strategy {
         let acc = ctx.get_account();
         // println!("{:?}", acc);
 
-        // send order reuqest right now
-        // ctx.send(req);
-
-        // // 当我们需要同时引用上下文的不同状态时，我们可以使用Context::enter方法
-        // ctx.enter(|sender, ctx| {
-        //     ctx.get_active_orders().for_each(|f| {
-        //         let order = CancelRequest {
-        //             order_id: f.orderid.clone().unwrap(),
-        //             exchange: Exchange::SHFE,
-        //             symbol: f.symbol.to_string(),
-        //         };
-        //         sender.send(order);
-        //     });
-        // });
+        self.gap += 1;
+        self.dup += tick.instant.elapsed().as_nanos();
+        if self.gap % 10 == 0 {
+            println!("Single transmission delay： {}", self.dup / self.gap);
+        }
     }
 
     fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
@@ -160,6 +139,8 @@ fn main() {
         .production_info("");
     let strategy_1 = Strategy {
         quote: Quote::new(),
+        gap: 0,
+        dup: 0,
     };
     CtpbeeR::builder::<MdApi, TdApi, _>("ctpbee")
         .strategies(vec![strategy_1.into_str()])
