@@ -6,8 +6,6 @@ use std::time::Instant;
 use crate::ac::__Strategy;
 use crate::builder::CtpBuilder;
 use crate::context::{new_context, ContextTrait};
-use crate::ctp::md_api::MdApi;
-use crate::ctp::td_api::TdApi;
 use crate::interface::Interface;
 use crate::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};

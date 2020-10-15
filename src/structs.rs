@@ -530,8 +530,8 @@ impl Generator {
     }
 
     pub fn update_tick<F>(&mut self, tick: &TickData, f: F)
-        where
-            F: FnOnce(&mut Self, Bar),
+    where
+        F: FnOnce(&mut Self, Bar),
     {
         let time = *tick.datetime.as_ref().unwrap();
         if self.last.is_none() {

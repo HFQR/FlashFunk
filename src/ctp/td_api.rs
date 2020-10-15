@@ -2327,7 +2327,8 @@ pub trait TdCallApi {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {}
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
+    }
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2801,7 +2802,8 @@ impl TdCallApi for CallDataCollector {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {}
+    ) {
+    }
 
     fn on_rsp_order_action(
         &mut self,
@@ -2832,6 +2834,136 @@ impl TdCallApi for CallDataCollector {
             Err(e) => {
                 println!(">>> Td Confirmed failed, id: {} msg: {}", e.id, e.msg);
             }
+        }
+    }
+
+    fn on_rsp_qry_investor_position(
+        &mut self,
+        pInvestorPosition: *mut CThostFtdcInvestorPositionField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) {
+        match get_rsp_info(pRspInfo) {
+            Ok(t) => {
+                unsafe {
+                    let symbol = slice_to_string(&(*pInvestorPosition).InstrumentID);
+                    let open_cost = (*pInvestorPosition).OpenCost;
+                    let direction = Direction::from((*pInvestorPosition).PosiDirection);
+                    let exchange = self.exchange_map.get(symbol.as_str()).unwrap();
+                    let td_pos = (*pInvestorPosition).TodayPosition as f64;
+                    let volume = (*pInvestorPosition).Position as f64;
+                    let yd_pos = (*pInvestorPosition).YdPosition as f64;
+                    let profit = (*pInvestorPosition).PositionProfit;
+                    let frozen = (*pInvestorPosition).ShortFrozen + (*pInvestorPosition).LongFrozen;
+                    let key = format!("{}_{}", symbol, (*pInvestorPosition).PosiDirection);
+
+                    let pos = self
+                        .pos
+                        .entry(Cow::from(key))
+                        .or_insert_with(|| match direction {
+                            Direction::SHORT => PositionData::new_with_short(&symbol),
+                            Direction::LONG => PositionData::new_with_long(&symbol),
+                            _ => panic!("bad direction"),
+                        });
+                    // according to the exchange  to setup the yd position
+                    match *exchange {
+                        Exchange::SHFE => {
+                            if yd_pos != 0.0 && td_pos == 0.0 {
+                                pos.yd_volume = volume;
+                            }
+                        }
+                        _ => {
+                            pos.yd_volume = volume - td_pos;
+                        }
+                    }
+                    let size = self.size_map.get(symbol.as_str()).unwrap();
+                    // pos.exchange = Some(*exchange);
+                    pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
+                    pos.volume += volume;
+                    pos.pnl += profit;
+                }
+                // if is the last data that been pushed,  take them and sent it the core
+                if bIsLast {
+                    self.pos
+                        .iter()
+                        .for_each(|(k, v)| self.sender.send_all(v.to_owned()));
+                    self.pos.clear();
+                }
+            }
+            Err(e) => {}
+        }
+    }
+
+    fn on_rsp_qry_trading_account(
+        &mut self,
+        pTradingAccount: *mut CThostFtdcTradingAccountField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) {
+        unsafe {
+            match get_rsp_info(pRspInfo) {
+                Ok(t) => {
+                    let account_data = AccountData {
+                        accountid: slice_to_string(&(*pTradingAccount).AccountID),
+                        balance: (*pTradingAccount).Balance,
+                        frozen: (*pTradingAccount).FrozenMargin
+                            + (*pTradingAccount).FrozenCash
+                            + (*pTradingAccount).FrozenCommission,
+                        date: Utc::today(),
+                    };
+                    self.sender.send_all(account_data);
+                }
+                Err(e) => {
+                    println!(">>> Account Query Err, id: {} msg: {}", e.id, e.msg);
+                }
+            };
+        }
+        if self.blocker.is_some() {
+            self.blocker.take().unwrap().0.step5.unblock();
+        }
+    }
+
+    fn on_rsp_qry_instrument(
+        &mut self,
+        pInstrument: *mut CThostFtdcInstrumentField,
+        pRspInfo: *mut CThostFtdcRspInfoField,
+        nRequestID: c_int,
+        bIsLast: bool,
+    ) {
+        // todo: add Contract data in here and send it
+        unsafe {
+            let contract = ContractData {
+                symbol: slice_to_string(&(*pInstrument).InstrumentID),
+                exchange: Option::from(Exchange::from((*pInstrument).ExchangeID)),
+                name: None,
+                product: None,
+                size: (*pInstrument).VolumeMultiple as f64,
+                pricetick: (*pInstrument).PriceTick as f64,
+                min_volume: 0.0,
+                stop_supported: false,
+                net_position: false,
+                history_data: false,
+                option_strike: 0.0,
+                option_underlying: None,
+                option_type: None,
+                option_expiry: None,
+                option_portfolio: None,
+                option_index: None,
+            };
+
+            self.size_map
+                .insert(Cow::from(contract.symbol.clone()), contract.size.clone());
+            self.exchange_map.insert(
+                Cow::from(contract.symbol.clone()),
+                contract.exchange.as_ref().unwrap().clone(),
+            );
+            self.sender.send_all(contract);
+        }
+
+        if bIsLast {
+            self.blocker.as_ref().unwrap().0.step4.unblock();
         }
     }
 
@@ -2935,11 +3067,6 @@ impl TdCallApi for CallDataCollector {
         }
     }
 
-    fn on_rtn_instrument_status(
-        &mut self,
-        pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {}
-
     fn on_err_rtn_order_action(
         &mut self,
         pOrderAction: *mut CThostFtdcOrderActionField,
@@ -2953,134 +3080,10 @@ impl TdCallApi for CallDataCollector {
         };
     }
 
-    fn on_rsp_qry_instrument(
+    fn on_rtn_instrument_status(
         &mut self,
-        pInstrument: *mut CThostFtdcInstrumentField,
-        pRspInfo: *mut CThostFtdcRspInfoField,
-        nRequestID: c_int,
-        bIsLast: bool,
+        pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
     ) {
-        // todo: add Contract data in here and send it
-        unsafe {
-            let contract = ContractData {
-                symbol: slice_to_string(&(*pInstrument).InstrumentID),
-                exchange: Option::from(Exchange::from((*pInstrument).ExchangeID)),
-                name: None,
-                product: None,
-                size: (*pInstrument).VolumeMultiple as f64,
-                pricetick: (*pInstrument).PriceTick as f64,
-                min_volume: 0.0,
-                stop_supported: false,
-                net_position: false,
-                history_data: false,
-                option_strike: 0.0,
-                option_underlying: None,
-                option_type: None,
-                option_expiry: None,
-                option_portfolio: None,
-                option_index: None,
-            };
-
-            self.size_map
-                .insert(Cow::from(contract.symbol.clone()), contract.size.clone());
-            self.exchange_map.insert(
-                Cow::from(contract.symbol.clone()),
-                contract.exchange.as_ref().unwrap().clone(),
-            );
-            self.sender.send_all(contract);
-        }
-
-        if bIsLast {
-            self.blocker.as_ref().unwrap().0.step4.unblock();
-        }
-    }
-
-    fn on_rsp_qry_trading_account(
-        &mut self,
-        pTradingAccount: *mut CThostFtdcTradingAccountField,
-        pRspInfo: *mut CThostFtdcRspInfoField,
-        nRequestID: c_int,
-        bIsLast: bool,
-    ) {
-        unsafe {
-            match get_rsp_info(pRspInfo) {
-                Ok(t) => {
-                    let account_data = AccountData {
-                        accountid: slice_to_string(&(*pTradingAccount).AccountID),
-                        balance: (*pTradingAccount).Balance,
-                        frozen: (*pTradingAccount).FrozenMargin
-                            + (*pTradingAccount).FrozenCash
-                            + (*pTradingAccount).FrozenCommission,
-                        date: Utc::today(),
-                    };
-                    self.sender.send_all(account_data);
-                }
-                Err(e) => {
-                    println!(">>> Account Query Err, id: {} msg: {}", e.id, e.msg);
-                }
-            };
-        }
-        if self.blocker.is_some() {
-            self.blocker.take().unwrap().0.step5.unblock();
-        }
-    }
-
-    fn on_rsp_qry_investor_position(
-        &mut self,
-        pInvestorPosition: *mut CThostFtdcInvestorPositionField,
-        pRspInfo: *mut CThostFtdcRspInfoField,
-        nRequestID: c_int,
-        bIsLast: bool,
-    ) {
-        match get_rsp_info(pRspInfo) {
-            Ok(t) => {
-                unsafe {
-                    let symbol = slice_to_string(&(*pInvestorPosition).InstrumentID);
-                    let open_cost = (*pInvestorPosition).OpenCost;
-                    let direction = Direction::from((*pInvestorPosition).PosiDirection);
-                    let exchange = self.exchange_map.get(symbol.as_str()).unwrap();
-                    let td_pos = (*pInvestorPosition).TodayPosition as f64;
-                    let volume = (*pInvestorPosition).Position as f64;
-                    let yd_pos = (*pInvestorPosition).YdPosition as f64;
-                    let profit = (*pInvestorPosition).PositionProfit;
-                    let frozen = (*pInvestorPosition).ShortFrozen + (*pInvestorPosition).LongFrozen;
-                    let key = format!("{}_{}", symbol, (*pInvestorPosition).PosiDirection);
-
-                    let pos = self
-                        .pos
-                        .entry(Cow::from(key))
-                        .or_insert_with(|| match direction {
-                            Direction::SHORT => PositionData::new_with_short(&symbol),
-                            Direction::LONG => PositionData::new_with_long(&symbol),
-                            _ => panic!("bad direction"),
-                        });
-                    // according to the exchange  to setup the yd position
-                    match *exchange {
-                        Exchange::SHFE => {
-                            if yd_pos != 0.0 && td_pos == 0.0 {
-                                pos.yd_volume = volume;
-                            }
-                        }
-                        _ => {
-                            pos.yd_volume = volume - td_pos;
-                        }
-                    }
-                    let size = self.size_map.get(symbol.as_str()).unwrap();
-                    // pos.exchange = Some(*exchange);
-                    pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
-                    pos.volume += volume;
-                    pos.pnl += profit;
-                }
-                // if is the last data that been pushed,  take them and sent it the core
-                if bIsLast {
-                    self.pos
-                        .iter()
-                        .for_each(|(k, v)| self.sender.send_all(v.to_owned()));
-                    self.pos.clear();
-                }
-            }
-            Err(e) => {}
-        }
     }
 }
 

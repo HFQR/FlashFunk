@@ -112,7 +112,13 @@ pub fn another_slice_to_string(v: &[i8]) -> String {
 }
 
 pub fn check_slice_to_string(v: &[i8]) -> String {
-    let r = v.split(|x| *x == 0i8).next().unwrap().iter().map(|x| *x as u8).collect::<Vec<u8>>();
+    let r = v
+        .split(|x| *x == 0i8)
+        .next()
+        .unwrap()
+        .iter()
+        .map(|x| *x as u8)
+        .collect::<Vec<u8>>();
     unsafe { String::from_utf8_unchecked(r) }
 }
 

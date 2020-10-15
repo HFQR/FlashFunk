@@ -11,7 +11,16 @@ use encoding::all::GB18030;
 use encoding::{DecoderTrap, Encoding};
 
 use crate::ctp::func::QuoteApi;
-use crate::ctp::sys::{slice_to_string, CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField, CThostFtdcMdApi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData, CThostFtdcMdSpi, CThostFtdcReqUserLoginField, CThostFtdcRspInfoField, CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField, CThostFtdcTraderApi, CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi, QuoteSpi_Destructor, TThostFtdcErrorIDType, TThostFtdcRequestIDType, another_slice_to_string, check_slice_to_string};
+use crate::ctp::sys::{
+    another_slice_to_string, check_slice_to_string, slice_to_string,
+    CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField,
+    CThostFtdcMdApi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init,
+    CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin,
+    CThostFtdcMdApi_SubscribeMarketData, CThostFtdcMdSpi, CThostFtdcReqUserLoginField,
+    CThostFtdcRspInfoField, CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField,
+    CThostFtdcTraderApi, CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi,
+    QuoteSpi_Destructor, TThostFtdcErrorIDType, TThostFtdcRequestIDType,
+};
 use crate::interface::Interface;
 use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::types::message::MdApiMessage;
@@ -90,8 +99,11 @@ impl QuoteApi for DataCollector<'_> {
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
         unsafe {
-            let instant = Instant::now();
-            let symbol = another_slice_to_string(&(*pDepthMarketData).InstrumentID);
+            let depth = *pDepthMarketData;
+
+            let v = depth.InstrumentID.as_ptr();
+            let symbol = CStr::from_ptr(v).to_string_lossy();
+
             let index = self.symbols.iter().enumerate().find_map(|(i, s)| {
                 if symbol.starts_with(*s) {
                     Some(i)
@@ -101,57 +113,71 @@ impl QuoteApi for DataCollector<'_> {
             });
             if let Some(i) = index {
                 let msg = {
-                    let datetime = format!(
-                        "{} {}.{}",
-                        check_slice_to_string(&(*pDepthMarketData).ActionDay),
-                        check_slice_to_string(&(*pDepthMarketData).UpdateTime),
-                        (*pDepthMarketData).UpdateMillisec as i32 * 1000
-                    );
-                    let naive =
-                        NaiveDateTime::parse_from_str(datetime.as_str(), "%Y%m%d %H:%M:%S.%f")
-                            .unwrap();
+                    let a = depth.ActionDay.as_ptr();
+                    let u = depth.UpdateTime.as_ptr();
+
+                    // ToDo: 处理这里的错误，如果api返回结果不可信
+                    let a = CStr::from_ptr(a).to_str().unwrap().as_bytes();
+                    let u = CStr::from_ptr(u).to_str().unwrap().as_bytes();
+
+                    let sub_t = depth.UpdateMillisec.to_string();
+                    let sub_t = sub_t.as_bytes();
+
+                    let mut buf = Vec::with_capacity(a.len() + u.len() + sub_t.len());
+
+                    buf.extend_from_slice(a);
+                    buf.push(b' ');
+                    buf.extend_from_slice(u);
+                    buf.push(b'.');
+                    buf.extend_from_slice(sub_t);
+
+                    // # Safety: 这里是安全的，因为CStr转换为str时需要处理错误。
+                    // 我们额外增加了' '和'.'以及一个String化的i32，这些都是无需检查的。
+                    let str = std::str::from_utf8_unchecked(&buf);
+
+                    let naive = NaiveDateTime::parse_from_str(str, "%Y%m%d %H:%M:%S.%f").unwrap();
                     TickData {
-                        symbol: Cow::Owned(symbol),
+                        symbol,
                         exchange: None,
                         datetime: Option::from(naive),
                         name: None,
-                        volume: (*pDepthMarketData).Volume as f64,
-                        open_interest: (*pDepthMarketData).OpenInterest as f64,
-                        last_price: (*pDepthMarketData).LastPrice as f64,
+                        volume: depth.Volume as f64,
+                        open_interest: depth.OpenInterest as f64,
+                        last_price: depth.LastPrice as f64,
                         last_volume: 0.0,
-                        limit_up: (*pDepthMarketData).UpperLimitPrice as f64,
-                        limit_down: (*pDepthMarketData).LowerLimitPrice as f64,
-                        open_price: (*pDepthMarketData).OpenPrice as f64,
-                        high_price: (*pDepthMarketData).HighestPrice as f64,
-                        low_price: (*pDepthMarketData).LowestPrice as f64,
-                        pre_close: (*pDepthMarketData).PreClosePrice as f64,
+                        limit_up: depth.UpperLimitPrice as f64,
+                        limit_down: depth.LowerLimitPrice as f64,
+                        open_price: depth.OpenPrice as f64,
+                        high_price: depth.HighestPrice as f64,
+                        low_price: depth.LowestPrice as f64,
+                        pre_close: depth.PreClosePrice as f64,
                         bid_price: [
-                            (*pDepthMarketData).BidPrice1 as f64,
-                            (*pDepthMarketData).BidPrice2 as f64,
-                            (*pDepthMarketData).BidPrice3 as f64,
-                            (*pDepthMarketData).BidPrice4 as f64,
-                            (*pDepthMarketData).BidPrice5 as f64,
+                            depth.BidPrice1 as f64,
+                            depth.BidPrice2 as f64,
+                            depth.BidPrice3 as f64,
+                            depth.BidPrice4 as f64,
+                            depth.BidPrice5 as f64,
                         ],
                         ask_price: [
-                            (*pDepthMarketData).AskPrice1 as f64,
-                            (*pDepthMarketData).AskPrice2 as f64,
-                            (*pDepthMarketData).AskPrice3 as f64,
-                            (*pDepthMarketData).AskPrice4 as f64,
-                            (*pDepthMarketData).AskPrice5 as f64,
+                            depth.AskPrice1 as f64,
+                            depth.AskPrice2 as f64,
+                            depth.AskPrice3 as f64,
+                            depth.AskPrice4 as f64,
+                            depth.AskPrice5 as f64,
                         ],
                         bid_volume: [
-                            (*pDepthMarketData).BidVolume1 as f64,
-                            (*pDepthMarketData).BidVolume2 as f64,
-                            (*pDepthMarketData).BidVolume3 as f64,
-                            (*pDepthMarketData).BidVolume4 as f64,
-                            (*pDepthMarketData).BidVolume5 as f64,
+                            depth.BidVolume1 as f64,
+                            depth.BidVolume2 as f64,
+                            depth.BidVolume3 as f64,
+                            depth.BidVolume4 as f64,
+                            depth.BidVolume5 as f64,
                         ],
                         ask_volume: [
-                            (*pDepthMarketData).AskVolume1 as f64,
-                            (*pDepthMarketData).AskVolume2 as f64,
-                            (*pDepthMarketData).AskVolume3 as f64,
-                            (*pDepthMarketData).AskVolume4 as f64,
-                            (*pDepthMarketData).AskVolume5 as f64,
+                            depth.AskVolume1 as f64,
+                            depth.AskVolume2 as f64,
+                            depth.AskVolume3 as f64,
+                            depth.AskVolume4 as f64,
+                            depth.AskVolume5 as f64,
                         ],
                         ..TickData::default()
                     }

@@ -49,8 +49,6 @@ impl Quote {
 #[symbol("ag2012")]
 struct Strategy {
     quote: Quote,
-    gap: u128,
-    dup: u128,
 }
 
 impl Ac for Strategy {
@@ -113,14 +111,7 @@ impl Ac for Strategy {
         //
         // let acc = ctx.get_account();
         // println!("{:?}", acc);
-        self.gap += 1;
-        if self.gap > 10 {
-            // self.dup += tick.instant.elapsed().as_nanos();
-            // if self.gap % 10 == 0 {
-            //     println!("Single transmission delay： {}， gap:{}", self.dup / (self.gap - 10), self.gap - 10);
-            // }
-            println!("dur: {}", tick.instant.elapsed().as_nanos());
-        }
+        println!("dur: {}", tick.instant.elapsed().as_nanos());
     }
 
     fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
@@ -140,8 +131,6 @@ fn main() {
         .production_info("");
     let strategy_1 = Strategy {
         quote: Quote::new(),
-        gap: 0,
-        dup: 0,
     };
     CtpbeeR::builder::<MdApi, TdApi, _>("ctpbee")
         .strategies(vec![strategy_1.into_str()])
