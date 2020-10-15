@@ -133,7 +133,7 @@ fn main() {
     let strategy_1 = Strategy {
         quote: Quote::new(),
     };
-    CtpbeeR::builder::<MockMdApi, TdApi, _>("ctpbee")
+    CtpbeeR::builder::<MdApi, TdApi, _>("ctpbee")
         .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")

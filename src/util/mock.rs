@@ -8,6 +8,7 @@ use crate::interface::Interface;
 use crate::structs::{LoginForm, TickData};
 use crate::types::message::MdApiMessage;
 use crate::util::channel::GroupSender;
+use std::rc::Rc;
 use std::thread::JoinHandle;
 
 pub struct MockMdApi {
@@ -53,38 +54,44 @@ impl Interface for MockMdApi {
                 .unwrap();
 
             tokio::task::LocalSet::new().block_on(&mut rt, async move {
-                let a = tokio::task::spawn_local(async move {
-                    loop {
-                        if shutdown.load(Ordering::SeqCst) == true {
-                            return;
+                let sender = Rc::new(sender);
+
+                // 每个单独的回调任务都可以参照这个task.
+                let a = tokio::task::spawn_local({
+                    let sender = sender.clone();
+                    async move {
+                        loop {
+                            if shutdown.load(Ordering::SeqCst) == true {
+                                return;
+                            }
+
+                            // 每500ms发送一个tick data;
+                            tokio::time::delay_for(Duration::from_millis(500)).await;
+
+                            // 在这里修改tick data数据;
+
+                            sender.send_all(TickData {
+                                symbol: Default::default(),
+                                exchange: None,
+                                datetime: None,
+                                name: None,
+                                volume: 0.0,
+                                open_interest: 0.0,
+                                last_price: 0.0,
+                                last_volume: 0.0,
+                                limit_up: 0.0,
+                                limit_down: 0.0,
+                                open_price: 0.0,
+                                high_price: 0.0,
+                                low_price: 0.0,
+                                pre_close: 0.0,
+                                bid_price: [0.0, 0.0, 0.0, 0.0, 0.0],
+                                ask_price: [0.0, 0.0, 0.0, 0.0, 0.0],
+                                bid_volume: [0.0, 0.0, 0.0, 0.0, 0.0],
+                                ask_volume: [0.0, 0.0, 0.0, 0.0, 0.0],
+                                instant: Instant::now(),
+                            });
                         }
-
-                        // 每500ms发送一个tick data;
-                        tokio::time::delay_for(Duration::from_millis(500)).await;
-
-                        // 在这里修改tick data数据;
-
-                        sender.send_all(TickData {
-                            symbol: Default::default(),
-                            exchange: None,
-                            datetime: None,
-                            name: None,
-                            volume: 0.0,
-                            open_interest: 0.0,
-                            last_price: 0.0,
-                            last_volume: 0.0,
-                            limit_up: 0.0,
-                            limit_down: 0.0,
-                            open_price: 0.0,
-                            high_price: 0.0,
-                            low_price: 0.0,
-                            pre_close: 0.0,
-                            bid_price: [0.0, 0.0, 0.0, 0.0, 0.0],
-                            ask_price: [0.0, 0.0, 0.0, 0.0, 0.0],
-                            bid_volume: [0.0, 0.0, 0.0, 0.0, 0.0],
-                            ask_volume: [0.0, 0.0, 0.0, 0.0, 0.0],
-                            instant: Instant::now(),
-                        });
                     }
                 });
 

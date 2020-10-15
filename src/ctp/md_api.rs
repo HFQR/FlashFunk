@@ -43,9 +43,9 @@ pub struct MdApi {
     symbols: Vec<&'static str>,
 }
 
-struct DataCollector<'a> {
+struct DataCollector {
     sender: GroupSender<MdApiMessage>,
-    symbols: &'a [&'static str],
+    symbols: Vec<*const i8>,
     login_status: bool,
     connect_status: bool,
     blocker: Option<MdApiBlocker>,
@@ -74,7 +74,7 @@ struct MdApiBlockerInner {
 }
 
 /// 此处我们实现种种方法来构建ctp的登录流程
-impl QuoteApi for DataCollector<'_> {
+impl QuoteApi for DataCollector {
     fn on_front_connected(&mut self) {
         self.connect_status = true;
         // 解除login线程的阻塞
@@ -103,10 +103,11 @@ impl QuoteApi for DataCollector<'_> {
             let depth = *pDepthMarketData;
 
             let v = depth.InstrumentID.as_ptr();
-            let symbol = CStr::from_ptr(v).to_string_lossy();
+
+            let symbol = CStr::from_ptr(v);
 
             let index = self.symbols.iter().enumerate().find_map(|(i, s)| {
-                if symbol.starts_with(*s) {
+                if symbol == CStr::from_ptr(*s) {
                     Some(i)
                 } else {
                     None
@@ -115,6 +116,8 @@ impl QuoteApi for DataCollector<'_> {
 
             if let Some(i) = index {
                 let msg = {
+                    let symbol = symbol.to_string_lossy();
+
                     let a = depth.ActionDay.as_ptr();
                     let u = depth.UpdateTime.as_ptr();
 
@@ -252,7 +255,15 @@ impl MdApi {
 
         let collector = DataCollector {
             sender,
-            symbols: &self.symbols,
+            symbols: self
+                .symbols
+                .iter()
+                .map(|r| {
+                    let mut r = r.as_bytes().to_vec();
+                    r.push(0);
+                    unsafe { CString::from_vec_unchecked(r) }.into_raw() as *const i8
+                })
+                .collect(),
             login_status: false,
             connect_status: false,
             blocker: Some(blocker),
