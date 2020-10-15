@@ -25,6 +25,8 @@ pub mod prelude {
     pub use crate::types::message::StrategyMessage;
 }
 
+pub use util::mock::MockMdApi;
+
 fn get_interface_path(path: &str) -> PathBuf {
     let px = format!("{}/HFQ/{}", var("HOME").unwrap(), path);
     let path_buffer = PathBuf::from(px);

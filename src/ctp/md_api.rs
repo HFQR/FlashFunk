@@ -6,7 +6,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_uchar};
 use std::process::id;
 
-use chrono::{DateTime, Local, NaiveDateTime};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use encoding::all::GB18030;
 use encoding::{DecoderTrap, Encoding};
 
@@ -98,6 +98,7 @@ impl QuoteApi for DataCollector<'_> {
     }
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
+        let instant = Instant::now();
         unsafe {
             let depth = *pDepthMarketData;
 
@@ -111,59 +112,62 @@ impl QuoteApi for DataCollector<'_> {
                     None
                 }
             });
+
             if let Some(i) = index {
                 let msg = {
                     let a = depth.ActionDay.as_ptr();
                     let u = depth.UpdateTime.as_ptr();
 
-                    // ToDo: 处理这里的错误，如果api返回结果不可信
-                    let a = CStr::from_ptr(a).to_str().unwrap().as_bytes();
-                    let u = CStr::from_ptr(u).to_str().unwrap().as_bytes();
+                    // // ToDo: 处理这里的错误，如果api返回结果不可信
+                    let a = CStr::from_ptr(a).to_str().unwrap();
+                    let u = CStr::from_ptr(u).to_str().unwrap();
 
-                    let sub_t = depth.UpdateMillisec.to_string();
-                    let sub_t = sub_t.as_bytes();
+                    let sub_t = depth.UpdateMillisec as u32 * 1_000_000;
 
-                    let mut buf = Vec::with_capacity(a.len() + u.len() + sub_t.len());
+                    let date = NaiveDate::from_ymd(
+                        a[0..4].parse().unwrap(),
+                        a[4..6].parse().unwrap(),
+                        a[6..].parse().unwrap(),
+                    );
 
-                    buf.extend_from_slice(a);
-                    buf.push(b' ');
-                    buf.extend_from_slice(u);
-                    buf.push(b'.');
-                    buf.extend_from_slice(sub_t);
+                    let time = NaiveTime::from_hms(
+                        u[0..2].parse().unwrap(),
+                        u[3..5].parse().unwrap(),
+                        u[6..].parse().unwrap(),
+                    )
+                    .with_nanosecond(sub_t)
+                    .unwrap();
 
-                    // # Safety: 这里是安全的，因为CStr转换为str时需要处理错误。
-                    // 我们额外增加了' '和'.'以及一个String化的i32，这些都是无需检查的。
-                    let str = std::str::from_utf8_unchecked(&buf);
+                    let datetime = Some(NaiveDateTime::new(date, time));
 
-                    let naive = NaiveDateTime::parse_from_str(str, "%Y%m%d %H:%M:%S.%f").unwrap();
                     TickData {
                         symbol,
                         exchange: None,
-                        datetime: Option::from(naive),
+                        datetime,
                         name: None,
                         volume: depth.Volume as f64,
-                        open_interest: depth.OpenInterest as f64,
-                        last_price: depth.LastPrice as f64,
+                        open_interest: depth.OpenInterest,
+                        last_price: depth.LastPrice,
                         last_volume: 0.0,
-                        limit_up: depth.UpperLimitPrice as f64,
-                        limit_down: depth.LowerLimitPrice as f64,
-                        open_price: depth.OpenPrice as f64,
-                        high_price: depth.HighestPrice as f64,
-                        low_price: depth.LowestPrice as f64,
-                        pre_close: depth.PreClosePrice as f64,
+                        limit_up: depth.UpperLimitPrice,
+                        limit_down: depth.LowerLimitPrice,
+                        open_price: depth.OpenPrice,
+                        high_price: depth.HighestPrice,
+                        low_price: depth.LowestPrice,
+                        pre_close: depth.PreClosePrice,
                         bid_price: [
-                            depth.BidPrice1 as f64,
-                            depth.BidPrice2 as f64,
-                            depth.BidPrice3 as f64,
-                            depth.BidPrice4 as f64,
-                            depth.BidPrice5 as f64,
+                            depth.BidPrice1,
+                            depth.BidPrice2,
+                            depth.BidPrice3,
+                            depth.BidPrice4,
+                            depth.BidPrice5,
                         ],
                         ask_price: [
-                            depth.AskPrice1 as f64,
-                            depth.AskPrice2 as f64,
-                            depth.AskPrice3 as f64,
-                            depth.AskPrice4 as f64,
-                            depth.AskPrice5 as f64,
+                            depth.AskPrice1,
+                            depth.AskPrice2,
+                            depth.AskPrice3,
+                            depth.AskPrice4,
+                            depth.AskPrice5,
                         ],
                         bid_volume: [
                             depth.BidVolume1 as f64,
@@ -179,6 +183,7 @@ impl QuoteApi for DataCollector<'_> {
                             depth.AskVolume4 as f64,
                             depth.AskVolume5 as f64,
                         ],
+                        instant,
                         ..TickData::default()
                     }
                 };

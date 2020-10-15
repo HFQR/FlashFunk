@@ -164,13 +164,13 @@ where
     // 连接
     md_api.connect(&login_form, s_md);
 
-    // 订阅
-    md_api.subscribe();
-
     td_api.connect(&login_form, s_td);
 
     // 启动策略工人线程。
     workers.into_iter().for_each(|worker| worker.start());
+
+    // 订阅
+    md_api.subscribe();
 
     // 此处策略消费端会阻塞线程并发送消息给td_api。
     c_st.block_handle(td_api);

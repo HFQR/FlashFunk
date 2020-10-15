@@ -11,6 +11,7 @@ use flashfunk::interface::Interface;
 use flashfunk::prelude::*;
 use flashfunk::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
 use flashfunk::types::message::TdApiMessage;
+use flashfunk::MockMdApi;
 use flashfunk_codegen::Strategy;
 
 /// 價格
@@ -85,7 +86,7 @@ impl Ac for Strategy {
                     exchange: Exchange::SHFE,
                     direction: Direction::LONG,
                     order_type: OrderType::LIMIT,
-                    volume: pos.short_volume.clone(),
+                    volume: pos.short_volume,
                     price: tick.last_price + 5.0,
                     offset: Offset::CLOSETODAY,
                     reference: None,
@@ -99,7 +100,7 @@ impl Ac for Strategy {
                     exchange: Exchange::SHFE,
                     direction: Direction::SHORT,
                     order_type: OrderType::LIMIT,
-                    volume: pos.long_volume.clone(),
+                    volume: pos.long_volume,
                     price: tick.last_price - 3.0,
                     offset: Offset::CLOSETODAY,
                     reference: None,
@@ -121,8 +122,8 @@ impl Ac for Strategy {
 
 fn main() {
     let login_form = LoginForm::new()
-        .user_id("089131")
-        .password("350888")
+        .user_id("170874")
+        .password("wi1015..")
         .broke_id("9999")
         .app_id("simnow_client_test")
         .md_address("tcp://180.168.146.187:10131")
@@ -132,7 +133,7 @@ fn main() {
     let strategy_1 = Strategy {
         quote: Quote::new(),
     };
-    CtpbeeR::builder::<MdApi, TdApi, _>("ctpbee")
+    CtpbeeR::builder::<MockMdApi, TdApi, _>("ctpbee")
         .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")
