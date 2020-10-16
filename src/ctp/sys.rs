@@ -1,10 +1,12 @@
-use crate::get_interface_path;
 use core::fmt;
-use encoding::all::GB18030;
-use encoding::{DecoderTrap, Encoding};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_uchar, c_void};
+
+use encoding::all::GB18030;
+use encoding::{DecoderTrap, Encoding};
+
+use crate::get_interface_path;
 
 include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
 

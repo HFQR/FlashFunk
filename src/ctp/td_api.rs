@@ -1,10 +1,12 @@
 use core::ffi::c_void;
 use core::ptr::slice_from_raw_parts;
+use core::sync::atomic::{AtomicI32, Ordering};
 
 use std::borrow::Cow;
 use std::cmp::max;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
+use std::sync::Arc;
 
 use chrono::{Date, NaiveDateTime, Utc};
 
@@ -19,9 +21,6 @@ use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use crate::util::hash::HashMap;
-use bitflags::_core::sync::atomic::AtomicI32;
-use std::sync::atomic::Ordering;
-use std::sync::Arc;
 
 const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
 const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
@@ -1603,7 +1602,8 @@ pub trait TdCallApi {
         println!("function callback: OnRspAuthenticate");
     }
 
-    fn on_rsp_user_login(
+    /// # Safety
+    unsafe fn on_rsp_user_login(
         &mut self,
         pRspUserLogin: *mut CThostFtdcRspUserLoginField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -1863,7 +1863,8 @@ pub trait TdCallApi {
         println!("function callback: OnRspQryTrade");
     }
 
-    fn on_rsp_qry_investor_position(
+    /// # Safety
+    unsafe fn on_rsp_qry_investor_position(
         &mut self,
         pInvestorPosition: *mut CThostFtdcInvestorPositionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -1873,7 +1874,8 @@ pub trait TdCallApi {
         println!("function callback: OnRspQryInvestorPosition");
     }
 
-    fn on_rsp_qry_trading_account(
+    /// # Safety
+    unsafe fn on_rsp_qry_trading_account(
         &mut self,
         pTradingAccount: *mut CThostFtdcTradingAccountField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -1903,7 +1905,8 @@ pub trait TdCallApi {
         println!("function callback: OnRspQryTradingCode");
     }
 
-    fn on_rsp_qry_instrument_margin_rate(
+    /// # Safety
+    unsafe fn on_rsp_qry_instrument_margin_rate(
         &mut self,
         pInstrumentMarginRate: *mut CThostFtdcInstrumentMarginRateField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -1913,7 +1916,8 @@ pub trait TdCallApi {
         println!("function callback: OnRspQryInstrumentMarginRate");
     }
 
-    fn on_rsp_qry_instrument_commission_rate(
+    /// # Safety
+    unsafe fn on_rsp_qry_instrument_commission_rate(
         &mut self,
         pInstrumentCommissionRate: *mut CThostFtdcInstrumentCommissionRateField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -1943,7 +1947,8 @@ pub trait TdCallApi {
         println!("function callback: OnRspQryProduct");
     }
 
-    fn on_rsp_qry_instrument(
+    /// # Safety
+    unsafe fn on_rsp_qry_instrument(
         &mut self,
         pInstrument: *mut CThostFtdcInstrumentField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -2292,15 +2297,18 @@ pub trait TdCallApi {
         println!("function callback: OnRspError");
     }
 
-    fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
+    /// # Safety
+    unsafe fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
         println!("function callback: OnRtnOrder");
     }
 
-    fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
+    /// # Safety
+    unsafe fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
         println!("function callback: OnRtnTrade");
     }
 
-    fn on_err_rtn_order_insert(
+    /// # Safety
+    unsafe fn on_err_rtn_order_insert(
         &mut self,
         pInputOrder: *mut CThostFtdcInputOrderField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -2758,7 +2766,7 @@ impl TdCallApi for CallDataCollector {
         }
     }
 
-    fn on_rsp_user_login(
+    unsafe fn on_rsp_user_login(
         &mut self,
         pRspUserLogin: *mut CThostFtdcRspUserLoginField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -2767,27 +2775,23 @@ impl TdCallApi for CallDataCollector {
     ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
+                let login = *pRspUserLogin;
+
                 println!(">>> Td Login successful");
-                unsafe {
-                    println!(
-                        "session {} frontid: {}",
-                        (*pRspUserLogin).SessionID as f64,
-                        (*pRspUserLogin).FrontID as f64
-                    );
-                }
+
+                println!(
+                    "session {} frontid: {}",
+                    login.SessionID as f64, login.FrontID as f64
+                );
 
                 let blocker = self.blocker.as_ref().unwrap();
 
-                unsafe {
-                    blocker
-                        .0
-                        .front_id
-                        .store((*pRspUserLogin).FrontID, Ordering::SeqCst);
-                    blocker
-                        .0
-                        .session_id
-                        .store((*pRspUserLogin).SessionID, Ordering::SeqCst);
-                }
+                blocker.0.front_id.store(login.FrontID, Ordering::SeqCst);
+                blocker
+                    .0
+                    .session_id
+                    .store(login.SessionID, Ordering::SeqCst);
+
                 blocker.0.step3.unblock();
             }
             Err(e) => {
@@ -2837,7 +2841,7 @@ impl TdCallApi for CallDataCollector {
         }
     }
 
-    fn on_rsp_qry_investor_position(
+    unsafe fn on_rsp_qry_investor_position(
         &mut self,
         pInvestorPosition: *mut CThostFtdcInvestorPositionField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -2846,43 +2850,44 @@ impl TdCallApi for CallDataCollector {
     ) {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {
-                unsafe {
-                    let symbol = slice_to_string(&(*pInvestorPosition).InstrumentID);
-                    let open_cost = (*pInvestorPosition).OpenCost;
-                    let direction = Direction::from((*pInvestorPosition).PosiDirection);
-                    let exchange = self.exchange_map.get(symbol.as_str()).unwrap();
-                    let td_pos = (*pInvestorPosition).TodayPosition as f64;
-                    let volume = (*pInvestorPosition).Position as f64;
-                    let yd_pos = (*pInvestorPosition).YdPosition as f64;
-                    let profit = (*pInvestorPosition).PositionProfit;
-                    let frozen = (*pInvestorPosition).ShortFrozen + (*pInvestorPosition).LongFrozen;
-                    let key = format!("{}_{}", symbol, (*pInvestorPosition).PosiDirection);
+                let position = *pInvestorPosition;
 
-                    let pos = self
-                        .pos
-                        .entry(Cow::from(key))
-                        .or_insert_with(|| match direction {
-                            Direction::SHORT => PositionData::new_with_short(&symbol),
-                            Direction::LONG => PositionData::new_with_long(&symbol),
-                            _ => panic!("bad direction"),
-                        });
-                    // according to the exchange  to setup the yd position
-                    match *exchange {
-                        Exchange::SHFE => {
-                            if yd_pos != 0.0 && td_pos == 0.0 {
-                                pos.yd_volume = volume;
-                            }
-                        }
-                        _ => {
-                            pos.yd_volume = volume - td_pos;
+                let symbol = slice_to_string(&position.InstrumentID);
+                let open_cost = position.OpenCost;
+                let direction = Direction::from(position.PosiDirection);
+                let exchange = *self.exchange_map.get(symbol.as_str()).unwrap();
+                let td_pos = position.TodayPosition as f64;
+                let volume = position.Position as f64;
+                let yd_pos = position.YdPosition as f64;
+                let profit = position.PositionProfit;
+                let frozen = position.ShortFrozen + position.LongFrozen;
+                let key = format!("{}_{}", symbol, position.PosiDirection);
+
+                let pos = self
+                    .pos
+                    .entry(Cow::from(key))
+                    .or_insert_with(|| match direction {
+                        Direction::SHORT => PositionData::new_with_short(&symbol),
+                        Direction::LONG => PositionData::new_with_long(&symbol),
+                        _ => panic!("bad direction"),
+                    });
+                // according to the exchange  to setup the yd position
+                match exchange {
+                    Exchange::SHFE => {
+                        if yd_pos != 0.0 && td_pos == 0.0 {
+                            pos.yd_volume = volume;
                         }
                     }
-                    let size = self.size_map.get(symbol.as_str()).unwrap();
-                    // pos.exchange = Some(*exchange);
-                    pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
-                    pos.volume += volume;
-                    pos.pnl += profit;
+                    _ => {
+                        pos.yd_volume = volume - td_pos;
+                    }
                 }
+                let size = self.size_map.get(symbol.as_str()).unwrap();
+                // pos.exchange = Some(*exchange);
+                pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
+                pos.volume += volume;
+                pos.pnl += profit;
+
                 // if is the last data that been pushed,  take them and sent it the core
                 if bIsLast {
                     self.pos
@@ -2895,37 +2900,36 @@ impl TdCallApi for CallDataCollector {
         }
     }
 
-    fn on_rsp_qry_trading_account(
+    unsafe fn on_rsp_qry_trading_account(
         &mut self,
         pTradingAccount: *mut CThostFtdcTradingAccountField,
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
     ) {
-        unsafe {
-            match get_rsp_info(pRspInfo) {
-                Ok(t) => {
-                    let account_data = AccountData {
-                        accountid: slice_to_string(&(*pTradingAccount).AccountID),
-                        balance: (*pTradingAccount).Balance,
-                        frozen: (*pTradingAccount).FrozenMargin
-                            + (*pTradingAccount).FrozenCash
-                            + (*pTradingAccount).FrozenCommission,
-                        date: Utc::today(),
-                    };
-                    self.sender.send_all(account_data);
-                }
-                Err(e) => {
-                    println!(">>> Account Query Err, id: {} msg: {}", e.id, e.msg);
-                }
-            };
-        }
+        match get_rsp_info(pRspInfo) {
+            Ok(t) => {
+                let acc = *pTradingAccount;
+
+                let account_data = AccountData {
+                    accountid: slice_to_string(&acc.AccountID),
+                    balance: acc.Balance,
+                    frozen: acc.FrozenMargin + acc.FrozenCash + acc.FrozenCommission,
+                    date: Utc::today(),
+                };
+                self.sender.send_all(account_data);
+            }
+            Err(e) => {
+                println!(">>> Account Query Err, id: {} msg: {}", e.id, e.msg);
+            }
+        };
+
         if self.blocker.is_some() {
             self.blocker.take().unwrap().0.step5.unblock();
         }
     }
 
-    fn on_rsp_qry_instrument(
+    unsafe fn on_rsp_qry_instrument(
         &mut self,
         pInstrument: *mut CThostFtdcInstrumentField,
         pRspInfo: *mut CThostFtdcRspInfoField,
@@ -2933,42 +2937,42 @@ impl TdCallApi for CallDataCollector {
         bIsLast: bool,
     ) {
         // todo: add Contract data in here and send it
-        unsafe {
-            let contract = ContractData {
-                symbol: slice_to_string(&(*pInstrument).InstrumentID),
-                exchange: Option::from(Exchange::from((*pInstrument).ExchangeID)),
-                name: None,
-                product: None,
-                size: (*pInstrument).VolumeMultiple as f64,
-                pricetick: (*pInstrument).PriceTick as f64,
-                min_volume: 0.0,
-                stop_supported: false,
-                net_position: false,
-                history_data: false,
-                option_strike: 0.0,
-                option_underlying: None,
-                option_type: None,
-                option_expiry: None,
-                option_portfolio: None,
-                option_index: None,
-            };
+        let instrument = *pInstrument;
 
-            self.size_map
-                .insert(Cow::from(contract.symbol.clone()), contract.size.clone());
-            self.exchange_map.insert(
-                Cow::from(contract.symbol.clone()),
-                contract.exchange.as_ref().unwrap().clone(),
-            );
-            self.sender.send_all(contract);
-        }
+        let contract = ContractData {
+            symbol: slice_to_string(&instrument.InstrumentID),
+            exchange: Some(Exchange::from(instrument.ExchangeID)),
+            name: None,
+            product: None,
+            size: instrument.VolumeMultiple as f64,
+            pricetick: instrument.PriceTick as f64,
+            min_volume: 0.0,
+            stop_supported: false,
+            net_position: false,
+            history_data: false,
+            option_strike: 0.0,
+            option_underlying: None,
+            option_type: None,
+            option_expiry: None,
+            option_portfolio: None,
+            option_index: None,
+        };
+
+        self.size_map
+            .insert(Cow::Owned(contract.symbol.clone()), contract.size);
+        self.exchange_map.insert(
+            Cow::Owned(contract.symbol.clone()),
+            contract.exchange.unwrap(),
+        );
+        self.sender.send_all(contract);
 
         if bIsLast {
             self.blocker.as_ref().unwrap().0.step4.unblock();
         }
     }
 
-    fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
-        let (order, idx) = unsafe {
+    unsafe fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
+        let (order, idx) = {
             let order = *pOrder;
 
             // fixme : we need a fast solution to parse datetime
@@ -3013,27 +3017,29 @@ impl TdCallApi for CallDataCollector {
         }
     }
 
-    fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
-        let (trade, idx) = unsafe {
-            let time_string = slice_to_string(&(*pTrade).TradeTime);
-            let date_string = slice_to_string(&(*pTrade).TradeDate);
+    unsafe fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
+        let (trade, idx) = {
+            let trade = *pTrade;
+
+            let time_string = slice_to_string(&trade.TradeTime);
+            let date_string = slice_to_string(&trade.TradeDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
             let datetime =
                 NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
                     .unwrap();
-            let orderref = slice_to_string(&(*pTrade).OrderRef);
+            let orderref = slice_to_string(&trade.OrderRef);
             let (idx, refs) = split_into_vec(orderref.as_str());
             (
                 TradeData {
-                    symbol: Cow::from(slice_to_string(&(*pTrade).InstrumentID)),
-                    exchange: Some(Exchange::from((*pTrade).ExchangeID)),
+                    symbol: Cow::from(slice_to_string(&trade.InstrumentID)),
+                    exchange: Some(Exchange::from(trade.ExchangeID)),
                     datetime,
                     orderid: Option::from(orderref),
-                    direction: Some(Direction::from((*pTrade).Direction)),
-                    offset: Some(Offset::from((*pTrade).OffsetFlag)),
-                    price: (*pTrade).Price as f64,
-                    volume: (*pTrade).Volume as f64,
-                    tradeid: Some(slice_to_string(&(*pTrade).TradeID)),
+                    direction: Some(Direction::from(trade.Direction)),
+                    offset: Some(Offset::from(trade.OffsetFlag)),
+                    price: trade.Price,
+                    volume: trade.Volume,
+                    tradeid: Some(slice_to_string(&trade.TradeID)),
                 },
                 idx,
             )
@@ -3051,19 +3057,19 @@ impl TdCallApi for CallDataCollector {
         }
     }
 
-    fn on_err_rtn_order_insert(
+    unsafe fn on_err_rtn_order_insert(
         &mut self,
         pInputOrder: *mut CThostFtdcInputOrderField,
         pRspInfo: *mut CThostFtdcRspInfoField,
     ) {
-        unsafe {
-            let order_id = slice_to_string(&(*pInputOrder).OrderRef);
-            println!("insert order err id: {}", order_id);
-            let (idx, refs) = split_into_vec(order_id.as_str());
+        let order = *pInputOrder;
 
-            // FixMe: 这里是否必须调用api?
-            // self.api.order_ref = max(refs, self.api.order_ref);
-        };
+        let order_id = slice_to_string(&order.OrderRef);
+        println!("insert order err id: {}", order_id);
+        let (idx, refs) = split_into_vec(order_id.as_str());
+
+        // FixMe: 这里是否必须调用api?
+        // self.api.order_ref = max(refs, self.api.order_ref);
 
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
@@ -3323,7 +3329,12 @@ impl Drop for TdApi {
 impl Interface for TdApi {
     type Message = TdApiMessage;
 
-    fn new(id: String, pwd: String, path: String, symbols: Vec<&'static str>) -> TdApi {
+    fn new(
+        id: impl Into<Vec<u8>>,
+        pwd: impl Into<Vec<u8>>,
+        path: impl Into<Vec<u8>>,
+        symbols: Vec<&'static str>,
+    ) -> TdApi {
         let p = CString::new(path).unwrap();
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };

@@ -2,7 +2,7 @@
 
 use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
 
-use crossbeam_queue::spsc::{new, Consumer, Producer};
+use super::spsc::{new, Consumer, Producer};
 
 pub(crate) fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
     let (tx, rx) = new(cap);

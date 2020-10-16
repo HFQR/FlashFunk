@@ -7,7 +7,12 @@ use crate::util::channel::GroupSender;
 pub trait Interface {
     type Message;
 
-    fn new(id: String, pwd: String, path: String, symbols: Vec<&'static str>) -> Self;
+    fn new(
+        id: impl Into<Vec<u8>>,
+        pwd: impl Into<Vec<u8>>,
+        path: impl Into<Vec<u8>>,
+        symbols: Vec<&'static str>,
+    ) -> Self;
 
     /// 发单
     fn send_order(&mut self, idx: usize, order: OrderRequest) {}

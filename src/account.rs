@@ -87,9 +87,10 @@ impl Account {
     /// 3.remove frozen if exist
     /// 4. add close_profit
     pub fn update_trade(&mut self, data: TradeData) {
-        let symbol = data.symbol.clone();
+        let symbol = data.symbol.as_ref();
+        let volume = data.volume as f64;
         // calculate fee for trade_data
-        let commision = data.volume * data.price * self.get_commission_ratio(symbol.as_ref());
+        let commision = volume * data.price * self.get_commission_ratio(symbol);
 
         // Check the orderid if has been frozen
         if let Some(order_id) = &data.orderid {
@@ -100,10 +101,10 @@ impl Account {
             // }
         }
         // insert fee to fact
-        match self.fee.get_mut(symbol.as_ref()) {
+        match self.fee.get_mut(symbol) {
             Some(t) => *t += commision,
             None => {
-                let _ = self.fee.insert(symbol.clone(), commision);
+                let _ = self.fee.insert(data.symbol.clone(), commision);
             }
         }
 
@@ -120,18 +121,16 @@ impl Account {
                 let close_profit = match data.direction.unwrap() {
                     Direction::LONG => {
                         //  replace 0.0 with  position avg price
-                        (0.0 - data.price) * data.volume * self.get_size_map(&symbol)
+                        (0.0 - data.price) * volume * self.get_size_map(symbol)
                     }
-                    Direction::SHORT => {
-                        (data.price - 0.0) * data.volume * self.get_size_map(&symbol)
-                    }
+                    Direction::SHORT => (data.price - 0.0) * volume * self.get_size_map(symbol),
                     _ => 0.0,
                 };
 
-                match self.close_profit.get_mut(symbol.as_ref()) {
+                match self.close_profit.get_mut(symbol) {
                     Some(t) => *t += close_profit,
                     None => {
-                        let _ = self.close_profit.insert(symbol.clone(), close_profit);
+                        let _ = self.close_profit.insert(data.symbol.clone(), close_profit);
                     }
                 }
             }
@@ -163,7 +162,7 @@ impl Account {
                 self.margin_frozen_container
                     .insert(data.orderid.unwrap(), data.volume * data.price * ratio);
             }
-            _ => {}
+            _ => unimplemented!(),
         }
 
         self.frozen_fee
@@ -206,7 +205,7 @@ impl Account {
                                     * self.get_size_map(x.symbol.as_ref())
                         }
                     }
-                    _ => panic!("暂不支持"),
+                    _ => unimplemented!("暂不支持"),
                 }
             })
             .sum()
@@ -250,11 +249,7 @@ impl Account {
     }
     /// get the frozen , when day,end ,it will zero
     pub fn frozen_margin(&self) -> f64 {
-        self.margin_frozen_container
-            .values()
-            .into_iter()
-            .copied()
-            .sum()
+        self.margin_frozen_container.values().sum()
     }
     /// generator a Account object named DailyResult, it will be written into database
     fn generate_self(&self) -> DailyResult {

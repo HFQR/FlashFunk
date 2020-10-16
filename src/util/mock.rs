@@ -29,7 +29,12 @@ impl Drop for MockMdApi {
 impl Interface for MockMdApi {
     type Message = MdApiMessage;
 
-    fn new(_: String, _: String, _: String, symbols: Vec<&'static str>) -> Self {
+    fn new(
+        _: impl Into<Vec<u8>>,
+        _: impl Into<Vec<u8>>,
+        _: impl Into<Vec<u8>>,
+        symbols: Vec<&'static str>,
+    ) -> Self {
         MockMdApi {
             symbols,
             sender: None,
@@ -46,12 +51,12 @@ impl Interface for MockMdApi {
         let sender = self.sender.take().unwrap();
         let shutdown = self.shutdown.clone();
         let handle = std::thread::spawn(move || {
-            let mut rt = tokio::runtime::Builder::new_current_thread()
+            let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
                 .unwrap();
 
-            tokio::task::LocalSet::new().block_on(&mut rt, async move {
+            tokio::task::LocalSet::new().block_on(&rt, async move {
                 let sender = Rc::new(sender);
 
                 // 每个单独的回调任务都可以参照这个task.
@@ -59,7 +64,7 @@ impl Interface for MockMdApi {
                     let sender = sender.clone();
                     async move {
                         loop {
-                            if shutdown.load(Ordering::SeqCst) == true {
+                            if shutdown.load(Ordering::SeqCst) {
                                 return;
                             }
 

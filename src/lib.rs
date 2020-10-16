@@ -1,3 +1,5 @@
+#![allow(clippy::mutex_atomic)]
+#![allow(clippy::type_complexity)]
 #[macro_use]
 extern crate bitflags;
 

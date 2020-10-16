@@ -164,7 +164,7 @@ impl ContextInner {
                         pos.long_volume += order.traded;
                     }
                     Offset::CLOSETODAY => {
-                        if order.traded == pos.short_volume {
+                        if order.traded - pos.short_volume == 0.0 {
                             pos.short_volume = 0.0;
                             pos.short_price = 0.0;
                         } else if order.traded < pos.short_volume {
@@ -192,7 +192,7 @@ impl ContextInner {
                     },
                     Offset::CLOSEYESTERDAY => {
                         // 平昨數量剛好等於昨倉數量
-                        if order.traded == pos.short_volume {
+                        if order.traded - pos.short_volume == 0.0 {
                             pos.short_yd_volume = 0.0;
                             pos.short_price = 0.0;
                             pos.short_volume -= order.traded;
@@ -218,7 +218,7 @@ impl ContextInner {
                         pos.short_volume += order.traded;
                     }
                     Offset::CLOSETODAY => {
-                        if order.traded == pos.long_volume {
+                        if order.traded - pos.long_volume == 0.0 {
                             pos.long_volume = 0.0;
                             pos.long_price = 0.0;
                         } else if order.traded < pos.long_volume {
@@ -248,7 +248,7 @@ impl ContextInner {
                     }
                     Offset::CLOSEYESTERDAY => {
                         // 平昨數量剛好等於昨倉數量
-                        if order.traded == pos.long_volume {
+                        if order.traded - pos.long_volume == 0.0 {
                             pos.long_yd_volume = 0.0;
                             pos.long_price = 0.0;
                             pos.long_volume -= order.traded;

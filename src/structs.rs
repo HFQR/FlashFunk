@@ -105,7 +105,7 @@ pub struct TradeData {
     pub direction: Option<Direction>,
     pub offset: Option<Offset>,
     pub price: f64,
-    pub volume: f64,
+    pub volume: i32,
 }
 
 impl Default for TradeData {
@@ -119,7 +119,7 @@ impl Default for TradeData {
             direction: None,
             offset: None,
             price: 0.0,
-            volume: 0.0,
+            volume: 0,
         }
     }
 }

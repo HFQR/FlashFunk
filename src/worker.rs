@@ -162,33 +162,32 @@ where
     let core = cores.pop().unwrap();
     core_affinity::set_for_current(core);
 
-    let id = builder.id.into();
-    let pwd = builder.pwd.into();
-    let path = builder.path.into();
-
-    // 构造api
-    let mut md_api = I::new(id, pwd, path, symbols);
-    let mut td_api = I2::new("".to_string(), "".to_string(), "".parse().unwrap(), vec![]);
+    // 构造interface
+    let mut i = I::new(
+        builder.id.as_ref(),
+        builder.pwd.as_ref(),
+        builder.path.as_ref(),
+        symbols,
+    );
+    let mut i2 = I2::new("", "", "", vec![]);
 
     let login_form = builder.login_form;
 
     // 连接
-    md_api.connect(&login_form, s_md);
+    i.connect(&login_form, s_md);
+    i2.connect(&login_form, s_td);
 
-    td_api.connect(&login_form, s_td);
+    // 订阅
+    i.subscribe();
 
     // 启动策略工人线程。分配剩余的核心id给工人。
     workers.into_iter().for_each(|worker| {
-        let core = cores.pop().unwrap();
+        let core = cores.pop().expect("Too many strategies");
         worker.start_with_core(core);
     });
 
-    // 订阅
-    md_api.subscribe();
-
     // 此处策略消费端会阻塞线程并发送消息给td_api。
-
-    c_st.block_handle(td_api);
+    c_st.block_handle(i2);
 }
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。

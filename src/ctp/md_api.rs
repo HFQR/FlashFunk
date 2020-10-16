@@ -9,8 +9,8 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
-use encoding::all::GB18030;
-use encoding::{DecoderTrap, Encoding};
+// use encoding::all::GB18030;
+// use encoding::{DecoderTrap, Encoding};
 
 use crate::ctp::func::QuoteApi;
 use crate::ctp::sys::{
@@ -271,7 +271,12 @@ impl MdApi {
 impl Interface for MdApi {
     type Message = MdApiMessage;
 
-    fn new(id: String, pwd: String, path: String, symbols: Vec<&'static str>) -> Self {
+    fn new(
+        id: impl Into<Vec<u8>>,
+        pwd: impl Into<Vec<u8>>,
+        path: impl Into<Vec<u8>>,
+        symbols: Vec<&'static str>,
+    ) -> Self {
         let ids = CString::new(id).unwrap();
         let pwds = CString::new(pwd).unwrap();
         let paths = CString::new(path).unwrap();
