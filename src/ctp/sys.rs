@@ -8,9 +8,9 @@ use std::os::raw::{c_char, c_int, c_uchar, c_void};
 
 include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
 
-pub fn to_c_ptr(string: String) -> *const i8 {
-    CString::new(string).unwrap().as_ptr()
-}
+// pub fn to_c_ptr(string: String) -> *const i8 {
+//     CString::new(string).unwrap().as_ptr()
+// }
 
 pub fn to_c_string(string: String) -> CString {
     CString::new(string).unwrap()

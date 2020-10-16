@@ -13,14 +13,14 @@ use std::time::Instant;
 /// Tick Data
 #[derive(Clone)]
 pub struct TickData {
-    pub symbol: Cow<'static, str>,
-    pub exchange: Option<Exchange>,
-    pub datetime: Option<NaiveDateTime>,
-    pub name: Option<String>,
-    pub volume: f64,
+    pub symbol: String,
+    pub exchange: Exchange,
+    pub datetime: NaiveDateTime,
+    pub name: String,
+    pub volume: i32,
     pub open_interest: f64,
     pub last_price: f64,
-    pub last_volume: f64,
+    pub last_volume: i32,
     pub limit_up: f64,
     pub limit_down: f64,
     pub open_price: f64,
@@ -29,22 +29,22 @@ pub struct TickData {
     pub pre_close: f64,
     pub bid_price: [f64; 5],
     pub ask_price: [f64; 5],
-    pub bid_volume: [f64; 5],
-    pub ask_volume: [f64; 5],
+    pub bid_volume: [i32; 5],
+    pub ask_volume: [i32; 5],
     pub instant: Instant,
 }
 
 impl Default for TickData {
     fn default() -> TickData {
         TickData {
-            symbol: Cow::Borrowed(""),
-            exchange: None,
-            datetime: None,
-            name: None,
-            volume: 0.0,
+            symbol: String::from(""),
+            exchange: Exchange::INIT,
+            datetime: chrono::Utc::now().naive_utc(),
+            name: String::from(""),
+            volume: 0,
             open_interest: 0.0,
             last_price: 0.0,
-            last_volume: 0.0,
+            last_volume: 0,
             limit_up: 0.0,
             limit_down: 0.0,
             open_price: 0.0,
@@ -53,8 +53,8 @@ impl Default for TickData {
             pre_close: 0.0,
             bid_price: [0.0; 5],
             ask_price: [0.0; 5],
-            bid_volume: [0.0; 5],
-            ask_volume: [0.0; 5],
+            bid_volume: [0; 5],
+            ask_volume: [0; 5],
             instant: Instant::now(),
         }
     }
@@ -70,11 +70,11 @@ impl TickData {
     }
 
     pub fn bid_volume(&self, index: usize) -> f64 {
-        *self.bid_volume.get(index).unwrap()
+        *self.bid_volume.get(index).unwrap() as f64
     }
 
     pub fn ask_volume(&self, index: usize) -> f64 {
-        *self.ask_volume.get(index).unwrap()
+        *self.ask_volume.get(index).unwrap() as f64
     }
 }
 
@@ -83,7 +83,7 @@ impl TickData {
 pub struct OrderData {
     pub symbol: String,
     pub exchange: Exchange,
-    pub datetime: Option<NaiveDateTime>,
+    pub datetime: NaiveDateTime,
     pub orderid: Option<String>,
     pub order_type: OrderType,
     pub direction: Option<Direction>,
@@ -99,7 +99,7 @@ pub struct OrderData {
 pub struct TradeData {
     pub symbol: Cow<'static, str>,
     pub exchange: Option<Exchange>,
-    pub datetime: Option<NaiveDateTime>,
+    pub datetime: NaiveDateTime,
     pub orderid: Option<String>,
     pub tradeid: Option<String>,
     pub direction: Option<Direction>,
@@ -113,7 +113,7 @@ impl Default for TradeData {
         TradeData {
             symbol: Cow::Borrowed(""),
             exchange: None,
-            datetime: None,
+            datetime: chrono::Utc::now().naive_utc(),
             orderid: None,
             tradeid: None,
             direction: None,
@@ -533,7 +533,7 @@ impl Generator {
     where
         F: FnOnce(&mut Self, Bar),
     {
-        let time = *tick.datetime.as_ref().unwrap();
+        let time = tick.datetime;
         if self.last.is_none() {
             self.last = Some(Bar::new(
                 self.symbol.clone(),

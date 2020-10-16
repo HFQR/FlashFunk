@@ -5,6 +5,8 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_uchar};
 use std::process::id;
+use std::sync::Arc;
+use std::time::Instant;
 
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use encoding::all::GB18030;
@@ -26,8 +28,6 @@ use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::types::message::MdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
-use std::sync::Arc;
-use std::time::Instant;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -46,8 +46,6 @@ pub struct MdApi {
 struct DataCollector {
     sender: GroupSender<MdApiMessage>,
     symbols: Vec<*const i8>,
-    login_status: bool,
-    connect_status: bool,
     blocker: Option<MdApiBlocker>,
 }
 
@@ -76,15 +74,11 @@ struct MdApiBlockerInner {
 /// 此处我们实现种种方法来构建ctp的登录流程
 impl QuoteApi for DataCollector {
     fn on_front_connected(&mut self) {
-        self.connect_status = true;
         // 解除login线程的阻塞
         self.blocker.as_ref().unwrap().0.step1.unblock();
     }
 
-    fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
-        self.login_status = false;
-        self.connect_status = false;
-    }
+    fn on_front_disconnected(&mut self, reason: DisconnectionReason) {}
 
     fn on_rsp_user_login(
         &mut self,
@@ -93,7 +87,6 @@ impl QuoteApi for DataCollector {
         request_id: TThostFtdcRequestIDType,
         is_last: bool,
     ) {
-        self.login_status = true;
         self.blocker.take().unwrap().0.step2.unblock();
     }
 
@@ -116,7 +109,7 @@ impl QuoteApi for DataCollector {
 
             if let Some(i) = index {
                 let msg = {
-                    let symbol = symbol.to_string_lossy();
+                    let symbol = symbol.to_str().unwrap().to_owned();
 
                     let a = depth.ActionDay.as_ptr();
                     let u = depth.UpdateTime.as_ptr();
@@ -141,17 +134,12 @@ impl QuoteApi for DataCollector {
                     .with_nanosecond(sub_t)
                     .unwrap();
 
-                    let datetime = Some(NaiveDateTime::new(date, time));
-
                     TickData {
                         symbol,
-                        exchange: None,
-                        datetime,
-                        name: None,
-                        volume: depth.Volume as f64,
+                        datetime: NaiveDateTime::new(date, time),
+                        volume: depth.Volume,
                         open_interest: depth.OpenInterest,
                         last_price: depth.LastPrice,
-                        last_volume: 0.0,
                         limit_up: depth.UpperLimitPrice,
                         limit_down: depth.LowerLimitPrice,
                         open_price: depth.OpenPrice,
@@ -173,23 +161,25 @@ impl QuoteApi for DataCollector {
                             depth.AskPrice5,
                         ],
                         bid_volume: [
-                            depth.BidVolume1 as f64,
-                            depth.BidVolume2 as f64,
-                            depth.BidVolume3 as f64,
-                            depth.BidVolume4 as f64,
-                            depth.BidVolume5 as f64,
+                            depth.BidVolume1,
+                            depth.BidVolume2,
+                            depth.BidVolume3,
+                            depth.BidVolume4,
+                            depth.BidVolume5,
                         ],
                         ask_volume: [
-                            depth.AskVolume1 as f64,
-                            depth.AskVolume2 as f64,
-                            depth.AskVolume3 as f64,
-                            depth.AskVolume4 as f64,
-                            depth.AskVolume5 as f64,
+                            depth.AskVolume1,
+                            depth.AskVolume2,
+                            depth.AskVolume3,
+                            depth.AskVolume4,
+                            depth.AskVolume5,
                         ],
                         instant,
                         ..TickData::default()
                     }
                 };
+
+                let msg: &'static TickData = Box::leak(Box::new(msg));
 
                 // 如果需要错误处理请在这里取回消息
 
@@ -258,14 +248,8 @@ impl MdApi {
             symbols: self
                 .symbols
                 .iter()
-                .map(|r| {
-                    let mut r = r.as_bytes().to_vec();
-                    r.push(0);
-                    unsafe { CString::from_vec_unchecked(r) }.into_raw() as *const i8
-                })
+                .map(|r| CString::new(*r).unwrap().into_raw() as *const i8)
                 .collect(),
-            login_status: false,
-            connect_status: false,
             blocker: Some(blocker),
         };
         // rust object

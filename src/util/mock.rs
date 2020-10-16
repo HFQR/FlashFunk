@@ -1,15 +1,14 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 
+use std::rc::Rc;
 use std::sync::Arc;
-use std::time::Instant;
+use std::thread::JoinHandle;
 
 use crate::interface::Interface;
 use crate::structs::{LoginForm, TickData};
 use crate::types::message::MdApiMessage;
 use crate::util::channel::GroupSender;
-use std::rc::Rc;
-use std::thread::JoinHandle;
 
 pub struct MockMdApi {
     symbols: Vec<&'static str>,
@@ -47,8 +46,7 @@ impl Interface for MockMdApi {
         let sender = self.sender.take().unwrap();
         let shutdown = self.shutdown.clone();
         let handle = std::thread::spawn(move || {
-            let mut rt = tokio::runtime::Builder::new()
-                .basic_scheduler()
+            let mut rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
                 .unwrap();
@@ -66,31 +64,13 @@ impl Interface for MockMdApi {
                             }
 
                             // 每500ms发送一个tick data;
-                            tokio::time::delay_for(Duration::from_millis(500)).await;
+                            tokio::time::sleep(Duration::from_millis(500)).await;
 
                             // 在这里修改tick data数据;
 
-                            sender.send_all(TickData {
-                                symbol: Default::default(),
-                                exchange: None,
-                                datetime: None,
-                                name: None,
-                                volume: 0.0,
-                                open_interest: 0.0,
-                                last_price: 0.0,
-                                last_volume: 0.0,
-                                limit_up: 0.0,
-                                limit_down: 0.0,
-                                open_price: 0.0,
-                                high_price: 0.0,
-                                low_price: 0.0,
-                                pre_close: 0.0,
-                                bid_price: [0.0, 0.0, 0.0, 0.0, 0.0],
-                                ask_price: [0.0, 0.0, 0.0, 0.0, 0.0],
-                                bid_volume: [0.0, 0.0, 0.0, 0.0, 0.0],
-                                ask_volume: [0.0, 0.0, 0.0, 0.0, 0.0],
-                                instant: Instant::now(),
-                            });
+                            let msg: &'static TickData = Box::leak(Box::new(TickData::default()));
+
+                            sender.send_all(msg);
                         }
                     }
                 });

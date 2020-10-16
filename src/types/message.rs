@@ -4,7 +4,7 @@ use crate::structs::{
 };
 
 pub enum MdApiMessage {
-    TickData(TickData),
+    TickData(&'static TickData),
     SubscribeRequest(SubscribeRequest),
 }
 
@@ -14,8 +14,8 @@ impl From<SubscribeRequest> for MdApiMessage {
     }
 }
 
-impl From<TickData> for MdApiMessage {
-    fn from(data: TickData) -> Self {
+impl From<&'static TickData> for MdApiMessage {
+    fn from(data: &'static TickData) -> Self {
         Self::TickData(data)
     }
 }

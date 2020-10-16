@@ -71,15 +71,15 @@ impl Account {
             - self.frozen_margin()
     }
     pub fn get_fee_sum(&self) -> f64 {
-        self.fee.values().into_iter().sum()
+        self.fee.values().sum()
     }
 
     pub fn get_frozen_fee_sum(&self) -> f64 {
-        self.frozen_fee.values().into_iter().sum()
+        self.frozen_fee.values().sum()
     }
 
     pub fn get_close_profit_sum(&self) -> f64 {
-        self.close_profit.values().into_iter().copied().sum()
+        self.close_profit.values().sum()
     }
     /// update trade
     /// 1. add fee to actual fee
@@ -171,7 +171,7 @@ impl Account {
     }
     /// update position by tick
     /// refresh pnl in time
-    pub fn update_tick(&mut self, tick: TickData) {
+    pub fn update_tick(&mut self, _tick: TickData) {
         unimplemented!()
     }
     /// Get the float pnl for account!
@@ -221,8 +221,6 @@ impl Account {
     }
     ///  get the margin of position for the account
     pub fn margin(&self) -> f64 {
-        let rs = 0.0;
-
         self.get_all_positions()
             .into_iter()
             .fold(0.0, |mut rs, pos| {
@@ -240,14 +238,14 @@ impl Account {
         if self.date == date {
             false
         } else {
-            let p = self.generate_self();
+            // let p = self.generate_self();
             self.date = date;
             true
         }
     }
     /// update the params by pass a Params
     /// it looks like hard to understand
-    fn update_params(&mut self, params: Params) {
+    fn update_params(&mut self, _params: Params) {
         unimplemented!()
     }
     /// get the frozen , when day,end ,it will zero

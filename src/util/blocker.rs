@@ -1,5 +1,6 @@
 use std::sync::{Arc, Condvar, Mutex};
 
+#[allow(clippy::mutex_atomic)]
 // 简易线程阻塞器
 pub(crate) struct Blocker {
     inner: Arc<WaiterInner>,

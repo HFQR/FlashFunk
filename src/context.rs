@@ -195,7 +195,7 @@ impl ContextInner {
                         if order.traded == pos.short_volume {
                             pos.short_yd_volume = 0.0;
                             pos.short_price = 0.0;
-                            pos.short_volume = pos.short_volume - order.traded;
+                            pos.short_volume -= order.traded;
                         } else if order.traded < pos.short_volume
                             && order.traded <= pos.short_yd_volume
                         {
@@ -361,7 +361,7 @@ impl ContextTrait for Context<'_> {
         self.1.update_account(account);
     }
 
-    fn update_position_by_price(&mut self, price: f64) {
+    fn update_position_by_price(&mut self, _price: f64) {
         unimplemented!()
     }
 

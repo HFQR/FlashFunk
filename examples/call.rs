@@ -3,7 +3,7 @@
 use std::fmt::Pointer;
 use std::thread;
 
-use chrono::Local;
+use chrono::{Local, NaiveDateTime};
 use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
 use flashfunk::ctp::md_api::MdApi;
 use flashfunk::ctp::td_api::TdApi;
@@ -54,6 +54,7 @@ struct Strategy {
 
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
+        // println!("{}", std::mem::size_of::<TickData>());
         // let req = OrderRequest {
         //     symbol: "ag2012".to_string(),
         //     exchange: Exchange::SHFE,
@@ -76,6 +77,7 @@ impl Ac for Strategy {
         //     }
         // }
         //
+
         let is_send_long = true;
         let is_send_short = true;
         ctx.enter(|x, v| {
@@ -133,7 +135,7 @@ fn main() {
     let strategy_1 = Strategy {
         quote: Quote::new(),
     };
-    CtpbeeR::builder::<MdApi, TdApi, _>("ctpbee")
+    CtpbeeR::builder::<MockMdApi, TdApi, _>("ctpbee")
         .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")

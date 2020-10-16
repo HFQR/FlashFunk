@@ -9,6 +9,7 @@ use crate::context::{new_context, ContextTrait};
 use crate::interface::Interface;
 use crate::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
+use core_affinity::CoreId;
 
 // 主线程工人。阻塞主线程，接收策略消息并发起api的回调。
 struct MainWorker<Interface> {
@@ -45,7 +46,7 @@ where
                     StrategyMessage::CancelRequest(req) => {
                         interface.cancel_order(req);
                     }
-                    _ => {}
+                    _ => unimplemented!(),
                 });
 
             if Instant::now().duration_since(now) > INTERVAL {
@@ -85,8 +86,11 @@ impl StrategyWorker {
     }
 
     // 初次启动
-    fn start(mut self) {
-        std::thread::spawn(move || self._start());
+    fn start_with_core(mut self, core_id: CoreId) {
+        std::thread::spawn(move || {
+            core_affinity::set_for_current(core_id);
+            self._start()
+        });
     }
 
     fn _start(&mut self) {
@@ -151,6 +155,13 @@ where
     // * 策略已被此函数消费无法再次调用。
     let (symbols, workers, s_md, s_td, c_st) = prepare_worker_channel(&mut builder);
 
+    // 收集核心cid
+    let mut cores = core_affinity::get_core_ids().unwrap();
+
+    // 分配最后一个核心给主线程
+    let core = cores.pop().unwrap();
+    core_affinity::set_for_current(core);
+
     let id = builder.id.into();
     let pwd = builder.pwd.into();
     let path = builder.path.into();
@@ -166,13 +177,17 @@ where
 
     td_api.connect(&login_form, s_td);
 
-    // 启动策略工人线程。
-    workers.into_iter().for_each(|worker| worker.start());
+    // 启动策略工人线程。分配剩余的核心id给工人。
+    workers.into_iter().for_each(|worker| {
+        let core = cores.pop().unwrap();
+        worker.start_with_core(core);
+    });
 
     // 订阅
     md_api.subscribe();
 
     // 此处策略消费端会阻塞线程并发送消息给td_api。
+
     c_st.block_handle(td_api);
 }
 

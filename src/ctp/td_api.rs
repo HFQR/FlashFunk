@@ -2969,29 +2969,32 @@ impl TdCallApi for CallDataCollector {
 
     fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
         let (order, idx) = unsafe {
+            let order = *pOrder;
+
             // fixme : we need a fast solution to parse datetime
-            let orderref = slice_to_string(&(*pOrder).OrderRef);
-            let id = format!("{}_{}_{}", (*pOrder).SessionID, (*pOrder).FrontID, orderref);
+            let orderref = slice_to_string(&order.OrderRef);
+            let id = format!("{}_{}_{}", order.SessionID, order.FrontID, orderref);
             let (idx, refs) = split_into_vec(orderref.as_str());
-            let time_string: String = slice_to_string(&(*pOrder).InsertTime);
-            let date_string: String = slice_to_string(&(*pOrder).InsertDate);
+            let time_string: String = slice_to_string(&order.InsertTime);
+            let date_string: String = slice_to_string(&order.InsertDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
-            let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
-                .unwrap();
-            let exchange = Exchange::from((*pOrder).ExchangeID);
+            let datetime =
+                NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
+                    .unwrap();
+            let exchange = Exchange::from(order.ExchangeID);
             (
                 OrderData {
-                    symbol: slice_to_string(&(*pOrder).InstrumentID),
+                    symbol: slice_to_string(&order.InstrumentID),
                     exchange,
-                    datetime: Option::from(naive),
+                    datetime,
                     orderid: Option::from(id),
-                    order_type: OrderType::from((*pOrder).OrderPriceType),
-                    direction: Some(Direction::from((*pOrder).Direction)),
-                    offset: Offset::from((*pOrder).CombOffsetFlag),
-                    price: (*pOrder).LimitPrice as f64,
-                    volume: (*pOrder).VolumeTotalOriginal as f64,
-                    traded: (*pOrder).VolumeTraded as f64,
-                    status: Status::from((*pOrder).OrderStatus),
+                    order_type: OrderType::from(order.OrderPriceType),
+                    direction: Some(Direction::from(order.Direction)),
+                    offset: Offset::from(order.CombOffsetFlag),
+                    price: order.LimitPrice as f64,
+                    volume: order.VolumeTotalOriginal as f64,
+                    traded: order.VolumeTraded as f64,
+                    status: Status::from(order.OrderStatus),
                 },
                 idx,
             )
@@ -3015,15 +3018,16 @@ impl TdCallApi for CallDataCollector {
             let time_string = slice_to_string(&(*pTrade).TradeTime);
             let date_string = slice_to_string(&(*pTrade).TradeDate);
             let datetime = format!("{:?} {:?}", date_string, time_string);
-            let naive = NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
-                .unwrap();
+            let datetime =
+                NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
+                    .unwrap();
             let orderref = slice_to_string(&(*pTrade).OrderRef);
             let (idx, refs) = split_into_vec(orderref.as_str());
             (
                 TradeData {
                     symbol: Cow::from(slice_to_string(&(*pTrade).InstrumentID)),
                     exchange: Some(Exchange::from((*pTrade).ExchangeID)),
-                    datetime: Option::from(naive),
+                    datetime,
                     orderid: Option::from(orderref),
                     direction: Some(Direction::from((*pTrade).Direction)),
                     offset: Some(Offset::from((*pTrade).OffsetFlag)),

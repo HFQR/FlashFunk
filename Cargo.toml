@@ -14,10 +14,11 @@ members = ["flashfunk-codegen"]
 ahash = "0.4.5"
 bitflags = "1.2.1"
 chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
+core_affinity = "0.5.10"
 crossbeam-queue = { git = "https://github.com/stjepang/crossbeam", branch = "spsc" }
 encoding = "0.2.33"
 libc = "0.2.0"
-tokio = { version = "0.2.22", features = ["rt-core", "rt-util", "time"] }
+tokio = { version = "0.3", features = ["rt", "time"] }
 
 [dev-dependencies]
 flashfunk-codegen = { path = "./flashfunk-codegen" }
