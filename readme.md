@@ -98,6 +98,6 @@ In order to run `call` example, for example in linux
 you should export absolute path of `/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/`
 likes, do not work on windows =_=
 ```
-export LD_LIBRARY_PATH=/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/
+export LD_LIBRARY_PATH="/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/:$LD_LIBRARY_PATH"
 ```
 `rusct-link-search-dylib` do not work , I don't know why
