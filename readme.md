@@ -35,7 +35,7 @@ likes, do not work on windows =_=
 
 for example In Linux 
 ```
-export LD_LIBRARY_PATH=/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/
+export LD_LIBRARY_PATH="/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/:$LD_LIBRARY_PATH"
 ```
 `rusct-link-search-dylib` do not work , I don't know why.
 
