@@ -7,6 +7,7 @@ use encoding::all::GB18030;
 use encoding::{DecoderTrap, Encoding};
 
 use crate::get_interface_path;
+use chrono::{NaiveDate, NaiveTime, Timelike};
 
 include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
 
@@ -112,6 +113,51 @@ pub fn another_slice_to_string(v: &[i8]) -> String {
     let r = v.iter().map(|x| *x as u8).collect::<Vec<u8>>();
     unsafe { String::from_utf8_unchecked(r) }
 }
+
+/// This function provide a high-speed parse time to build a  ( NaiveDate, and NaiveTime)
+pub fn parse_datetime_from_str_with_mill(date: *const i8, time: *const i8, mill: c_int) -> (NaiveDate, NaiveTime) {
+    unsafe {
+        let a = CStr::from_ptr(date).to_str().unwrap();
+        let u = CStr::from_ptr(time).to_str().unwrap();
+        let sub_t = mill as u32 * 1_000_000;
+        let date = NaiveDate::from_ymd(
+            a[0..4].parse().unwrap(),
+            a[4..6].parse().unwrap(),
+            a[6..].parse().unwrap(),
+        );
+
+        let time = NaiveTime::from_hms(
+            u[0..2].parse().unwrap(),
+            u[3..5].parse().unwrap(),
+            u[6..].parse().unwrap(),
+        )
+            .with_nanosecond(sub_t)
+            .unwrap();
+
+        (date, time)
+    }
+}
+
+pub fn parse_datetime_from_str(date: *const i8, time: *const i8) -> (NaiveDate, NaiveTime) {
+    unsafe {
+        let a = CStr::from_ptr(date).to_str().unwrap();
+        let u = CStr::from_ptr(time).to_str().unwrap();
+        let date = NaiveDate::from_ymd(
+            a[0..4].parse().unwrap(),
+            a[4..6].parse().unwrap(),
+            a[6..].parse().unwrap(),
+        );
+
+        let time = NaiveTime::from_hms(
+            u[0..2].parse().unwrap(),
+            u[3..5].parse().unwrap(),
+            u[6..].parse().unwrap(),
+        );
+
+        (date, time)
+    }
+}
+
 
 pub fn check_slice_to_string(v: &[i8]) -> String {
     let r = v

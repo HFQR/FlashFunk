@@ -13,16 +13,7 @@ use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 // use encoding::{DecoderTrap, Encoding};
 
 use crate::ctp::func::QuoteApi;
-use crate::ctp::sys::{
-    another_slice_to_string, check_slice_to_string, slice_to_string,
-    CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField,
-    CThostFtdcMdApi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init,
-    CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin,
-    CThostFtdcMdApi_SubscribeMarketData, CThostFtdcMdSpi, CThostFtdcReqUserLoginField,
-    CThostFtdcRspInfoField, CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField,
-    CThostFtdcTraderApi, CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi,
-    QuoteSpi_Destructor, TThostFtdcErrorIDType, TThostFtdcRequestIDType,
-};
+use crate::ctp::sys::{another_slice_to_string, check_slice_to_string, slice_to_string, CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField, CThostFtdcMdApi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData, CThostFtdcMdSpi, CThostFtdcReqUserLoginField, CThostFtdcRspInfoField, CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField, CThostFtdcTraderApi, CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi, QuoteSpi_Destructor, TThostFtdcErrorIDType, TThostFtdcRequestIDType, parse_datetime_from_str, parse_datetime_from_str_with_mill};
 use crate::interface::Interface;
 use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::types::message::MdApiMessage;
@@ -110,29 +101,9 @@ impl QuoteApi for DataCollector {
             if let Some(i) = index {
                 let msg = {
                     let symbol = symbol.to_str().unwrap().to_owned();
-
-                    let a = depth.ActionDay.as_ptr();
-                    let u = depth.UpdateTime.as_ptr();
-
-                    // // ToDo: 处理这里的错误，如果api返回结果不可信
-                    let a = CStr::from_ptr(a).to_str().unwrap();
-                    let u = CStr::from_ptr(u).to_str().unwrap();
-
-                    let sub_t = depth.UpdateMillisec as u32 * 1_000_000;
-
-                    let date = NaiveDate::from_ymd(
-                        a[0..4].parse().unwrap(),
-                        a[4..6].parse().unwrap(),
-                        a[6..].parse().unwrap(),
-                    );
-
-                    let time = NaiveTime::from_hms(
-                        u[0..2].parse().unwrap(),
-                        u[3..5].parse().unwrap(),
-                        u[6..].parse().unwrap(),
-                    )
-                    .with_nanosecond(sub_t)
-                    .unwrap();
+                    let (date, time) = parse_datetime_from_str_with_mill(
+                        depth.ActionDay.as_ptr(),
+                        depth.UpdateTime.as_ptr(), depth.UpdateMillisec);
 
                     TickData {
                         symbol,

@@ -46,7 +46,7 @@ impl Quote {
         let bid_vol_1 = tick.bid_volume(0);
         // when price is down just, increase\+
         // let value  = if ask_1 > self.ask {
-                // price u
+        // price u
 
 
         self.value = self.value;
@@ -65,6 +65,18 @@ impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         let is_send_long = true;
         let is_send_short = true;
+        let req = OrderRequest {
+            symbol: "OI101".to_string(),
+            exchange: Exchange::SHFE,
+            direction: Direction::LONG,
+            order_type: OrderType::MARKET,
+            volume: 1.0,
+            price: tick.last_price - 1.0,
+            offset: Offset::OPEN,
+            reference: None,
+        };
+        ctx.send(req);
+
         ctx.enter(|x, v| {
             let pos = v.position_mut("OI101");
             if pos.short_volume != 0.0 && is_send_long == false {
@@ -80,7 +92,6 @@ impl Ac for Strategy {
                 };
                 x.send(req);
             }
-
             if pos.long_volume != 0.0 && is_send_short == false {
                 let req = OrderRequest {
                     symbol: "OI101".to_string(),

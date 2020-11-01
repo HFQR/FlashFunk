@@ -8,7 +8,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 use std::sync::Arc;
 
-use chrono::{Date, NaiveDateTime, Utc};
+use chrono::{Date, NaiveDateTime, Utc, Timelike};
 
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
@@ -2335,8 +2335,7 @@ pub trait TdCallApi {
         println!("function callback: OnRtnBulletin");
     }
 
-    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {
-    }
+    fn on_rtn_trading_notice(&mut self, pTradingNoticeInfo: *mut CThostFtdcTradingNoticeInfoField) {}
 
     fn on_rtn_error_conditional_order(
         &mut self,
@@ -2806,8 +2805,7 @@ impl TdCallApi for CallDataCollector {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {
-    }
+    ) {}
 
     fn on_rsp_order_action(
         &mut self,
@@ -2974,23 +2972,17 @@ impl TdCallApi for CallDataCollector {
     unsafe fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
         let (order, idx) = {
             let order = *pOrder;
-
-            // fixme : we need a fast solution to parse datetime
-            let orderref = slice_to_string(&order.OrderRef);
-            let id = format!("{}_{}_{}", order.SessionID, order.FrontID, orderref);
-            let (idx, refs) = split_into_vec(orderref.as_str());
-            let time_string: String = slice_to_string(&order.InsertTime);
-            let date_string: String = slice_to_string(&order.InsertDate);
-            let datetime = format!("{:?} {:?}", date_string, time_string);
-            let datetime =
-                NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
-                    .unwrap();
+            let order_ref = slice_to_string(&order.OrderRef);
+            let id = format!("{}_{}_{}", order.SessionID, order.FrontID, order_ref);
+            let (idx, refs) = split_into_vec(order_ref.as_str());
+            let (date, time) = parse_datetime_from_str(order.InsertDate.as_ptr(),
+                                                       order.InsertTime.as_ptr());
             let exchange = Exchange::from(order.ExchangeID);
             (
                 OrderData {
                     symbol: slice_to_string(&order.InstrumentID),
                     exchange,
-                    datetime,
+                    datetime: NaiveDateTime::new(date, time),
                     orderid: Option::from(id),
                     order_type: OrderType::from(order.OrderPriceType),
                     direction: Some(Direction::from(order.Direction)),
@@ -3020,21 +3012,16 @@ impl TdCallApi for CallDataCollector {
     unsafe fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
         let (trade, idx) = {
             let trade = *pTrade;
-
-            let time_string = slice_to_string(&trade.TradeTime);
-            let date_string = slice_to_string(&trade.TradeDate);
-            let datetime = format!("{:?} {:?}", date_string, time_string);
-            let datetime =
-                NaiveDateTime::parse_from_str(datetime.as_str(), "\"%Y%m%d\" \"%H:%M:%S\"")
-                    .unwrap();
-            let orderref = slice_to_string(&trade.OrderRef);
-            let (idx, refs) = split_into_vec(orderref.as_str());
+            let (date, time) = parse_datetime_from_str(trade.TradeDate.as_ptr(),
+                                                       trade.TradeTime.as_ptr());
+            let order_ref = slice_to_string(&trade.OrderRef);
+            let (idx, refs) = split_into_vec(order_ref.as_str());
             (
                 TradeData {
                     symbol: Cow::from(slice_to_string(&trade.InstrumentID)),
                     exchange: Some(Exchange::from(trade.ExchangeID)),
-                    datetime,
-                    orderid: Option::from(orderref),
+                    datetime: NaiveDateTime::new(date, time),
+                    orderid: Option::from(order_ref),
                     direction: Some(Direction::from(trade.Direction)),
                     offset: Some(Offset::from(trade.OffsetFlag)),
                     price: trade.Price,
@@ -3093,8 +3080,7 @@ impl TdCallApi for CallDataCollector {
     fn on_rtn_instrument_status(
         &mut self,
         pInstrumentStatus: *mut CThostFtdcInstrumentStatusField,
-    ) {
-    }
+    ) {}
 }
 
 fn get_order_type(order: OrderType) -> c_char {
