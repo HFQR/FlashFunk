@@ -24,8 +24,6 @@ tokio = { version = "0.3", features = ["rt", "time"] }
 flashfunk-codegen = { path = "./flashfunk-codegen" }
 
 [[example]]
-name = "login"
-[[example]]
 name = "call"
 
 [profile.release]

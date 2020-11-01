@@ -15,6 +15,7 @@ use flashfunk::MockMdApi;
 use flashfunk_codegen::Strategy;
 
 /// 價格
+/// Now we build a order book and calculate the  trend power
 struct Quote {
     ask: f64,
     bid: f64,
@@ -22,6 +23,7 @@ struct Quote {
     ask_volume: f64,
     thread: f64,
     last_price: f64,
+    value: f64,
 }
 
 impl Quote {
@@ -33,59 +35,42 @@ impl Quote {
             ask_volume: 0.0,
             thread: 0.0,
             last_price: 0.0,
+            value: 0.0,
         }
     }
     /// 計算盤口信息
-    pub fn update_tick(&mut self, tick: &TickData) {
-        if tick.ask_price(0) != self.ask && tick.bid_price(0) != self.bid {
-            self.bid = tick.bid_price(0);
-            self.ask = tick.ask_price(0);
-            self.last_price = tick.last_price;
-        };
+    pub fn update_tick(&mut self, tick: &TickData) -> f64 {
+        let ask_1 = tick.ask_price(0);
+        let bid_1 = tick.bid_price(0);
+        let ask_vol_1 = tick.ask_volume(0);
+        let bid_vol_1 = tick.bid_volume(0);
+        // when price is down just, increase\+
+        // let value  = if ask_1 > self.ask {
+                // price u
+
+
+        self.value = self.value;
+        self.value
     }
 }
 
 #[derive(Strategy)]
 #[name("阿呆")]
-#[symbol("ag2012")]
+#[symbol("OI101")]
 struct Strategy {
     quote: Quote,
 }
 
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
-        // println!("{}", std::mem::size_of::<TickData>());
-        // let req = OrderRequest {
-        //     symbol: "ag2012".to_string(),
-        //     exchange: Exchange::SHFE,
-        //     direction: Direction::LONG,
-        //     order_type: OrderType::LIMIT,
-        //     volume: 1.0,
-        //     price: tick.last_price + 1.0,
-        //     offset: Offset::OPEN,
-        //     reference: None,
-        // };
-        //
-        // let orders = ctx.get_active_orders();
-        // let mut is_send_long = false;
-        // let mut is_send_short = false;
-        // for x in orders {
-        //     if x.direction.as_ref().unwrap() == &Direction::LONG {
-        //         is_send_long = true;
-        //     } else {
-        //         is_send_short = true
-        //     }
-        // }
-        //
-
         let is_send_long = true;
         let is_send_short = true;
         ctx.enter(|x, v| {
-            let pos = v.position_mut("ag2012");
+            let pos = v.position_mut("OI101");
             if pos.short_volume != 0.0 && is_send_long == false {
                 let req = OrderRequest {
-                    symbol: "ag2012".to_string(),
-                    exchange: Exchange::SHFE,
+                    symbol: "OI101".to_string(),
+                    exchange: Exchange::CZCE,
                     direction: Direction::LONG,
                     order_type: OrderType::LIMIT,
                     volume: pos.short_volume,
@@ -98,8 +83,8 @@ impl Ac for Strategy {
 
             if pos.long_volume != 0.0 && is_send_short == false {
                 let req = OrderRequest {
-                    symbol: "ag2012".to_string(),
-                    exchange: Exchange::SHFE,
+                    symbol: "OI101".to_string(),
+                    exchange: Exchange::CZCE,
                     direction: Direction::SHORT,
                     order_type: OrderType::LIMIT,
                     volume: pos.long_volume,
@@ -110,10 +95,7 @@ impl Ac for Strategy {
                 x.send(req);
             }
         });
-        // self.quote.update_tick(tick);
-        //
-        // let acc = ctx.get_account();
-        // println!("{:?}", acc);
+        self.quote.update_tick(tick);
         println!("dur: {}", tick.instant.elapsed().as_nanos());
     }
 
@@ -135,7 +117,7 @@ fn main() {
     let strategy_1 = Strategy {
         quote: Quote::new(),
     };
-    CtpbeeR::builder::<MockMdApi, TdApi, _>("ctpbee")
+    CtpbeeR::builder::<MdApi, TdApi, _>("ctpbee")
         .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")
