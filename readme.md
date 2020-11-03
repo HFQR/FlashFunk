@@ -40,9 +40,8 @@ we need to test most operation
 In order to run `call` example, for example in linux 
 
 you should export absolute path of `/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/`
-likes, do not work on windows =_=
-
 for example In Linux 
+
 ```
 export LD_LIBRARY_PATH="/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/:$LD_LIBRARY_PATH"
 ```
@@ -50,9 +49,15 @@ export LD_LIBRARY_PATH="/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linu
 
 also works on windows.
 
-### Necessary tools
+Then run 
+```
+cargo run --example call --release
+```
+### Install 
 
-- `LLVM` are need in windows. please search how to install and compile it on windows. 
+1. install rustc and cargo first
+2. sudo bash -c "$(wget -O 0 https://apt.llvm.org/llvm.sh)"
+3. ln -s llvm-config-11 /usr/bin/llvm-config
 
 - `gcc`
 

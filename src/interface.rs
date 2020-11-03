@@ -32,7 +32,13 @@ pub trait Interface {
     /// 释放退出接口
     fn exit(&mut self) {}
 
+    /// 查詢賬戶
     fn req_account(&mut self) {}
 
+    /// 查詢持倉
     fn req_position(&mut self) {}
+
+    //
+    // /// 更新交易接口的訂單
+    // fn update_quote(&mut self,  )
 }

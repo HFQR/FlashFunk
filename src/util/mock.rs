@@ -6,9 +6,11 @@ use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use crate::interface::Interface;
-use crate::structs::{LoginForm, TickData};
-use crate::types::message::MdApiMessage;
-use crate::util::channel::GroupSender;
+use crate::structs::{LoginForm, TickData, CancelRequest, OrderRequest, OrderData};
+use crate::types::message::{MdApiMessage, TdApiMessage};
+use crate::util::channel::{GroupSender, Sender};
+use crate::account::Account;
+use chrono::NaiveDate;
 
 pub struct MockMdApi {
     symbols: Vec<&'static str>,
@@ -85,5 +87,56 @@ impl Interface for MockMdApi {
         });
 
         self.handle = Some(handle);
+    }
+}
+
+
+pub struct MockTdApi {
+    acc: Account,
+    date: NaiveDate,
+    sender: Option<GroupSender<TdApiMessage>>,
+}
+
+impl MockTdApi {
+    fn change_req_to_data(&mut self, order_req: OrderRequest) -> OrderData {
+        unimplemented!()
+    }
+}
+
+/// todo: we need to build a Local TdApi with Account\
+/// It should provide a settle check
+impl Interface for MockTdApi {
+    type Message = TdApiMessage;
+
+    fn new(id: impl Into<Vec<u8>>, pwd: impl Into<Vec<u8>>, path: impl Into<Vec<u8>>, symbols: Vec<&'static str>) -> Self {
+        unimplemented!()
+    }
+
+    /// 发单
+    fn send_order(&mut self, idx: usize, order: OrderRequest) {
+        // self.acc.update_order(self.change_req_to_data(order))
+    }
+
+    /// 撤单
+    fn cancel_order(&mut self, req: CancelRequest) {}
+
+    /// 登录接口
+    fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {
+        self.sender = Some(sender)
+    }
+
+    /// 订阅行情
+    fn subscribe(&mut self) {
+        unimplemented!()
+    }
+
+    /// 取消订阅行情
+    fn unsubscribe(&mut self, symbol: String) {
+        unimplemented!()
+    }
+
+    /// 释放退出接口
+    fn exit(&mut self) {
+        unimplemented!()
     }
 }
