@@ -3,7 +3,7 @@
 > High Frequency Trading Framework
 
 
-## Why Rust
+## 为什么选择`Rust`
 有幸和`yutiansut`一起工作， 接觸到了rust，後來發現Rust很適合金融， 因爲強大的編譯器能夠幫你解決大部分開發中遇到的問題，
 只要編譯能通過，邏輯閉環， 基本都能夠穩定運行， 而不是像c++那樣，在高性能的服務領域需要非常優秀的c++技巧和細緻入微的耐心才能夠寫出高可用的系統。
 
@@ -16,8 +16,7 @@
 
 This project are contributed by  `somewheve` and `fakeshadow` and `qzm`
 
-## Help
-Here are some works unfinished
+## 等待完成 
 
 - 回測計算
 I provide a  small core Account. we need to  build it on MockTdApi
@@ -28,36 +27,12 @@ we need to test most operation
 - log get 
 將底層的錯誤日誌分發到上層處理. 或者單獨使用高性能的log庫來寫入
 
-### Interface compile 
+### 接口编译  
 本项目最终采用`rust-indgen` 作为`c++`接口封装
 
-
-
-### 一些必要的工作
-
-
-### Environment setup
-In order to run `call` example, for example in linux 
-
-you should export absolute path of `/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/`
-for example In Linux 
-
-```
-export LD_LIBRARY_PATH="/home/somewheve/Documents/ctpbee-rs/sdk_sources/ctp/linux/:$LD_LIBRARY_PATH"
-```
-`rusct-link-search-dylib` do not work , I don't know why.
-
-also works on windows.
-
-Then run 
-```
-cargo run --example call --release
-```
-### Install 
-
-1. install rustc and cargo first
-2. sudo bash -c "$(wget -O 0 https://apt.llvm.org/llvm.sh)"
-3. ln -s llvm-config-11 /usr/bin/llvm-config
+### 如何安装
+ 
+参见 [install](./install.md)
 
 - `gcc`
 
