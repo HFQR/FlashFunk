@@ -229,8 +229,8 @@ const ORDER_ID_LENGTH: usize = 12usize;
 pub fn split_into_vec(order_id: &str) -> (usize, i32) {
     if order_id.len().eq(&ORDER_ID_LENGTH) {
         (
-            order_id[9..12].parse::<usize>().unwrap(),
-            order_id[0..9].parse::<i32>().unwrap(),
+            order_id[9..12].parse::<usize>().unwrap_or(10000000),
+            order_id[0..9].parse::<i32>().unwrap_or(10000000),
         )
     } else {
         (10000000 as usize, order_id.parse::<i32>().unwrap())
