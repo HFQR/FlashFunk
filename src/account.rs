@@ -251,6 +251,7 @@ impl Account {
     pub fn frozen_margin(&self) -> f64 {
         self.margin_frozen_container.values().sum()
     }
+
     /// generator a Account object named DailyResult, it will be written into database
     fn generate_self(&self) -> DailyResult {
         DailyResult {

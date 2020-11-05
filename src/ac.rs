@@ -27,6 +27,8 @@ impl __Strategy {
     pub fn symbols(&self) -> &[&'static str] {
         &self.symbols
     }
+
+    pub fn name(&self) -> &'static str { self.name }
 }
 
 impl Deref for __Strategy {
