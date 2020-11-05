@@ -34,8 +34,6 @@ we need to test most operation
  
 参见 [install](./install.md)
 
-- `gcc`
-
 ### At last 
 我和我的合作伙伴都認爲架構已經沒有更好的改進方式了  現在針對的主要是字符串解析耗時間
 運行example下面的call即可 

@@ -38,5 +38,5 @@ panic = "abort"
 rpath = true
 
 [build-dependencies]
-bindgen = { git = "https://github.com/rust-lang/rust-bindgen.git", branch = "master", default-features = false }
+bindgen = "0.55.1"
 cc = "1.0"
