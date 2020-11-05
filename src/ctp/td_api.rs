@@ -2747,6 +2747,12 @@ impl TdCallApi for CallDataCollector {
         self.blocker.as_ref().unwrap().0.step1.unblock();
     }
 
+    fn on_front_disconnected(&mut self, nReason: c_int) {
+        // todo: 打印连接失败的原因
+        self.blocker = Option::from(TdApiBlocker::new());
+        println!("function callback: OnFrontDisconnected");
+    }
+
     fn on_rsp_authenticate(
         &mut self,
         pRspAuthenticateField: *mut CThostFtdcRspAuthenticateField,
@@ -3001,7 +3007,7 @@ impl TdCallApi for CallDataCollector {
                 // Fixme: 如果不帶idx send_all or ignore it ?
                 // println!("broadcast message");
                 // self.sender.send_to(order, 0);
-                self.sender.send_all(order);
+                // self.sender.send_all(order);
             }
             _ => {
                 self.sender.send_to(order, idx);
