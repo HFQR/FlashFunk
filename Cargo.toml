@@ -1,6 +1,6 @@
 [package]
 name = "flashfunk"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
@@ -24,7 +24,7 @@ tokio = { version = "0.3", features = ["rt", "time"] }
 flashfunk-codegen = { path = "./flashfunk-codegen" }
 
 [http]
-timeout = 150
+timeout = 600
 
 #[[example]]
 #name = "call"
