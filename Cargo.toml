@@ -23,8 +23,8 @@ tokio = { version = "0.3", features = ["rt", "time"] }
 [dev-dependencies]
 flashfunk-codegen = { path = "./flashfunk-codegen" }
 
-[[example]]
-name = "call"
+#[[example]]
+#name = "call"
 
 [profile.release]
 lto = "fat"
