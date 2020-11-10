@@ -15,17 +15,20 @@ use crate::account::Account;
 use chrono::NaiveDate;
 use flashfunk::structs::{TickData, LoginForm};
 use flashfunk::interface::Interface;
-use flashfunk::types::message::MdApiMessage;
+use flashfunk::types::message::{MdApiMessage, StrategyMessage};
 use flashfunk_fetcher::{Tick, fetch_tick, Client};
+use flashfunk::ctp::td_api::TdApi;
+use flashfunk::prelude::{CtpbeeR, Context};
+use flashfunk::ac::Ac;
 
-pub struct MockMdApi {
+pub struct LocalMdApi {
     symbols: Vec<&'static str>,
     sender: Option<GroupSender<MdApiMessage>>,
     shutdown: Arc<AtomicBool>,
     handle: Option<JoinHandle<()>>,
 }
 
-impl Drop for MockMdApi {
+impl Drop for LocalMdApi {
     fn drop(&mut self) {
         self.shutdown.store(true, Ordering::SeqCst);
         if let Some(handle) = self.handle.take() {
@@ -34,7 +37,7 @@ impl Drop for MockMdApi {
     }
 }
 
-impl Interface for MockMdApi {
+impl Interface for LocalMdApi {
     type Message = MdApiMessage;
 
     fn new(
@@ -100,5 +103,39 @@ impl Interface for MockMdApi {
     }
 }
 
+#[derive(Strategy)]
+#[name("阿呆")]
+#[symbol("OI101")]
+pub struct HelloFlash {
 
-fn main() {}
+
+}
+
+
+impl Ac for HelloFlash {
+    fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
+        println!("code: {:?} {}", tick.symbol, tick.last_price)
+    }
+}
+
+
+fn main() {
+    let login_form = LoginForm::new()
+        .user_id("170874")
+        .password("wi1015..")
+        .broke_id("9999")
+        .app_id("simnow_client_test")
+        .md_address("tcp://180.168.146.187:10131")
+        .td_address("tcp://180.168.146.187:10130")
+        .auth_code("0000000000000000")
+        .production_info("");
+    let hello = HelloFlash {
+    };
+    CtpbeeR::builder::<LocalMdApi, TdApi, _>("ctpbee")
+        .strategies(vec![strategy_1.into_str()])
+        .id("name")
+        .pwd("id")
+        .path("bug")
+        .login_form(login_form)
+        .start();
+}
