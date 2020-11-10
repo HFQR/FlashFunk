@@ -24,7 +24,7 @@ pub struct ContextInner {
     order_map: HashMap<String, OrderData>,
     contract_map: HashMap<String, ContractData>,
     exchange_map: HashMap<String, Exchange>,
-    position_map: HashMap<Cow<'static, str>, Position>,
+    position_map: HashMap<String, Position>,
     account: AccountData,
 }
 
@@ -33,7 +33,7 @@ impl ContextInner {
         self.order_map.insert(order.orderid.clone().unwrap(), order);
     }
 
-    pub fn get_active_orders(&mut self) -> impl Iterator<Item = &OrderData> {
+    pub fn get_active_orders(&mut self) -> impl Iterator<Item=&OrderData> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
@@ -44,14 +44,14 @@ impl ContextInner {
         self.order_map.get(order_id)
     }
 
-    pub fn get_active_ids(&mut self) -> impl Iterator<Item = &str> {
+    pub fn get_active_ids(&mut self) -> impl Iterator<Item=&str> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(i, _)| i.as_str())
     }
 
-    pub fn get_order_ids(&mut self) -> impl Iterator<Item = &str> {
+    pub fn get_order_ids(&mut self) -> impl Iterator<Item=&str> {
         self.order_map.iter().map(|(i, _)| i.as_str())
     }
 
@@ -62,9 +62,9 @@ impl ContextInner {
     pub fn get_contract(&mut self, symbol: &str) -> Option<&ContractData> {
         self.contract_map.get(symbol)
     }
-    pub fn position_mut(&mut self, symbol: &str) -> &mut Position {
+    pub fn position_mut(&mut self, symbol: &String) -> &mut Position {
         self.position_map
-            .entry(Cow::Owned(symbol.to_owned()))
+            .entry(symbol.to_owned())
             .or_insert_with(|| Position::new_with_symbol(symbol))
     }
 
@@ -91,7 +91,7 @@ impl ContextInner {
                     })
                     .unwrap_or_else(|| {
                         self.position_map.insert(
-                            position_data.symbol.clone(),
+                            position_data.symbol.to_string(),
                             Position::new_with_long(
                                 position_data.symbol.as_ref(),
                                 position_data.volume,
@@ -117,7 +117,7 @@ impl ContextInner {
                     })
                     .unwrap_or_else(|| {
                         self.position_map.insert(
-                            position_data.symbol.clone(),
+                            position_data.symbol.to_string(),
                             Position::new_with_short(
                                 position_data.symbol.as_ref(),
                                 position_data.volume,
@@ -153,7 +153,7 @@ impl ContextInner {
 
     fn update_trade(&mut self, order: &OrderData) {
         // should check the update logic
-        let mut pos = self.position_mut(order.symbol.as_str());
+        let mut pos = self.position_mut(&order.symbol);
         match order.direction.unwrap() {
             Direction::LONG => {
                 match order.offset {
@@ -277,26 +277,26 @@ impl ContextInner {
 
 pub trait ContextTrait {
     fn enter<F>(&mut self, f: F)
-    where
-        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
+        where
+            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
 
     fn send(&self, m: impl Into<StrategyMessage>);
 
     fn add_order(&mut self, order: OrderData);
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item = &OrderData> + '_>;
+    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_>;
 
     fn get_order(&mut self, order_id: &str) -> Option<&OrderData>;
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_>;
+    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_>;
+    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
 
     fn get_exchange(&mut self, symbol: &str) -> Option<&Exchange>;
 
     fn get_contract(&mut self, symbol: &str) -> Option<&ContractData>;
 
-    fn get_position(&mut self, symbol: &'static str) -> &Position;
+    fn get_position(&mut self, symbol: &String) -> &Position;
 
     fn get_account(&mut self) -> &AccountData;
 
@@ -309,8 +309,8 @@ pub trait ContextTrait {
 
 impl ContextTrait for Context<'_> {
     fn enter<F>(&mut self, f: F)
-    where
-        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
+        where
+            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
     {
         let (sender, inner) = self;
         f(*sender, inner);
@@ -325,7 +325,7 @@ impl ContextTrait for Context<'_> {
         self.1.add_order(order);
     }
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item = &OrderData> + '_> {
+    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_> {
         Box::new(self.1.get_active_orders())
     }
 
@@ -333,11 +333,11 @@ impl ContextTrait for Context<'_> {
         self.1.get_order(order_id)
     }
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_> {
+    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
         Box::new(self.1.get_active_ids())
     }
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item = &str> + '_> {
+    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
         Box::new(self.1.get_order_ids())
     }
 
@@ -349,7 +349,7 @@ impl ContextTrait for Context<'_> {
         self.1.get_contract(symbol)
     }
 
-    fn get_position(&mut self, symbol: &str) -> &Position {
+    fn get_position(&mut self, symbol: &String) -> &Position {
         self.1.position_mut(symbol)
     }
 

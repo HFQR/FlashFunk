@@ -226,6 +226,8 @@ impl_to_c_slice!(
 
 const ORDER_ID_LENGTH: usize = 12usize;
 
+/// 拆分訂單號爲 index和id
+/// todo: 減少二重判斷
 pub fn split_into_vec(order_id: &str) -> (usize, i32) {
     if order_id.len().eq(&ORDER_ID_LENGTH) {
         (
@@ -234,5 +236,32 @@ pub fn split_into_vec(order_id: &str) -> (usize, i32) {
         )
     } else {
         (10000000 as usize, order_id.parse::<i32>().unwrap())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::ctp::sys::{split_into_vec, ToCSlice};
+
+    #[test]
+    fn test_split_into_vec() {
+        let data = "000000000000";
+        assert_eq!(data.len(), 12usize);
+        let (index, id) = split_into_vec(data);
+        assert_eq!(index, 0usize);
+        assert_eq!(id, 0i32);
+
+
+        let data2 = "450201";
+        let (id, index) = split_into_vec(data2);
+        assert_eq!(id, 10000000usize);
+        assert_eq!(index, 450201i32);
+    }
+
+    #[test]
+    fn test_macro_use() {
+        let a = "hello";
+        let x: [i8; 5] = a.to_c_slice();
+        assert_eq!(x, [104, 101, 108, 108, 111]);
     }
 }

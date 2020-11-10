@@ -63,6 +63,9 @@ struct Strategy {
 
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
+        let pos = ctx.get_position(&tick.symbol);
+
+
         let is_send_long = true;
         let is_send_short = true;
         let req = OrderRequest {
@@ -78,7 +81,7 @@ impl Ac for Strategy {
         ctx.send(req);
 
         ctx.enter(|x, v| {
-            let pos = v.position_mut("OI101");
+            let pos = v.position_mut(&"OI101".to_string());
             if pos.short_volume != 0.0 && is_send_long == false {
                 let req = OrderRequest {
                     symbol: "OI101".to_string(),

@@ -8,7 +8,7 @@ use std::thread::JoinHandle;
 use crate::interface::Interface;
 use crate::structs::{LoginForm, TickData, CancelRequest, OrderRequest, OrderData};
 use crate::types::message::{MdApiMessage, TdApiMessage};
-use crate::util::channel::{GroupSender, Sender};
+use crate::util::channel::{GroupSender};
 use crate::account::Account;
 use chrono::NaiveDate;
 
