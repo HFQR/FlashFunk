@@ -64,4 +64,5 @@ pub trait Ac {
     fn on_l2_order(&mut self, order: &OrderData, ctx: &mut Context) {}
 
     fn on_l2_trade(&mut self, order: &TradeData, ctx: &mut Context) {}
+
 }

@@ -10,7 +10,7 @@ use crate::structs::{LoginForm, TickData, CancelRequest, OrderRequest, OrderData
 use crate::types::message::{MdApiMessage, TdApiMessage};
 use crate::util::channel::{GroupSender};
 use crate::account::Account;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
 
 pub struct MockMdApi {
     symbols: Vec<&'static str>,
@@ -95,12 +95,20 @@ pub struct MockTdApi {
     acc: Account,
     date: NaiveDate,
     sender: Option<GroupSender<TdApiMessage>>,
+    current_tick: TickData,
 }
 
 impl MockTdApi {
     fn change_req_to_data(&mut self, order_req: OrderRequest) -> OrderData {
         unimplemented!()
     }
+
+
+    fn match_order(&mut self) {}
+    /// todo:
+    ///  1. 检查订单队列是否成交
+    ///  2. 更新订单数据 通过self.sender将数据推送出去， 出现资金不足的情况下 可以先打印 我后面会补充log信息
+    fn check(&mut self) {}
 }
 
 /// todo: we need to build a Local TdApi with Account\
@@ -109,16 +117,26 @@ impl Interface for MockTdApi {
     type Message = TdApiMessage;
 
     fn new(id: impl Into<Vec<u8>>, pwd: impl Into<Vec<u8>>, path: impl Into<Vec<u8>>, symbols: Vec<&'static str>) -> Self {
-        unimplemented!()
+        println!("{:?}", symbols);
+        MockTdApi {
+            acc: Account::new(),
+            // fixme: 需要将这个更换为回测过程中的交易日， 每日阶段后进行切换
+            date: Utc::today().naive_local(),
+            sender: None,
+            current_tick: Default::default(),
+        }
     }
 
     /// 发单
     fn send_order(&mut self, idx: usize, order: OrderRequest) {
+        //todo: 将报单更新到订单队列
         // self.acc.update_order(self.change_req_to_data(order))
     }
 
     /// 撤单
-    fn cancel_order(&mut self, req: CancelRequest) {}
+    fn cancel_order(&mut self, req: CancelRequest) {
+        // todo： 如果req的id还保存在订单队列 需要进场撤单。然后更新报单的状态 发挥给策略
+    }
 
     /// 登录接口
     fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {
@@ -138,5 +156,11 @@ impl Interface for MockTdApi {
     /// 释放退出接口
     fn exit(&mut self) {
         unimplemented!()
+    }
+
+    /// 更新行情
+    fn update_quote(&mut self, quote: &TickData) {
+        self.current_tick = quote.clone();
+        self.check();
     }
 }
