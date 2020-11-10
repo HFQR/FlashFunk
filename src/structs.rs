@@ -9,6 +9,7 @@ use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 use crate::constants::*;
 use bitflags::_core::cmp::{max, min};
 use std::time::Instant;
+use flashfunk_fetcher::Tick;
 
 /// Tick Data
 #[derive(Clone)]
@@ -92,6 +93,33 @@ pub struct OrderData {
     pub volume: f64,
     pub traded: f64,
     pub status: Status,
+}
+
+
+impl From<Tick> for TickData {
+    fn from(tick: Tick) -> Self {
+        TickData {
+            symbol: tick.local_symbol,
+            exchange: Exchange::INIT,
+            datetime: tick.datetime.clone(),
+            name: "".to_string(),
+            volume: tick.volume.clone(),
+            open_interest: tick.open_interest.clone(),
+            last_price: tick.last_price.clone(),
+            last_volume: 0,
+            limit_up: tick.limit_up.clone(),
+            limit_down: tick.limit_down.clone(),
+            open_price: 0.0,
+            high_price: 0.0,
+            low_price: 0.0,
+            pre_close: 0.0,
+            bid_price: [tick.bid_price_1.clone(), tick.bid_price_2.clone(), tick.bid_price_3.clone(), tick.bid_price_4.clone(), tick.bid_price_5.clone()],
+            ask_price: [tick.ask_price_1.clone(), tick.ask_price_2.clone(), tick.ask_price_3.clone(), tick.ask_price_4.clone(), tick.ask_price_5.clone()],
+            bid_volume: [tick.bid_volume_1.clone(), tick.bid_volume_2.clone(), tick.bid_volume_3.clone(), tick.bid_volume_4.clone(), tick.bid_volume_5.clone()],
+            ask_volume: [tick.ask_volume_1.clone(), tick.ask_volume_2.clone(), tick.ask_volume_3.clone(), tick.ask_volume_4.clone(), tick.ask_volume_5.clone()],
+            instant: Instant::now(),
+        }
+    }
 }
 
 /// Trade Data
@@ -530,8 +558,8 @@ impl Generator {
     }
 
     pub fn update_tick<F>(&mut self, tick: &TickData, f: F)
-    where
-        F: FnOnce(&mut Self, Bar),
+        where
+            F: FnOnce(&mut Self, Bar),
     {
         let time = tick.datetime;
         if self.last.is_none() {

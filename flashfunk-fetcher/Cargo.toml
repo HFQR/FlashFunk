@@ -9,5 +9,6 @@ description = "This project are used to fetch history tick data from clickhouse 
 [dependencies]
 chrono = "0.4"
 chrono-tz = { version = "0.5", features = ["serde"] }
+clickhouse-rs = { git = "https://github.com/suharev7/clickhouse-rs/" }
 futures = "0.1.29"
 tokio = "0.1.22"
