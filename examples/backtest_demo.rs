@@ -46,7 +46,7 @@ impl Interface for LocalMdApi {
         _: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
     ) -> Self {
-        MockMdApi {
+        LocalMdApi {
             symbols,
             sender: None,
             shutdown: Arc::new(AtomicBool::new(false)),
