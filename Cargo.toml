@@ -19,6 +19,7 @@ core_affinity = "0.5.10"
 encoding = "0.2.33"
 libc = "0.2.0"
 tokio = { version = "0.3", features = ["rt", "time"] }
+flashfunk-fetcher = { path = "./flashfunk-fetcher" }
 
 [dev-dependencies]
 flashfunk-codegen = { path = "./flashfunk-codegen" }
