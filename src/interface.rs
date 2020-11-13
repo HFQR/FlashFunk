@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_variables)]
 
-use crate::structs::{CancelRequest, LoginForm, OrderRequest};
+use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::util::channel::GroupSender;
 
 /// 用户登录接口,包含用户的
@@ -38,7 +38,6 @@ pub trait Interface {
     /// 查詢持倉
     fn req_position(&mut self) {}
 
-    //
-    // /// 更新交易接口的訂單
-    // fn update_quote(&mut self,  )
+    /// 更新交易接口的訂單
+    fn update_quote(&mut self, quote: &TickData) {}
 }

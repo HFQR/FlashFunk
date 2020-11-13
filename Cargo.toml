@@ -8,7 +8,7 @@ include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
 build = "build.rs"
 
 [workspace]
-members = ["flashfunk-codegen"]
+members = ["flashfunk-codegen", "flashfunk-fetcher"]
 
 [dependencies]
 ahash = "0.4.5"
@@ -19,15 +19,19 @@ core_affinity = "0.5.10"
 encoding = "0.2.33"
 libc = "0.2.0"
 tokio = { version = "0.3", features = ["rt", "time"] }
+flashfunk-fetcher = { path = "./flashfunk-fetcher" }
 
 [dev-dependencies]
 flashfunk-codegen = { path = "./flashfunk-codegen" }
+flashfunk-fetcher = { path = "./flashfunk-fetcher" }
 
 [http]
 timeout = 600
 
-#[[example]]
-#name = "call"
+[[example]]
+name = "call"
+[[example]]
+name = "backtest_demo"
 
 [profile.release]
 lto = "fat"

@@ -1,3 +1,5 @@
+/// This file provide how to build an back
+///
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 
@@ -10,16 +12,23 @@ use crate::structs::{LoginForm, TickData, CancelRequest, OrderRequest, OrderData
 use crate::types::message::{MdApiMessage, TdApiMessage};
 use crate::util::channel::{GroupSender};
 use crate::account::Account;
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
+use flashfunk::structs::{TickData, LoginForm};
+use flashfunk::interface::Interface;
+use flashfunk::types::message::{MdApiMessage, StrategyMessage};
+use flashfunk_fetcher::{Tick, fetch_tick, Client};
+use flashfunk::ctp::td_api::TdApi;
+use flashfunk::prelude::{CtpbeeR, Context};
+use flashfunk::ac::Ac;
 
-pub struct MockMdApi {
+pub struct LocalMdApi {
     symbols: Vec<&'static str>,
     sender: Option<GroupSender<MdApiMessage>>,
     shutdown: Arc<AtomicBool>,
     handle: Option<JoinHandle<()>>,
 }
 
-impl Drop for MockMdApi {
+impl Drop for LocalMdApi {
     fn drop(&mut self) {
         self.shutdown.store(true, Ordering::SeqCst);
         if let Some(handle) = self.handle.take() {
@@ -28,7 +37,7 @@ impl Drop for MockMdApi {
     }
 }
 
-impl Interface for MockMdApi {
+impl Interface for LocalMdApi {
     type Message = MdApiMessage;
 
     fn new(
@@ -37,7 +46,7 @@ impl Interface for MockMdApi {
         _: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
     ) -> Self {
-        MockMdApi {
+        LocalMdApi {
             symbols,
             sender: None,
             shutdown: Arc::new(AtomicBool::new(false)),
@@ -50,8 +59,13 @@ impl Interface for MockMdApi {
     }
 
     fn subscribe(&mut self) {
+        // In here we fetch data from clickhouse and write an algorithm to send data sync
+        let url = "tcp://10.0.0.34:9002/cy";
+        let client = Client::new(url);
+        let mut tick_vec = fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00", &client);
         let sender = self.sender.take().unwrap();
         let shutdown = self.shutdown.clone();
+
         let handle = std::thread::spawn(move || {
             let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
@@ -74,9 +88,8 @@ impl Interface for MockMdApi {
                             tokio::time::sleep(Duration::from_millis(500)).await;
 
                             // 在这里修改tick data数据;
-
-                            let msg: &'static TickData = Box::leak(Box::new(TickData::default()));
-
+                            let tick = TickData::from(tick_vec.remove(0));
+                            let msg: &'static TickData = Box::leak(Box::new(tick));
                             sender.send_all(msg);
                         }
                     }
@@ -90,77 +103,39 @@ impl Interface for MockMdApi {
     }
 }
 
+#[derive(Strategy)]
+#[name("阿呆")]
+#[symbol("OI101")]
+pub struct HelloFlash {
 
-pub struct MockTdApi {
-    acc: Account,
-    date: NaiveDate,
-    sender: Option<GroupSender<TdApiMessage>>,
-    current_tick: TickData,
+
 }
 
-impl MockTdApi {
-    fn change_req_to_data(&mut self, order_req: OrderRequest) -> OrderData {
-        unimplemented!()
+
+impl Ac for HelloFlash {
+    fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
+        println!("code: {:?} {}", tick.symbol, tick.last_price)
     }
-
-
-    fn match_order(&mut self) {}
-    /// todo:
-    ///  1. 检查订单队列是否成交
-    ///  2. 更新订单数据 通过self.sender将数据推送出去， 出现资金不足的情况下 可以先打印 我后面会补充log信息
-    fn check(&mut self) {}
 }
 
-/// todo: we need to build a Local TdApi with Account\
-/// It should provide a settle check
-impl Interface for MockTdApi {
-    type Message = TdApiMessage;
 
-    fn new(id: impl Into<Vec<u8>>, pwd: impl Into<Vec<u8>>, path: impl Into<Vec<u8>>, symbols: Vec<&'static str>) -> Self {
-        println!("{:?}", symbols);
-        MockTdApi {
-            acc: Account::new(),
-            // fixme: 需要将这个更换为回测过程中的交易日， 每日阶段后进行切换
-            date: Utc::today().naive_local(),
-            sender: None,
-            current_tick: Default::default(),
-        }
-    }
-
-    /// 发单
-    fn send_order(&mut self, idx: usize, order: OrderRequest) {
-        //todo: 将报单更新到订单队列
-        // self.acc.update_order(self.change_req_to_data(order))
-    }
-
-    /// 撤单
-    fn cancel_order(&mut self, req: CancelRequest) {
-        // todo： 如果req的id还保存在订单队列 需要进场撤单。然后更新报单的状态 发挥给策略
-    }
-
-    /// 登录接口
-    fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {
-        self.sender = Some(sender)
-    }
-
-    /// 订阅行情
-    fn subscribe(&mut self) {
-        unimplemented!()
-    }
-
-    /// 取消订阅行情
-    fn unsubscribe(&mut self, symbol: String) {
-        unimplemented!()
-    }
-
-    /// 释放退出接口
-    fn exit(&mut self) {
-        unimplemented!()
-    }
-
-    /// 更新行情
-    fn update_quote(&mut self, quote: &TickData) {
-        self.current_tick = quote.clone();
-        self.check();
-    }
+fn main() {
+    let login_form = LoginForm::new()
+        .user_id("170874")
+        .password("wi1015..")
+        .broke_id("9999")
+        .app_id("simnow_client_test")
+        .md_address("tcp://180.168.146.187:10131")
+        .td_address("tcp://180.168.146.187:10130")
+        .auth_code("0000000000000000")
+        .production_info("");
+    let hello = HelloFlash {
+    };
+    CtpbeeR::builder::<LocalMdApi, TdApi, _>("ctpbee")
+        .strategies(vec![strategy_1.into_str()])
+        .id("name")
+        .pwd("id")
+        .path("bug")
+        .login_form(login_form)
+        .start();
 }
