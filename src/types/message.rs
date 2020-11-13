@@ -3,6 +3,7 @@ use crate::structs::{
     SubscribeRequest, TickData, TradeData,
 };
 
+
 pub enum MdApiMessage {
     TickData(&'static TickData),
     SubscribeRequest(SubscribeRequest),
@@ -27,6 +28,7 @@ pub enum TdApiMessage {
     PositionData(PositionData),
     ContractData(ContractData),
 }
+
 
 impl From<OrderData> for TdApiMessage {
     fn from(data: OrderData) -> Self {
@@ -57,6 +59,20 @@ impl From<ContractData> for TdApiMessage {
         Self::ContractData(data)
     }
 }
+
+pub enum TdOtherApiMessage {
+    OrderData(OrderData),
+    TradeData(TradeData),
+}
+
+impl From<OrderData> for TdOtherApiMessage {
+    fn from(data: OrderData) -> Self { Self::OrderData(data) }
+}
+
+impl From<TradeData> for TdOtherApiMessagep {
+    fn from(data: TradeData) -> Self { Self::TradeData(data) }
+}
+
 
 pub enum StrategyMessage {
     OrderRequest(OrderRequest),
