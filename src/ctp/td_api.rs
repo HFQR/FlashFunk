@@ -3006,11 +3006,12 @@ impl TdCallApi for CallDataCollector {
             10000000usize => {
                 // Fixme: 如果不帶idx send_all or ignore it ?
                 // println!("broadcast message");
-                // self.sender.send_to(order, 0);
+                // self.sender.try_send_to(order, 0);
                 // self.sender.send_all(order);
             }
             _ => {
-                self.sender.send_to(order, idx);
+                // todo: why order sender error
+                self.sender.try_send_to(order, idx).unwrap_or(());
             }
         }
     }
@@ -3045,7 +3046,7 @@ impl TdCallApi for CallDataCollector {
                 // self.api.producer.send_all(trade)
             }
             _ => {
-                self.sender.send_to(trade, idx);
+                self.sender.try_send_to(trade, idx).unwrap_or(());
             }
         }
     }
