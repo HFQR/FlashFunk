@@ -29,11 +29,17 @@ pub mod prelude {
 
 pub use util::mock::MockMdApi;
 
+
+fn get_home_path() -> PathBuf {
+    let px = format!("{}/.HFQ/", var("HOME").unwrap().clone());
+    PathBuf::from(px)
+}
+
 fn get_interface_path(path: &str) -> PathBuf {
-    let px = format!("{}/HFQ/{}", var("HOME").unwrap(), path);
+    let px = format!("{}/.HFQ/{}", var("HOME").unwrap(), path);
     let path_buffer = PathBuf::from(px);
     if !path_buffer.exists() {
-        panic!("please mkdier interface dir fisrt");
+        panic!("please mkdir interface dir fisrt");
     }
     path_buffer.join("bindings.rs")
 }

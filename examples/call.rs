@@ -64,15 +64,13 @@ struct Strategy {
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         let pos = ctx.get_position(&tick.symbol);
-
-
         let is_send_long = true;
         let is_send_short = true;
         let req = OrderRequest {
             symbol: "OI101".to_string(),
             exchange: Exchange::SHFE,
             direction: Direction::LONG,
-            order_type: OrderType::MARKET,
+            order_type: OrderType::LIMIT,
             volume: 1.0,
             price: tick.last_price - 1.0,
             offset: Offset::OPEN,
@@ -135,7 +133,6 @@ fn main() {
         .strategies(vec![strategy_1.into_str()])
         .id("name")
         .pwd("id")
-        .path("bug")
         .login_form(login_form)
         .start();
 }

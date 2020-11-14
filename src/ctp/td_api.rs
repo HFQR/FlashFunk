@@ -21,6 +21,9 @@ use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use crate::util::hash::HashMap;
+use crate::{get_interface_path, get_home_path};
+use std::fs::create_dir;
+use std::path::PathBuf;
 
 const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
 const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
@@ -3325,9 +3328,14 @@ impl Interface for TdApi {
     fn new(
         id: impl Into<Vec<u8>>,
         pwd: impl Into<Vec<u8>>,
-        path: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
     ) -> TdApi {
+        let home_path = get_home_path();
+        let string = String::from_utf8(id.into()).unwrap();
+        let path = home_path.to_string_lossy().to_string() + string.as_str() + "//";
+        if !PathBuf::from(path.clone()).exists() {
+            create_dir(path.clone()).expect("create dir failed ");
+        }
         let p = CString::new(path).unwrap();
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };

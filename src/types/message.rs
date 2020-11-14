@@ -69,7 +69,7 @@ impl From<OrderData> for TdOtherApiMessage {
     fn from(data: OrderData) -> Self { Self::OrderData(data) }
 }
 
-impl From<TradeData> for TdOtherApiMessagep {
+impl From<TradeData> for TdOtherApiMessage {
     fn from(data: TradeData) -> Self { Self::TradeData(data) }
 }
 

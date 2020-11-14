@@ -10,7 +10,6 @@ pub trait Interface {
     fn new(
         id: impl Into<Vec<u8>>,
         pwd: impl Into<Vec<u8>>,
-        path: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
     ) -> Self;
 

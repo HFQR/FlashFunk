@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::constants::{Direction, Exchange, Offset, Status};
 use crate::structs::{AccountData, ContractData, OrderData, Position, PositionData};
 use crate::types::message::StrategyMessage;

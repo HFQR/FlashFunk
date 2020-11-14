@@ -34,7 +34,6 @@ impl Interface for MockMdApi {
     fn new(
         _: impl Into<Vec<u8>>,
         _: impl Into<Vec<u8>>,
-        _: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
     ) -> Self {
         MockMdApi {
@@ -116,7 +115,7 @@ impl MockTdApi {
 impl Interface for MockTdApi {
     type Message = TdApiMessage;
 
-    fn new(id: impl Into<Vec<u8>>, pwd: impl Into<Vec<u8>>, path: impl Into<Vec<u8>>, symbols: Vec<&'static str>) -> Self {
+    fn new(id: impl Into<Vec<u8>>, pwd: impl Into<Vec<u8>>, symbols: Vec<&'static str>) -> Self {
         println!("{:?}", symbols);
         MockTdApi {
             acc: Account::new(),

@@ -19,6 +19,9 @@ use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::types::message::MdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
+use crate::{get_interface_path, get_home_path};
+use std::fs::create_dir;
+use std::path::PathBuf;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -26,7 +29,6 @@ type c_bool = std::os::raw::c_uchar;
 pub struct MdApi {
     user_id: CString,
     password: CString,
-    path: CString,
     market_api: *mut CThostFtdcMdApi,
     market_spi: Option<*mut QuoteSpi>,
     login_info: Option<LoginForm>,
@@ -245,19 +247,22 @@ impl Interface for MdApi {
     fn new(
         id: impl Into<Vec<u8>>,
         pwd: impl Into<Vec<u8>>,
-        path: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
     ) -> Self {
-        let ids = CString::new(id).unwrap();
-        let pwds = CString::new(pwd).unwrap();
-        let paths = CString::new(path).unwrap();
-        let flow_path_ptr = paths.as_ptr();
+        let home_path = get_home_path();
+        let string = String::from_utf8(id.into()).unwrap();
+        let path = home_path.to_string_lossy().to_string() + string.as_str() + "//";
+        if !PathBuf::from(path.clone()).exists() {
+            create_dir(path.clone()).expect("create dir failed ");
+        }
+        let p = CString::new(path).unwrap();
+        let pwd = CString::new(pwd).unwrap();
+        let flow_path_ptr = p.as_ptr();
         // 创建了行情对象
         let api = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
         MdApi {
-            user_id: ids,
-            password: pwds,
-            path: paths,
+            user_id: p.clone(),
+            password: pwd,
             market_api: api,
             market_spi: None,
             login_info: None,
