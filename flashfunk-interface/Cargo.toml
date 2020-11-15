@@ -1,0 +1,36 @@
+[package]
+name = "flashfunk-interface"
+version = "0.4.0"
+authors = ["somewheve <somewheve@gmail.com>"]
+edition = "2018"
+include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
+
+build = "../build.rs"
+
+[dependencies]
+ahash = "0.4.5"
+bitflags = "1.2.1"
+chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
+encoding = "0.2.33"
+libc = "0.2.0"
+flashfunk-core = { path = "../flashfunk-core" }
+
+
+[http]
+timeout = 600
+
+
+[profile.release]
+lto = "fat"
+opt-level = 3
+codegen-units = 1
+debug-assertions = false
+overflow-checks = false
+panic = "abort"
+
+[profile.dev]
+rpath = true
+
+[build-dependencies]
+bindgen = "0.55.1"
+cc = "1.0"
