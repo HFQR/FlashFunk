@@ -2855,57 +2855,53 @@ impl TdCallApi for CallDataCollector {
         nRequestID: c_int,
         bIsLast: bool,
     ) {
-        match get_rsp_info(pRspInfo) {
-            Ok(t) => {
-                let position = *pInvestorPosition;
+        if pInvestorPosition.is_null() {} else {
+            let position = *pInvestorPosition;
+            let symbol = slice_to_string(&position.InstrumentID);
+            let open_cost = position.OpenCost;
+            let direction = Direction::from(position.PosiDirection);
+            let exchange = *self.exchange_map.get(symbol.as_str()).unwrap();
+            let td_pos = position.TodayPosition as f64;
+            let volume = position.Position as f64;
+            let yd_pos = position.YdPosition as f64;
+            let profit = position.PositionProfit;
+            let frozen = position.ShortFrozen + position.LongFrozen;
+            let key = format!("{}_{}", symbol, position.PosiDirection);
 
-                let symbol = slice_to_string(&position.InstrumentID);
-                let open_cost = position.OpenCost;
-                let direction = Direction::from(position.PosiDirection);
-                let exchange = *self.exchange_map.get(symbol.as_str()).unwrap();
-                let td_pos = position.TodayPosition as f64;
-                let volume = position.Position as f64;
-                let yd_pos = position.YdPosition as f64;
-                let profit = position.PositionProfit;
-                let frozen = position.ShortFrozen + position.LongFrozen;
-                let key = format!("{}_{}", symbol, position.PosiDirection);
-
-                let pos = self
-                    .pos
-                    .entry(Cow::from(key))
-                    .or_insert_with(|| match direction {
-                        Direction::SHORT => PositionData::new_with_short(&symbol),
-                        Direction::LONG => PositionData::new_with_long(&symbol),
-                        _ => panic!("bad direction"),
-                    });
-                // according to the exchange  to setup the yd position
-                match exchange {
-                    Exchange::SHFE => {
-                        if yd_pos != 0.0 && td_pos == 0.0 {
-                            pos.yd_volume = volume;
-                        }
-                    }
-                    _ => {
-                        pos.yd_volume = volume - td_pos;
+            let pos = self
+                .pos
+                .entry(Cow::from(key))
+                .or_insert_with(|| match direction {
+                    Direction::SHORT => PositionData::new_with_short(&symbol),
+                    Direction::LONG => PositionData::new_with_long(&symbol),
+                    _ => panic!("bad direction"),
+                });
+            // according to the exchange  to setup the yd position
+            match exchange {
+                Exchange::SHFE => {
+                    if yd_pos != 0.0 && td_pos == 0.0 {
+                        pos.yd_volume = volume;
                     }
                 }
-                let size = self.size_map.get(symbol.as_str()).unwrap();
-                // pos.exchange = Some(*exchange);
-                pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
-                pos.volume += volume;
-                pos.pnl += profit;
-
-                // if is the last data that been pushed,  take them and sent it the core
-                if bIsLast {
-                    self.pos
-                        .iter()
-                        .for_each(|(k, v)| self.sender.send_all(v.to_owned()));
-                    self.pos.clear();
+                _ => {
+                    pos.yd_volume = volume - td_pos;
                 }
             }
-            Err(e) => {}
+            let size = self.size_map.get(symbol.as_str()).unwrap();
+            // pos.exchange = Some(*exchange);
+            pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
+            pos.volume += volume;
+            pos.pnl += profit;
+            // if is the last data that been pushed,  take them and sent it the core
+            if bIsLast {
+                self.pos
+                    .iter()
+                    .for_each(|(k, v)| self.sender.send_all(v.to_owned()));
+                self.pos.clear();
+            }
         }
     }
+
 
     unsafe fn on_rsp_qry_trading_account(
         &mut self,
@@ -2914,23 +2910,18 @@ impl TdCallApi for CallDataCollector {
         nRequestID: c_int,
         bIsLast: bool,
     ) {
-        match get_rsp_info(pRspInfo) {
-            Ok(t) => {
-                let acc = *pTradingAccount;
+        if !pTradingAccount.is_null() {
+            let acc = *pTradingAccount;
+            let account_data = AccountData {
+                accountid: slice_to_string(&acc.AccountID),
+                balance: acc.Balance,
+                frozen: acc.FrozenMargin + acc.FrozenCash + acc.FrozenCommission,
+                date: Utc::today(),
+            };
+            self.sender.send_all(account_data);
+        } else {
 
-                let account_data = AccountData {
-                    accountid: slice_to_string(&acc.AccountID),
-                    balance: acc.Balance,
-                    frozen: acc.FrozenMargin + acc.FrozenCash + acc.FrozenCommission,
-                    date: Utc::today(),
-                };
-                self.sender.send_all(account_data);
-            }
-            Err(e) => {
-                println!(">>> Account Query Err, id: {} msg: {}", e.id, e.msg);
-            }
-        };
-
+        }
         if self.blocker.is_some() {
             self.blocker.take().unwrap().0.step5.unblock();
         }

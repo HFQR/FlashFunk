@@ -43,7 +43,6 @@ impl Interface for LocalMdApi {
     fn new(
         _: impl Into<Vec<u8>>,
         _: impl Into<Vec<u8>>,
-        _: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
     ) -> Self {
         LocalMdApi {
