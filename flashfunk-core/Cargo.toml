@@ -40,3 +40,7 @@ rpath = true
 [build-dependencies]
 bindgen = "0.55.1"
 cc = "1.0"
+
+[[example]]
+name = "call"
+path = "../examples/call.rs"

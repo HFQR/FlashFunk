@@ -11,7 +11,7 @@ use crate::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
 use core_affinity::CoreId;
 
-// 主线程工人。阻塞主线程，接收策略消息并发起api的回调。
+// 主线程工人。阻塞主线程，接收策略消息并向Interface（tdapi）发出相应请求。
 struct MainWorker<Interface> {
     receiver: Vec<Receiver<StrategyMessage>>,
     _i: PhantomData<Interface>,
@@ -37,6 +37,8 @@ impl<I, M> MainWorker<I>
             self.receiver
                 .iter()
                 .enumerate()
+                // msg映射为（idx，msg）并且处理使得 Result -> Option
+                // 从而忽略RecvErr（没从spsc队列pop出来不是问题，策略没发而已）
                 .filter_map(|(idx, c)| c.recv().map(|msg| (idx, msg)).ok())
                 // 此处idx为策略通道的index，可以交给回调用以确认回程消息的策略
                 .for_each(|(idx, msg)| match msg {

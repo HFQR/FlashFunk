@@ -31,42 +31,43 @@ impl ContextInner {
         self.order_map.insert(order.orderid.clone().unwrap(), order);
     }
 
-    pub fn get_active_orders(&mut self) -> impl Iterator<Item=&OrderData> {
+    pub fn get_active_orders(&self) -> impl Iterator<Item=&OrderData> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(_, v)| v)
     }
 
-    pub fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
+    pub fn get_order(&self, order_id: &str) -> Option<&OrderData> {
         self.order_map.get(order_id)
     }
 
-    pub fn get_active_ids(&mut self) -> impl Iterator<Item=&str> {
+    pub fn get_active_ids(&self) -> impl Iterator<Item=&str> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(i, _)| i.as_str())
     }
 
-    pub fn get_order_ids(&mut self) -> impl Iterator<Item=&str> {
+    pub fn get_order_ids(&self) -> impl Iterator<Item=&str> {
         self.order_map.iter().map(|(i, _)| i.as_str())
     }
 
-    pub fn get_exchange(&mut self, symbol: &str) -> Option<&Exchange> {
+    pub fn get_exchange(&self, symbol: &str) -> Option<&Exchange> {
         self.exchange_map.get(symbol)
     }
 
-    pub fn get_contract(&mut self, symbol: &str) -> Option<&ContractData> {
+    pub fn get_contract(&self, symbol: &str) -> Option<&ContractData> {
         self.contract_map.get(symbol)
     }
-    pub fn position_mut(&mut self, symbol: &String) -> &mut Position {
+    
+    pub fn get_position(&mut self, symbol: &String) -> &Position {
         self.position_map
             .entry(symbol.to_owned())
             .or_insert_with(|| Position::new_with_symbol(symbol))
     }
 
-    pub fn get_account(&mut self) -> &AccountData {
+    pub fn get_account(&self) -> &AccountData {
         &self.account
     }
 
@@ -151,7 +152,7 @@ impl ContextInner {
 
     fn update_trade(&mut self, order: &OrderData) {
         // should check the update logic
-        let mut pos = self.position_mut(&order.symbol);
+        let mut pos = self.position_map.entry(order.symbol.to_owned()).or_insert_with(|| Position::new_with_symbol(&order.symbol));
         match order.direction.unwrap() {
             Direction::LONG => {
                 match order.offset {
@@ -282,21 +283,21 @@ pub trait ContextTrait {
 
     fn add_order(&mut self, order: OrderData);
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_>;
+    fn get_active_orders(&self) -> Box<dyn Iterator<Item=&OrderData> + '_>;
 
-    fn get_order(&mut self, order_id: &str) -> Option<&OrderData>;
+    fn get_order(&self, order_id: &str) -> Option<&OrderData>;
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
+    fn get_active_ids(&self) -> Box<dyn Iterator<Item=&str> + '_>;
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_>;
+    fn get_order_ids(&self) -> Box<dyn Iterator<Item=&str> + '_>;
 
-    fn get_exchange(&mut self, symbol: &str) -> Option<&Exchange>;
+    fn get_exchange(&self, symbol: &str) -> Option<&Exchange>;
 
-    fn get_contract(&mut self, symbol: &str) -> Option<&ContractData>;
+    fn get_contract(&self, symbol: &str) -> Option<&ContractData>;
 
     fn get_position(&mut self, symbol: &String) -> &Position;
 
-    fn get_account(&mut self) -> &AccountData;
+    fn get_account(&self) -> &AccountData;
 
     fn update_account(&mut self, account: &AccountData);
 
@@ -323,35 +324,35 @@ impl ContextTrait for Context<'_> {
         self.1.add_order(order);
     }
 
-    fn get_active_orders(&mut self) -> Box<dyn Iterator<Item=&OrderData> + '_> {
+    fn get_active_orders(&self) -> Box<dyn Iterator<Item=&OrderData> + '_> {
         Box::new(self.1.get_active_orders())
     }
 
-    fn get_order(&mut self, order_id: &str) -> Option<&OrderData> {
+    fn get_order(&self, order_id: &str) -> Option<&OrderData> {
         self.1.get_order(order_id)
     }
 
-    fn get_active_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
+    fn get_active_ids(&self) -> Box<dyn Iterator<Item=&str> + '_> {
         Box::new(self.1.get_active_ids())
     }
 
-    fn get_order_ids(&mut self) -> Box<dyn Iterator<Item=&str> + '_> {
+    fn get_order_ids(&self) -> Box<dyn Iterator<Item=&str> + '_> {
         Box::new(self.1.get_order_ids())
     }
 
-    fn get_exchange(&mut self, symbol: &str) -> Option<&Exchange> {
+    fn get_exchange(&self, symbol: &str) -> Option<&Exchange> {
         self.1.get_exchange(symbol)
     }
 
-    fn get_contract(&mut self, symbol: &str) -> Option<&ContractData> {
+    fn get_contract(&self, symbol: &str) -> Option<&ContractData> {
         self.1.get_contract(symbol)
     }
 
     fn get_position(&mut self, symbol: &String) -> &Position {
-        self.1.position_mut(symbol)
+        self.1.get_position(symbol)
     }
 
-    fn get_account(&mut self) -> &AccountData {
+    fn get_account(&self) -> &AccountData {
         self.1.get_account()
     }
 

@@ -63,6 +63,7 @@ impl Account {
     pub fn balance(&self) -> f64 {
         self.available() + self.margin()
     }
+
     pub fn available(&self) -> f64 {
         self.pre_balance + self.float_pnl() + self.get_close_profit_sum()
             - self.get_frozen_fee_sum()
@@ -70,6 +71,7 @@ impl Account {
             - self.margin()
             - self.frozen_margin()
     }
+    
     pub fn get_fee_sum(&self) -> f64 {
         self.fee.values().sum()
     }
