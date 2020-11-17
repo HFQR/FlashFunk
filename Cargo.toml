@@ -5,6 +5,10 @@ codegen-units = 4
 members = [
     "./flashfunk-codegen",
     "./flashfunk-core",
-    "./flashfunk-interface",
+    #    "./flashfunk-interface",
     "./flashfunk-fetcher",
 ]
+
+
+#[[example]]
+#name = "call"

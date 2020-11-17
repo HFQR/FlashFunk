@@ -4,14 +4,14 @@ use std::fmt::Pointer;
 use std::thread;
 
 use chrono::{Local, NaiveDateTime};
-use flashfunk::constants::{Direction, Exchange, Offset, OrderType};
-use flashfunk::ctp::md_api::MdApi;
-use flashfunk::ctp::td_api::TdApi;
-use flashfunk::interface::Interface;
-use flashfunk::prelude::*;
-use flashfunk::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
-use flashfunk::types::message::TdApiMessage;
-use flashfunk::MockMdApi;
+use flashfunk_core::constants::{Direction, Exchange, Offset, OrderType};
+use flashfunk_core::ctp::md_api::MdApi;
+use flashfunk_core::ctp::td_api::TdApi;
+use flashfunk_core::interface::Interface;
+use flashfunk_core::prelude::*;
+use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
+use flashfunk_core::types::message::TdApiMessage;
+use flashfunk_core::MockMdApi;
 use flashfunk_codegen::Strategy;
 
 /// 價格

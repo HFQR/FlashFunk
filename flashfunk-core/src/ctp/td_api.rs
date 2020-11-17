@@ -2678,7 +2678,7 @@ pub trait TdCallApi {
 
 /// 交易API
 pub struct TdApi {
-    order_ref: i32,
+    order_ref: Arc<AtomicI32>,
     trader_api: *mut CThostFtdcTraderApi,
     trader_spi: Option<*mut FCtpTdSpi>,
     path: CString,
@@ -2710,6 +2710,7 @@ pub struct CallDataCollector {
     pos: HashMap<Cow<'static, str>, PositionData>,
     size_map: HashMap<Cow<'static, str>, f64>,
     exchange_map: HashMap<Cow<'static, str>, Exchange>,
+    order_ref: Arc<AtomicI32>,
 }
 
 struct TdApiBlockerInner {
@@ -2919,9 +2920,7 @@ impl TdCallApi for CallDataCollector {
                 date: Utc::today(),
             };
             self.sender.send_all(account_data);
-        } else {
-
-        }
+        } else {}
         if self.blocker.is_some() {
             self.blocker.take().unwrap().0.step5.unblock();
         }
@@ -2975,6 +2974,7 @@ impl TdCallApi for CallDataCollector {
             let order_ref = slice_to_string(&order.OrderRef);
             let id = format!("{}_{}_{}", order.SessionID, order.FrontID, order_ref);
             let (idx, refs) = split_into_vec(order_ref.as_str());
+            self.order_ref.store(self.order_ref.fetch_max(refs, Ordering::SeqCst), Ordering::SeqCst);
             let (date, time) = parse_datetime_from_str(order.InsertDate.as_ptr(),
                                                        order.InsertTime.as_ptr());
             let exchange = Exchange::from(order.ExchangeID);
@@ -3275,6 +3275,7 @@ impl TdApi {
             pos: Default::default(),
             size_map: Default::default(),
             exchange_map: Default::default(),
+            order_ref: self.order_ref.clone(),
         };
         // rust object
         let trait_object_box: Box<Box<dyn TdCallApi>> = Box::new(Box::new(collector));
@@ -3331,7 +3332,7 @@ impl Interface for TdApi {
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
         TdApi {
-            order_ref: 0,
+            order_ref: Arc::new(Default::default()),
             path: p,
             trader_api: api,
             trader_spi: None,
@@ -3344,7 +3345,7 @@ impl Interface for TdApi {
 
     fn send_order(&mut self, idx: usize, order: OrderRequest) {
         self.request_id += 1;
-        self.order_ref += 1;
+        self.order_ref.fetch_add(1, Ordering::SeqCst);
 
         let form = self.login_info();
         let req = CThostFtdcInputOrderField {
@@ -3359,7 +3360,7 @@ impl Interface for TdApi {
             CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
                 .unwrap()
                 .to_c_slice(),
-            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.to_string(), idx).to_c_slice(),
+            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.load(Ordering::SeqCst), idx).to_c_slice(),
             CombHedgeFlag: String::from_utf8(Vec::from([THOST_FTDC_HF_Speculation]))
                 .unwrap()
                 .to_c_slice(),
