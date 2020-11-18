@@ -2974,7 +2974,8 @@ impl TdCallApi for CallDataCollector {
             let order_ref = slice_to_string(&order.OrderRef);
             let id = format!("{}_{}_{}", order.SessionID, order.FrontID, order_ref);
             let (idx, refs) = split_into_vec(order_ref.as_str());
-            self.order_ref.store(self.order_ref.fetch_max(refs, Ordering::SeqCst), Ordering::SeqCst);
+
+            self.order_ref.fetch_max(refs, Ordering::SeqCst);
             let (date, time) = parse_datetime_from_str(order.InsertDate.as_ptr(),
                                                        order.InsertTime.as_ptr());
             let exchange = Exchange::from(order.ExchangeID);
