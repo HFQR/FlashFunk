@@ -1,11 +1,11 @@
 #![allow(
-    dead_code,
-    unused_must_use,
-    unused_variables,
-    non_camel_case_types,
-    non_snake_case,
-    non_upper_case_globals,
-    unused_imports
+dead_code,
+unused_must_use,
+unused_variables,
+non_camel_case_types,
+non_snake_case,
+non_upper_case_globals,
+unused_imports
 )]
 
 use std::env::var;
@@ -47,7 +47,7 @@ fn build(target: &str, out_path: PathBuf) {
 fn main() {
     mkdir_home_path(vec!["ctp"]);
 
-    let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+    let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).parent().unwrap().to_path_buf();
     // add c++ std library
     println!("cargo:rustc-link-lib=dylib=stdc++");
 
@@ -60,8 +60,10 @@ fn main() {
 
     // link to interface cpp
     println!("cargo:rustc-link-lib=dylib=stdc++");
-    let lib_dir = format!("{}/sdk_sources/ctp/lib", current_dir.to_str().unwrap());
-    let dylib_lib = format!("{}/sdk_sources/ctp/linux", current_dir.to_str().unwrap());
+
+    let p =current_dir.to_path_buf();
+    let lib_dir = format!("{}/flashfunk-interface/sdk_sources/ctp/lib", p.to_str().unwrap());
+    let dylib_lib = format!("{}/flashfunk-interface/sdk_sources/ctp/linux", p.to_str().unwrap());
 
     // println!("cargo:rustc-flags=-C link-args=-Wl,-rpath,{}", dylib_lib);
 

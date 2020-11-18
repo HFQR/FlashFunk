@@ -21,6 +21,7 @@ fn build(target: &str, out_path: PathBuf) {
     cc::Build::new()
         .file("src/ctp/src/ctp.cpp")
         .cpp(true)
+
         .warnings(false)
         .out_dir(get_interface_path(target))
         .include("/usr/include/")
