@@ -1,5 +1,5 @@
 use clickhouse_rs::types::{Block, Complex, Row};
-use chrono::{Utc, NaiveDateTime, DateTime};
+use chrono::{NaiveDateTime, DateTime};
 use chrono_tz::Tz;
 
 #[derive(Clone, Debug)]

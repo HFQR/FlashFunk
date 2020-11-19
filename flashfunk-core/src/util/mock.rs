@@ -32,21 +32,21 @@ impl Interface for MockMdApi {
     type Message = MdApiMessage;
 
     fn new(
-        _: impl Into<Vec<u8>>,
-        _: impl Into<Vec<u8>>,
+        id: impl Into<Vec<u8>>,
+        pwd: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
+        req: &LoginForm,
+        sender: GroupSender<Self::Message>,
     ) -> Self {
         MockMdApi {
             symbols,
-            sender: None,
+            sender: Option::from(sender),
             shutdown: Arc::new(AtomicBool::new(false)),
             handle: None,
         }
     }
 
-    fn connect(&mut self, _: &LoginForm, sender: GroupSender<Self::Message>) {
-        self.sender = Some(sender);
-    }
+    fn connect(&mut self) {}
 
     fn subscribe(&mut self) {
         let sender = self.sender.take().unwrap();
@@ -115,13 +115,18 @@ impl MockTdApi {
 impl Interface for MockTdApi {
     type Message = TdApiMessage;
 
-    fn new(id: impl Into<Vec<u8>>, pwd: impl Into<Vec<u8>>, symbols: Vec<&'static str>) -> Self {
-        println!("{:?}", symbols);
+    fn new(
+        id: impl Into<Vec<u8>>,
+        pwd: impl Into<Vec<u8>>,
+        symbols: Vec<&'static str>,
+        req: &LoginForm,
+        sender: GroupSender<Self::Message>,
+    ) -> Self {
         MockTdApi {
             acc: Account::new(),
             // fixme: 需要将这个更换为回测过程中的交易日， 每日阶段后进行切换
             date: Utc::today().naive_local(),
-            sender: None,
+            sender: Option::from(sender),
             current_tick: Default::default(),
         }
     }
@@ -138,9 +143,7 @@ impl Interface for MockTdApi {
     }
 
     /// 登录接口
-    fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {
-        self.sender = Some(sender)
-    }
+    fn connect(&mut self) {}
 
     /// 订阅行情
     fn subscribe(&mut self) {

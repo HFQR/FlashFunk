@@ -11,6 +11,7 @@ use flashfunk_core::interface::Interface;
 use flashfunk_core::prelude::*;
 use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
 use flashfunk_core::types::message::TdApiMessage;
+use flashfunk_core::MockMdApi;
 use flashfunk_codegen::Strategy;
 
 /// 價格

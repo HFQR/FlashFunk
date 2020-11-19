@@ -29,6 +29,11 @@ impl __Strategy {
     }
 
     pub fn name(&self) -> &'static str { self.name }
+
+    pub fn change_to(&mut self, name: &'static str, symbols: Vec<&'static str>) {
+        self.symbols = symbols;
+        self.name = name;
+    }
 }
 
 impl Deref for __Strategy {
@@ -64,5 +69,4 @@ pub trait Ac {
     fn on_l2_order(&mut self, order: &OrderData, ctx: &mut Context) {}
 
     fn on_l2_trade(&mut self, order: &TradeData, ctx: &mut Context) {}
-
 }

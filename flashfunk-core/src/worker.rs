@@ -163,23 +163,18 @@ pub(crate) fn start_workers<I, I2>(mut builder: CtpBuilder<'_, I, I2>)
     // 分配最后一个核心给主线程
     let core = cores.pop().unwrap();
     core_affinity::set_for_current(core);
-
+    let login_form = builder.login_form;
     // 构造interface
     let mut i = I::new(
         builder.id.as_ref(),
         builder.pwd.as_ref(),
-        symbols,
+        symbols, &login_form, s_md,
     );
-    let mut i2 = I2::new(builder.id.as_ref(), builder.pwd.as_ref(), vec![]);
+    let mut i2 = I2::new(builder.id.as_ref(), builder.pwd.as_ref(), vec![], &login_form, s_td);
+    // keep trade login first and then  login to market pointer
+    i2.connect();
+    i.connect();
 
-    let login_form = builder.login_form;
-
-    // 连接
-    i.connect(&login_form, s_md);
-    i2.connect(&login_form, s_td);
-
-    // 订阅
-    i.subscribe();
 
     // 启动策略工人线程。分配剩余的核心id给工人。
     workers.into_iter().for_each(|worker| {
@@ -193,7 +188,7 @@ pub(crate) fn start_workers<I, I2>(mut builder: CtpBuilder<'_, I, I2>)
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。
-const MESSAGE_LIMIT: usize = 1024usize;
+const MESSAGE_LIMIT: usize = 4024usize;
 
 // 帮助函数
 fn prepare_worker_channel<I, I2>(

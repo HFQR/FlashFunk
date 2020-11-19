@@ -5,7 +5,7 @@ authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
 
-build = "../build.rs"
+build = "../flashfunk-core/build.rs"
 
 [dependencies]
 ahash = "0.4.5"

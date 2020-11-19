@@ -5,8 +5,7 @@ authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
 
-build = "../build.rs"
-
+build = "build.rs"
 
 [dependencies]
 ahash = "0.4.5"
@@ -23,8 +22,6 @@ flashfunk-fetcher = { path = "../flashfunk-fetcher" }
 flashfunk-codegen = { path = "../flashfunk-codegen" }
 flashfunk-fetcher = { path = "../flashfunk-fetcher" }
 
-[http]
-timeout = 600
 
 [profile.release]
 lto = "fat"

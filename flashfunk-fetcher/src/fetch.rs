@@ -3,9 +3,7 @@ extern crate chrono_tz;
 extern crate clickhouse_rs;
 extern crate tokio;
 
-use clickhouse_rs::types::{Block};
 use clickhouse_rs::{Pool};
-use std::error::Error;
 use crate::model::Tick;
 use tokio::prelude::*;
 use std::ops::{Deref, DerefMut};

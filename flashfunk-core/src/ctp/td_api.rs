@@ -24,12 +24,14 @@ use crate::util::hash::HashMap;
 use crate::{get_interface_path, get_home_path};
 use std::fs::create_dir;
 use std::path::PathBuf;
+use std::process::id;
+use bitflags::_core::ops::Deref;
 
 const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
 const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
 
 unsafe fn get_trader_spi<'a>(spi: *mut c_void) -> &'a mut dyn TdCallApi {
-    &mut **(spi as *mut *mut dyn TdCallApi)
+    **(spi as *mut *mut &mut dyn TdCallApi)
 }
 
 /// # Safety
@@ -2678,21 +2680,13 @@ pub trait TdCallApi {
 
 /// 交易API
 pub struct TdApi {
-    order_ref: i32,
-    trader_api: *mut CThostFtdcTraderApi,
-    trader_spi: Option<*mut FCtpTdSpi>,
-    path: CString,
-    login_info: Option<LoginForm>,
+    data_collector: CallDataCollector,
     request_id: i32,
     front_id: i32,
     session_id: i32,
 }
 
 impl TdApi {
-    fn login_info(&self) -> &LoginForm {
-        self.login_info.as_ref().unwrap()
-    }
-
     pub(crate) fn session_id(&self) -> i32 {
         self.session_id
     }
@@ -2700,16 +2694,6 @@ impl TdApi {
     pub(crate) fn front_id(&self) -> i32 {
         self.front_id
     }
-}
-
-pub struct CallDataCollector {
-    login_status: bool,
-    connect_status: bool,
-    sender: GroupSender<TdApiMessage>,
-    blocker: Option<TdApiBlocker>,
-    pos: HashMap<Cow<'static, str>, PositionData>,
-    size_map: HashMap<Cow<'static, str>, f64>,
-    exchange_map: HashMap<Cow<'static, str>, Exchange>,
 }
 
 struct TdApiBlockerInner {
@@ -2730,6 +2714,7 @@ impl Clone for TdApiBlocker {
     }
 }
 
+
 impl TdApiBlocker {
     fn new() -> Self {
         Self(Arc::new(TdApiBlockerInner {
@@ -2743,6 +2728,25 @@ impl TdApiBlocker {
         }))
     }
 }
+
+pub struct CallDataCollector {
+    session_id: i32,
+
+    login_status: bool,
+    connect_status: bool,
+    sender: GroupSender<TdApiMessage>,
+    blocker: Option<TdApiBlocker>,
+    pos: HashMap<Cow<'static, str>, PositionData>,
+    size_map: HashMap<Cow<'static, str>, f64>,
+    exchange_map: HashMap<Cow<'static, str>, Exchange>,
+    order_ref: Arc<AtomicI32>,
+    trade_pointer: *mut CThostFtdcTraderApi,
+    login_form: LoginForm,
+    symbols: Vec<&'static str>,
+    pub request_id: i32,
+    pub front_id: i32,
+}
+
 
 impl TdCallApi for CallDataCollector {
     fn on_front_connected(&mut self) {
@@ -2919,9 +2923,7 @@ impl TdCallApi for CallDataCollector {
                 date: Utc::today(),
             };
             self.sender.send_all(account_data);
-        } else {
-
-        }
+        } else {}
         if self.blocker.is_some() {
             self.blocker.take().unwrap().0.step5.unblock();
         }
@@ -2975,6 +2977,8 @@ impl TdCallApi for CallDataCollector {
             let order_ref = slice_to_string(&order.OrderRef);
             let id = format!("{}_{}_{}", order.SessionID, order.FrontID, order_ref);
             let (idx, refs) = split_into_vec(order_ref.as_str());
+
+            self.order_ref.fetch_max(refs, Ordering::SeqCst);
             let (date, time) = parse_datetime_from_str(order.InsertDate.as_ptr(),
                                                        order.InsertTime.as_ptr());
             let exchange = Exchange::from(order.ExchangeID);
@@ -3198,10 +3202,10 @@ impl From<i8> for Direction {
     }
 }
 
-impl TdApi {
+impl CallDataCollector {
     pub fn auth(&mut self) {
         self.request_id += 1;
-        let form = self.login_info();
+        let form = &self.login_form;
         let req = CThostFtdcReqAuthenticateField {
             UserID: form._user_id().to_c_slice(),
             BrokerID: form._broke_id().to_c_slice(),
@@ -3211,7 +3215,7 @@ impl TdApi {
         };
         unsafe {
             RustCtpCallReqAuthenticate(
-                self.trader_api,
+                self.trade_pointer,
                 Box::into_raw(Box::new(req)) as *mut CThostFtdcReqAuthenticateField,
                 self.request_id,
             )
@@ -3220,7 +3224,7 @@ impl TdApi {
 
     pub fn login(&mut self) {
         self.request_id += 1;
-        let form = self.login_info();
+        let form = &(self.login_form);
 
         let login_req = CThostFtdcReqUserLoginField {
             BrokerID: form._broke_id().to_c_slice(),
@@ -3231,7 +3235,7 @@ impl TdApi {
         };
         unsafe {
             RustCtpCallReqUserLogin(
-                self.trader_api,
+                self.trade_pointer,
                 Box::into_raw(Box::new(login_req)),
                 self.request_id,
             )
@@ -3242,7 +3246,7 @@ impl TdApi {
         self.request_id += 1;
         unsafe {
             RustCtpCallReqQryInstrument(
-                self.trader_api,
+                self.trade_pointer,
                 Box::into_raw(Box::new(CThostFtdcQryInstrumentField::default())),
                 self.request_id,
             );
@@ -3252,48 +3256,33 @@ impl TdApi {
     /// 注册交易前值
     fn register_fronted(&mut self, register_addr: CString) {
         let front_socket_address_ptr = register_addr.into_raw();
-        unsafe { RustCtpCallRegisterFront(self.trader_api, front_socket_address_ptr) }
+        unsafe { RustCtpCallRegisterFront(self.trade_pointer, front_socket_address_ptr) }
     }
 
     pub fn init(&mut self) -> bool {
-        unsafe { RustCtpCallInit(self.trader_api) };
+        unsafe { RustCtpCallInit(self.trade_pointer) };
         true
     }
 
     fn register_spi(
         &mut self,
-        login_info: LoginForm,
-        sender: GroupSender<TdApiMessage>,
-        blocker: TdApiBlocker,
     ) {
-        self.login_info = Some(login_info);
-        let collector = CallDataCollector {
-            login_status: false,
-            connect_status: false,
-            sender,
-            blocker: Some(blocker),
-            pos: Default::default(),
-            size_map: Default::default(),
-            exchange_map: Default::default(),
-        };
-        // rust object
-        let trait_object_box: Box<Box<dyn TdCallApi>> = Box::new(Box::new(collector));
+        let trait_object_box: Box<Box<&mut TdCallApi>> = Box::new(Box::new(self));
         let trait_object_pointer =
-            Box::into_raw(trait_object_box) as *mut Box<dyn TdCallApi> as *mut c_void;
+            Box::into_raw(trait_object_box) as *mut Box<&mut dyn TdCallApi> as *mut c_void;
         // 把 rust对象 传给回调SPI
         let trader_spi = unsafe { FCtpTdSpi::new(trait_object_pointer) };
         let ptr = Box::into_raw(Box::new(trader_spi));
-        self.trader_spi = Some(ptr);
         unsafe {
-            RustCtpCallSubscribePrivateTopic(self.trader_api, 0);
-            RustCtpCallSubscribePublicTopic(self.trader_api, 0);
-            RustCtpCallRegisterSpi(self.trader_api, ptr as *mut CThostFtdcTraderSpi)
+            RustCtpCallSubscribePrivateTopic(self.trade_pointer, 0);
+            RustCtpCallSubscribePublicTopic(self.trade_pointer, 0);
+            RustCtpCallRegisterSpi(self.trade_pointer, ptr as *mut CThostFtdcTraderSpi)
         };
     }
 
     fn req_settle(&mut self) {
         self.request_id += 1;
-        let form = self.login_info();
+        let form = &(self.login_form);
         let req = CThostFtdcSettlementInfoConfirmField {
             BrokerID: form._broke_id().to_c_slice(),
             InvestorID: form._user_id().to_c_slice(),
@@ -3301,7 +3290,165 @@ impl TdApi {
         };
         unsafe {
             RustCtpCallReqSettlementInfoConfirm(
-                self.trader_api,
+                self.trade_pointer,
+                Box::into_raw(Box::new(req)),
+                self.request_id,
+            );
+        }
+    }
+
+    pub fn new(req: &LoginForm, symbols: Vec<&'static str>, sender: GroupSender<TdApiMessage>, trader_pointer: *mut CThostFtdcTraderApi) -> Self {
+        let blocker = TdApiBlocker::new();
+        CallDataCollector {
+            session_id: 0,
+            front_id: 0,
+            request_id: 0,
+            login_status: false,
+            connect_status: false,
+            sender: sender,
+            blocker: Option::from(blocker),
+            pos: Default::default(),
+            size_map: Default::default(),
+            exchange_map: Default::default(),
+            order_ref: Arc::new(Default::default()),
+            trade_pointer: trader_pointer,
+            login_form: req.clone(),
+            symbols,
+        }
+    }
+
+    pub fn send_order_local(&mut self, idx: usize, order: OrderRequest) {
+        self.request_id += 1;
+        self.order_ref.fetch_add(1, Ordering::SeqCst);
+
+        let form = &(self.login_form);
+        let req = CThostFtdcInputOrderField {
+            InstrumentID: order.symbol.as_str().to_c_slice(),
+            LimitPrice: order.price,
+            VolumeTotalOriginal: order.volume as c_int,
+            OrderPriceType: get_order_type(order.order_type),
+            Direction: get_direction(order.direction),
+            UserID: form._user_id().to_c_slice(),
+            InvestorID: form._user_id().to_c_slice(),
+            BrokerID: form._broke_id().to_c_slice(),
+            CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
+                .unwrap()
+                .to_c_slice(),
+            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.load(Ordering::SeqCst), idx).to_c_slice(),
+            CombHedgeFlag: String::from_utf8(Vec::from([THOST_FTDC_HF_Speculation]))
+                .unwrap()
+                .to_c_slice(),
+            ContingentCondition: THOST_FTDC_CC_Immediately as i8,
+            ForceCloseReason: THOST_FTDC_FCC_NotForceClose as i8,
+            IsAutoSuspend: 0 as c_int,
+            TimeCondition: THOST_FTDC_TC_GFD as i8,
+            VolumeCondition: THOST_FTDC_VC_AV as i8,
+            MinVolume: 1 as c_int,
+            ExchangeID: get_order_exchange(order.exchange).to_c_slice(),
+            ..CThostFtdcInputOrderField::default()
+        };
+        unsafe {
+            RustCtpCallReqOrderInsert(
+                self.trade_pointer,
+                Box::into_raw(Box::new(req)),
+                self.request_id,
+            )
+        };
+    }
+
+    fn connect(&mut self) {
+
+        // 阻塞器交给data collector
+        self.register_spi();
+
+        let addr = CString::new(self.login_form._td_address()).unwrap();
+
+        self.register_fronted(addr);
+
+        self.init();
+
+        // 阻塞等待on_front_connected
+        self.blocker.as_mut().unwrap().0.step1.block();
+
+        self.auth();
+
+        // 阻塞等待on_rsp_authenticate
+        self.blocker.as_mut().unwrap().0.step2.block();
+        self.login();
+
+        // 阻塞等待on_rsp_user_login
+        self.blocker.as_mut().unwrap().0.step3.block();
+
+        // on_rsp_user_login 完成时会写入atomic i32至blocker，我们读取并赋予TdApi.
+        self.session_id = self.blocker.as_mut().unwrap().0.session_id.load(Ordering::SeqCst);
+        self.front_id = self.blocker.as_mut().unwrap().0.front_id.load(Ordering::SeqCst);
+
+        self.req_settle();
+
+        self.req_instrument();
+        self.req_position();
+
+        //阻塞等待合約查詢完畢
+        self.blocker.as_mut().unwrap().0.step4.block();
+        // println!("第四步解封");
+
+        self.req_account();
+        // 阻塞等待賬戶查詢完畢
+        self.blocker.as_mut().unwrap().0.step5.block();
+    }
+
+    fn cancel(&mut self, req: CancelRequest) {
+        self.request_id += 1;
+        let exchange = req.exchange;
+        let data = req
+            .order_id
+            .split('_')
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
+        let form = &(self.login_form);
+        let action = CThostFtdcInputOrderActionField {
+            InstrumentID: req.symbol.to_c_slice(),
+            OrderRef: data[2].to_c_slice(),
+            FrontID: data[1].parse::<i32>().unwrap() as c_int,
+            SessionID: data[0].parse::<i32>().unwrap() as c_int,
+            ActionFlag: THOST_FTDC_AF_Delete as i8,
+            BrokerID: form._broke_id().to_c_slice(),
+            InvestorID: form._user_id().to_c_slice(),
+            ExchangeID: get_order_exchange(exchange).to_c_slice(),
+            ..CThostFtdcInputOrderActionField::default()
+        };
+        unsafe {
+            RustCtpCallReqOrderAction(
+                self.trade_pointer,
+                Box::into_raw(Box::new(action)),
+                self.request_id,
+            );
+        }
+    }
+
+    fn req_account(&mut self) {
+        self.request_id += 1;
+        unsafe {
+            RustCtpCallReqQryTradingAccount(
+                self.trade_pointer,
+                Box::into_raw(Box::new(CThostFtdcQryTradingAccountField::default())),
+                self.request_id,
+            );
+        }
+    }
+
+    fn req_position(&mut self) {
+        self.request_id += 1;
+        let login_info = &(self.login_form);
+        unsafe {
+            let req = CThostFtdcQryInvestorPositionField {
+                BrokerID: login_info._broke_id().to_c_slice(),
+                InvestorID: login_info._user_id().to_c_slice(),
+                ..CThostFtdcQryInvestorPositionField::default()
+            };
+            RustCtpCallReqQryInvestorPosition(
+                self.trade_pointer,
                 Box::into_raw(Box::new(req)),
                 self.request_id,
             );
@@ -3320,7 +3467,9 @@ impl Interface for TdApi {
         id: impl Into<Vec<u8>>,
         pwd: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
-    ) -> TdApi {
+        req: &LoginForm,
+        sender: GroupSender<Self::Message>,
+    ) -> Self {
         let home_path = get_home_path();
         let string = String::from_utf8(id.into()).unwrap();
         let path = home_path.to_string_lossy().to_string() + string.as_str() + "//";
@@ -3331,11 +3480,7 @@ impl Interface for TdApi {
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
         TdApi {
-            order_ref: 0,
-            path: p,
-            trader_api: api,
-            trader_spi: None,
-            login_info: None,
+            data_collector: CallDataCollector::new(req, symbols, sender, api),
             request_id: 0,
             front_id: 0,
             session_id: 0,
@@ -3343,142 +3488,23 @@ impl Interface for TdApi {
     }
 
     fn send_order(&mut self, idx: usize, order: OrderRequest) {
-        self.request_id += 1;
-        self.order_ref += 1;
-
-        let form = self.login_info();
-        let req = CThostFtdcInputOrderField {
-            InstrumentID: order.symbol.as_str().to_c_slice(),
-            LimitPrice: order.price,
-            VolumeTotalOriginal: order.volume as c_int,
-            OrderPriceType: get_order_type(order.order_type),
-            Direction: get_direction(order.direction),
-            UserID: form._user_id().to_c_slice(),
-            InvestorID: form._user_id().to_c_slice(),
-            BrokerID: form._broke_id().to_c_slice(),
-            CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
-                .unwrap()
-                .to_c_slice(),
-            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.to_string(), idx).to_c_slice(),
-            CombHedgeFlag: String::from_utf8(Vec::from([THOST_FTDC_HF_Speculation]))
-                .unwrap()
-                .to_c_slice(),
-            ContingentCondition: THOST_FTDC_CC_Immediately as i8,
-            ForceCloseReason: THOST_FTDC_FCC_NotForceClose as i8,
-            IsAutoSuspend: 0 as c_int,
-            TimeCondition: THOST_FTDC_TC_GFD as i8,
-            VolumeCondition: THOST_FTDC_VC_AV as i8,
-            MinVolume: 1 as c_int,
-            ExchangeID: get_order_exchange(order.exchange).to_c_slice(),
-            ..CThostFtdcInputOrderField::default()
-        };
-        unsafe {
-            RustCtpCallReqOrderInsert(
-                self.trader_api,
-                Box::into_raw(Box::new(req)),
-                self.request_id,
-            )
-        };
+        self.data_collector.send_order_local(idx, order)
     }
 
     fn cancel_order(&mut self, req: CancelRequest) {
-        self.request_id += 1;
-        let exchange = req.exchange;
-        let data = req
-            .order_id
-            .split('_')
-            .into_iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>();
-        let form = self.login_info();
-        let action = CThostFtdcInputOrderActionField {
-            InstrumentID: req.symbol.to_c_slice(),
-            OrderRef: data[2].to_c_slice(),
-            FrontID: data[1].parse::<i32>().unwrap() as c_int,
-            SessionID: data[0].parse::<i32>().unwrap() as c_int,
-            ActionFlag: THOST_FTDC_AF_Delete as i8,
-            BrokerID: form._broke_id().to_c_slice(),
-            InvestorID: form._user_id().to_c_slice(),
-            ExchangeID: get_order_exchange(exchange).to_c_slice(),
-            ..CThostFtdcInputOrderActionField::default()
-        };
-        unsafe {
-            RustCtpCallReqOrderAction(
-                self.trader_api,
-                Box::into_raw(Box::new(action)),
-                self.request_id,
-            );
-        }
+        self.data_collector.cancel(req)
     }
 
-    fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {
+    fn connect(&mut self) {
         // 建立线程阻塞器
-        let blocker = TdApiBlocker::new();
-
-        // 阻塞器交给data collector
-        self.register_spi(req.clone(), sender, blocker.clone());
-
-        let addr = CString::new(req._td_address()).unwrap();
-
-        self.register_fronted(addr);
-
-        self.init();
-
-        // 阻塞等待on_front_connected
-        blocker.0.step1.block();
-
-        self.auth();
-
-        // 阻塞等待on_rsp_authenticate
-        blocker.0.step2.block();
-        self.login();
-
-        // 阻塞等待on_rsp_user_login
-        blocker.0.step3.block();
-
-        // on_rsp_user_login 完成时会写入atomic i32至blocker，我们读取并赋予TdApi.
-        self.session_id = blocker.0.session_id.load(Ordering::SeqCst);
-        self.front_id = blocker.0.front_id.load(Ordering::SeqCst);
-
-        self.req_settle();
-
-        self.req_instrument();
-        self.req_position();
-
-        //阻塞等待合約查詢完畢
-        blocker.0.step4.block();
-        // println!("第四步解封");
-
-        self.req_account();
-        // 阻塞等待賬戶查詢完畢
-        blocker.0.step5.block();
+        self.data_collector.connect()
     }
 
     fn req_account(&mut self) {
-        self.request_id += 1;
-        unsafe {
-            RustCtpCallReqQryTradingAccount(
-                self.trader_api,
-                Box::into_raw(Box::new(CThostFtdcQryTradingAccountField::default())),
-                self.request_id,
-            );
-        }
+        self.data_collector.req_account();
     }
 
     fn req_position(&mut self) {
-        self.request_id += 1;
-        let login_info = self.login_info.as_ref().unwrap();
-        unsafe {
-            let req = CThostFtdcQryInvestorPositionField {
-                BrokerID: login_info._broke_id().to_c_slice(),
-                InvestorID: login_info._user_id().to_c_slice(),
-                ..CThostFtdcQryInvestorPositionField::default()
-            };
-            RustCtpCallReqQryInvestorPosition(
-                self.trader_api,
-                Box::into_raw(Box::new(req)),
-                self.request_id,
-            );
-        }
+        self.data_collector.req_position();
     }
 }
