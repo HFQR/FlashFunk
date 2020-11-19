@@ -96,10 +96,10 @@ pub struct OrderData {
 }
 
 
-impl From<Tick> for TickData {
-    fn from(tick: Tick) -> Self {
+impl From<&Tick> for TickData {
+    fn from(tick: &Tick) -> Self {
         TickData {
-            symbol: tick.local_symbol,
+            symbol: tick.local_symbol.clone(),
             exchange: Exchange::INIT,
             datetime: tick.datetime.clone(),
             name: "".to_string(),

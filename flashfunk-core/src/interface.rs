@@ -11,6 +11,8 @@ pub trait Interface {
         id: impl Into<Vec<u8>>,
         pwd: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
+        req: &LoginForm,
+        sender: GroupSender<Self::Message>,
     ) -> Self;
 
     /// 发单
@@ -20,7 +22,7 @@ pub trait Interface {
     fn cancel_order(&mut self, req: CancelRequest) {}
 
     /// 登录接口
-    fn connect(&mut self, req: &LoginForm, sender: GroupSender<Self::Message>) {}
+    fn connect(&mut self) {}
 
     /// 订阅行情
     fn subscribe(&mut self) {}
