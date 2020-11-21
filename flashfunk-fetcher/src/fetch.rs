@@ -8,6 +8,9 @@ use crate::model::Tick;
 use tokio::prelude::*;
 use std::ops::{Deref, DerefMut};
 use std::borrow::BorrowMut;
+use self::clickhouse_rs::pool::GetHandle;
+use futures::AndThen;
+use std::sync::mpsc::Sender;
 
 
 pub struct Client {
@@ -48,15 +51,19 @@ pub(crate) fn run<F, T, U>(future: F) -> Result<T, U>
     result
 }
 
-pub fn fetch_tick(code: &'static str, start: &'static str, end: &'static str, client: &Client) -> Vec<Tick> {
+pub fn fetch_tick(code: &'static str, start: &'static str, end: &'static str, client: &Client, sender: Sender<Tick>) {
     let sql = format!("SELECT * FROM tick WHERE (local_symbol=='{}') AND (datetime>='{}') AND (datetime<='{}')", code, start, end);
-    let data = client.get_handle()
+    let x = client.get_handle()
         .and_then(move |c| c.query(sql
         ).fetch_all())
         .and_then(move |(_, block)| {
-            Ok(Tick::new_with_block(block))
-        });
-    run(data).unwrap()
+            for row in block.rows() {
+                sender.send(Tick::new(row)).unwrap_or(());
+            }
+            Ok(())
+        }).map_err(|err| eprintln!("database error: {:?}", err));
+    ;
+    tokio::run(x)
 }
 
 
@@ -64,13 +71,25 @@ pub fn fetch_tick(code: &'static str, start: &'static str, end: &'static str, cl
 mod test {
     use super::clickhouse_rs::Pool;
     use crate::{fetch_tick, Client};
+    use std::thread;
+    use std::sync::mpsc::channel;
+
 
     #[test]
-    fn test_fetch_tick() {
+    #[tokio::main]
+    async fn test_fetch_tick() {
+        // now it not work
         let url = "tcp://10.0.0.34:9002/cy";
         let client = Client::new(url);
-        let data = fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00", &client);
-        let length = data.len();
-        assert_eq!(length, 12293usize)
+        // Create a simple streaming channel
+        let (tx, rx) = channel();
+        thread::spawn(move || {
+            while true {
+                let tick = rx.recv().unwrap();
+                println!("price: {}", tick.last_price);
+            }
+        });
+
+        fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00", &client, tx);
     }
 }

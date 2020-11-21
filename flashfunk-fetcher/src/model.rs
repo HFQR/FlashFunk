@@ -41,7 +41,7 @@ impl Tick {
     pub fn new_with_block(block: Block<Complex>) -> Vec<Tick> {
         block.rows().into_iter().map(|x| { Tick::new(x) }).collect::<Vec<Tick>>()
     }
-    fn new(row: Row<Complex>) -> Tick {
+    pub fn new(row: Row<Complex>) -> Tick {
         let x: DateTime<Tz> = row.get("datetime").unwrap();
         Tick {
             local_symbol: row.get("local_symbol").unwrap(),

@@ -6,6 +6,8 @@ edition = "2018"
 description = "This project are used to fetch history tick data from clickhouse database"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+
+
 [dependencies]
 chrono = "0.4"
 chrono-tz = { version = "0.5", features = ["serde"] }
