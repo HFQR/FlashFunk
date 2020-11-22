@@ -1,6 +1,6 @@
 use std::any::Any;
-use std::sync::mpsc::{sync_channel, SyncSender};
 use std::error::Error;
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 
 use async_trait::async_trait;
 use clickhouse_rs::Pool;
@@ -22,8 +22,8 @@ type SqlFormat = String;
 
 // 定义sql语句和逻辑的trait
 #[async_trait]
-pub trait SqlQuery {
-    type SqlResult;
+pub trait SqlQuery: Send + Sync {
+    type SqlResult: Send + 'static;
 
     fn sql(&self) -> SqlFormat;
 
@@ -32,7 +32,7 @@ pub trait SqlQuery {
 
 #[async_trait]
 impl SqlQuery for TickQuery {
-    type SqlResult = Result<Vec<Tick>, Box<dyn std::error::Error + Send + Sync + 'static>>;
+    type SqlResult = Result<Vec<Tick>, Box<dyn Error + Send + Sync + 'static>>;
 
     fn sql(&self) -> SqlFormat {
         let mut sql = SqlFormat::new();
@@ -84,14 +84,14 @@ impl SqlQuery for TickQuery {
 
 // 中间trait，用来消除类型
 #[async_trait]
-trait SqlQueryMessageHandler {
+trait SqlQueryMessageHandler: Send + Sync {
     // SyncSender使用any类型返回结果，用来解放类型绑定。
     async fn handle(&mut self, pool: &Pool, sender: SyncSender<Box<dyn Any + Send>>);
 }
 
 // impl 中间trait. 使类型不在关联<TickQuery as SqlQuery>::SqlResult
 #[async_trait]
-impl SqlQueryMessageHandler for TickQuery {
+impl<Q: SqlQuery> SqlQueryMessageHandler for Q {
     async fn handle(&mut self, pool: &Pool, sender: SyncSender<Box<dyn Any + Send>>) {
         let res = self.query(pool).await;
         // 在转换为any类型前用Option包裹结果，方便后面取出所有权。
@@ -101,11 +101,27 @@ impl SqlQueryMessageHandler for TickQuery {
 
 // 此类型存放box的中间trait和发送sql结果的通道发送端
 struct SqlQueryMessage {
-    query: Box<dyn SqlQueryMessageHandler + Send>,
-    sender: SyncSender<Box<dyn Any + Send>>,
+    query: Box<dyn SqlQueryMessageHandler>,
+    tx: SyncSender<Box<dyn Any + Send>>,
 }
 
-// static tokio handle。第一次调用的时候会lazy生成 clickhouse客户端和tokio运行时。并返回通道入口。
+impl SqlQueryMessage {
+    // 构造 回程通道和消息
+    fn new_with_recv(
+        query: impl SqlQueryMessageHandler + 'static,
+    ) -> (Self, Receiver<Box<dyn Any + Send>>) {
+        let (tx, rx) = sync_channel(1);
+
+        let this = Self {
+            query: Box::new(query),
+            tx,
+        };
+
+        (this, rx)
+    }
+}
+
+// 静态tokio handle。第一次调用的时候会惰性生成 clickhouse客户端和tokio运行时。并返回通道入口。
 static HANDLE: Lazy<UnboundedSender<SqlQueryMessage>> = Lazy::new(|| {
     let url = std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap());
     let pool = Pool::new(url);
@@ -121,7 +137,7 @@ static HANDLE: Lazy<UnboundedSender<SqlQueryMessage>> = Lazy::new(|| {
             .block_on(async move {
                 while let Some(msg) = rx.next().await {
                     let mut handle = msg.query;
-                    let sender = msg.sender;
+                    let sender = msg.tx;
                     handle.handle(&pool, sender).await;
                 }
             })
@@ -130,33 +146,27 @@ static HANDLE: Lazy<UnboundedSender<SqlQueryMessage>> = Lazy::new(|| {
     tx
 });
 
-// 外部调用者不应该负责sql的建立和销毁，他们需要的只是输入query返回tick
 pub fn fetch_tick(
     code: impl Into<String>,
     start: impl Into<String>,
     end: impl Into<String>,
     // 这里使用TickQuery的关联类型，避免后面的downcast类型错误
 ) -> <TickQuery as SqlQuery>::SqlResult {
-
     // 构造 query
-    let query = TickQuery { code: code.into(), start: start.into(), end: end.into() };
-
-    // 构造 接收返回数据的通道
-    let (tx, rx) = sync_channel(1);
-
-    // 打包消息
-    let msg = SqlQueryMessage {
-        query: Box::new(query),
-        sender: tx,
+    let query = TickQuery {
+        code: code.into(),
+        start: start.into(),
+        end: end.into(),
     };
 
+    // 打包消息
+    let (msg, rx) = SqlQueryMessage::new_with_recv(query);
+
     // 发送消息， 这里应该处理错误
-    HANDLE.unbounded_send(msg).unwrap();
+    HANDLE.unbounded_send(msg)?;
 
     // downcast类型是运行时错误，用<TickQuery as SqlQuery>::SqlResult的关联类型确保一致性
-    // 此处只有recv的错误需要处理
-    rx.recv()
-        .unwrap()
+    rx.recv()?
         // downcast为Option的原因在 SqlQueryMessageHandler::handle 方法中
         .downcast_mut::<Option<<TickQuery as SqlQuery>::SqlResult>>()
         .unwrap()
@@ -170,6 +180,7 @@ mod test {
 
     #[test]
     fn test_fetch_tick() {
-        let data = fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00");
+        let ticks =
+            fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00").unwrap();
     }
 }
