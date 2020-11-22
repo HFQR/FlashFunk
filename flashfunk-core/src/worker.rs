@@ -48,6 +48,10 @@ impl<I, M> MainWorker<I>
                     StrategyMessage::CancelRequest(req) => {
                         interface.cancel_order(req);
                     }
+                    // MainWorker -> MockTdApi
+                    StrategyMessage::MockTdTickData(quote) =>{
+                        interface.update_quote(quote);
+                    }
                     _ => unimplemented!(),
                 });
 

@@ -27,7 +27,8 @@ pub mod prelude {
     pub use crate::types::message::StrategyMessage;
 }
 
-pub use util::mock::MockMdApi;
+pub use util::mock::{MockMdApi,MockTdApi};
+pub use util::channel::{GroupSender};
 
 
 fn get_home_path() -> PathBuf {

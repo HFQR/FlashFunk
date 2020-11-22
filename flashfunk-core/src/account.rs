@@ -1,7 +1,7 @@
 use chrono::{Date, Utc};
 use std::borrow::Cow;
 
-use crate::constants::{Direction, Offset};
+use crate::constants::{Direction, Offset, Status};
 use crate::structs::PositionData;
 use crate::structs::{DailyResult, OrderData, Params, TickData, TradeData};
 use crate::util::hash::HashMap;
@@ -139,11 +139,11 @@ impl Account {
         }
     }
     /// return size by passed symbol
-    fn get_size_map(&self, symbol: &str) -> f64 {
+    pub fn get_size_map(&self, symbol: &str) -> f64 {
         self.size_map.get(symbol).copied().unwrap_or(0.0)
     }
     /// return commission_ration by passed symbol
-    fn get_commission_ratio(&self, symbol: &str) -> f64 {
+    pub fn get_commission_ratio(&self, symbol: &str) -> f64 {
         self.commission_ratio.get(symbol).copied().unwrap_or(0.0)
     }
     /// return margin_ratio by passed symbol
@@ -157,6 +157,15 @@ impl Account {
         let symbol = data.symbol.as_str();
         let commission_ratio = self.get_commission_ratio(&symbol);
 
+        match data.status {
+            Status::CANCELLED => {
+                // Remove Margin frozen
+                self.margin_frozen_container
+                    .remove(&data.orderid.clone().unwrap());
+            }
+            _ => {},
+        }
+
         match data.offset {
             Offset::OPEN => {
                 // Add Margin frozen
@@ -164,7 +173,7 @@ impl Account {
                 self.margin_frozen_container
                     .insert(data.orderid.unwrap(), data.volume * data.price * ratio);
             }
-            _ => unimplemented!(),
+            _ => {},
         }
 
         self.frozen_fee
