@@ -1,6 +1,6 @@
-use clickhouse_rs::types::{Block, Complex, Row};
-use chrono::{NaiveDateTime, DateTime};
+use chrono::{DateTime, NaiveDateTime};
 use chrono_tz::Tz;
+use clickhouse_rs::types::{Block, Complex, Row};
 
 #[derive(Clone, Debug)]
 pub struct Tick {
@@ -39,9 +39,13 @@ pub struct Tick {
 impl Tick {
     // 遍历column
     pub fn new_with_block(block: Block<Complex>) -> Vec<Tick> {
-        block.rows().into_iter().map(|x| { Tick::new(x) }).collect::<Vec<Tick>>()
+        block
+            .rows()
+            .into_iter()
+            .map(|x| Tick::new(x))
+            .collect::<Vec<Tick>>()
     }
-    fn new(row: Row<Complex>) -> Tick {
+    pub fn new(row: Row<Complex>) -> Tick {
         let x: DateTime<Tz> = row.get("datetime").unwrap();
         Tick {
             local_symbol: row.get("local_symbol").unwrap(),
@@ -77,5 +81,3 @@ impl Tick {
         }
     }
 }
-
-
