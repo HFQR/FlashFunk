@@ -38,9 +38,9 @@ impl SqlQuery for TickQuery {
         let mut sql = SqlFormat::new();
 
         // 常见sql字段应打包作为const
-        sql.push_str("SELECT *");
-        sql.push_str("FROM tick");
-        sql.push_str("WHERE");
+        sql.push_str("SELECT * ");
+        sql.push_str("FROM tick ");
+        sql.push_str("WHERE ");
 
         // 分段format。sql的性能开销重要性低于可读性和正确性。
         sql.push_str(&format!("(local_symbol=='{}')", self.code));
@@ -107,8 +107,7 @@ struct SqlQueryMessage {
 
 // static tokio handle。第一次调用的时候会lazy生成 clickhouse客户端和tokio运行时。并返回通道入口。
 static HANDLE: Lazy<UnboundedSender<SqlQueryMessage>> = Lazy::new(|| {
-    let url = "tcp://10.0.0.34:9002/cy";
-
+    let url = std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap());
     let pool = Pool::new(url);
 
     let (tx, mut rx) = unbounded::<SqlQueryMessage>();
