@@ -323,9 +323,98 @@ impl MockTdApi {
         }
     }
 
-    // todo 排队精细（尽可能分离成交量，支持部分成交）
+    // todo 排队精细（考虑委托数量，支持部分成交）
     fn match_order_mode_2(&mut self) {
-        unimplemented!();
+        for (id, order) in self.active_order_map.clone(){
+            let order_price: f64 = order.price;
+            let order_dir: Direction = order.direction.unwrap();
+            let order_vol: i32 = order.volume as i32;
+            let mut trade_price: f64 = 0.0;
+            let mut trade_vol: i32 = 0;
+
+            let queue_num: i32 = self.queue_num_map.get(&id).unwrap().clone();
+            let mut new_queue_num_head: i32 = 0;
+        
+            let current_tick: &TickData = &self.current_tick;
+            let old_tick: &TickData = &self.old_tick;
+
+            if order.symbol != current_tick.symbol{
+                continue;
+            }
+            if (order.direction.unwrap() == Direction::LONG) && (order.price >= self.current_tick.bid_price(0)){
+                trade_price = order.price.min(self.current_tick.ask_price(0));
+            }
+            else if (order.direction.unwrap() == Direction::SHORT) && (order.price <= self.current_tick.ask_price(0)){
+                trade_price = order.price.max(self.current_tick.bid_price(0));
+            }
+            else {
+                if queue_num > 0{
+                    // 获取该订单价格在订单簿上的挂单量，考虑自身长度
+                    new_queue_num_head = self.get_vol_form_orderbook(&order, current_tick) - order_vol;
+                    new_queue_num_head = new_queue_num_head.min(queue_num);
+                    // fixme 这里需要acc支持获取合约乘数
+                    //let ab_tuple: (f64, f64) = self.calc_volume(self.acc.get_size_map(current_tick.symbol.as_ref()));
+                    let ab_tuple: (f64, f64) = self.calc_volume(10.0);
+                    if order_dir == Direction::LONG 
+                        && current_tick.bid_price(0) == order_price && old_tick.bid_price(0) == order_price{
+                            new_queue_num_head = new_queue_num_head.min(queue_num - ab_tuple.1 as i32);
+                    }
+                    if order_dir == Direction::SHORT 
+                        && current_tick.ask_price(0) == order_price && old_tick.ask_price(0) == order_price{
+                            new_queue_num_head = new_queue_num_head.min(queue_num - ab_tuple.0 as i32);
+                    }
+                    if new_queue_num_head > 0{
+                        self.queue_num_map.insert(id, new_queue_num_head);
+                        continue;
+                    }
+                    else{
+                        // 计算全成还是部成
+                        trade_vol = 1-new_queue_num_head;
+                        trade_price = order_price;
+                    }
+                }
+                else{
+                    // 不应该出现这种情况
+                    println!("请检查排队撮合逻辑");
+                    trade_vol = order_vol;
+                    trade_price = order_price;
+                }
+            }
+            self.trade_id += 1;
+            let trade_data = TradeData{
+                symbol: Cow::from(order.symbol),
+                exchange: Some(order.exchange),
+                datetime: current_tick.datetime,
+                orderid: Option::from(id.clone()),
+                direction: order.direction,
+                offset: Some(order.offset),
+                price: trade_price,
+                volume: trade_vol as i32,
+                tradeid: Some(self.trade_id.to_string()),
+            };
+            // 处理 order
+            let mut order_data = self.active_order_map.remove(&id).unwrap();
+            self.queue_num_map.remove(&id);
+
+            if trade_vol == order_vol {
+                order_data.status = Status::ALLTRADED;
+            }
+            else {
+                order_data.status = Status::PARTTRADED;
+                order_data.volume = (order_vol - trade_vol) as f64;
+                self.active_order_map.insert(id.clone(), order_data.clone());
+                self.queue_num_map.insert(id.clone(), 1);
+            }
+            let temp_vec: Vec<&str> = id.split("_").collect();
+            let idx = temp_vec[0].to_string().parse::<usize>().unwrap();
+            
+            self.acc.update_order(order_data.clone());
+            self.sender.try_send_to(order_data, idx).unwrap_or(());
+
+            // 处理 trade
+            self.acc.update_trade(trade_data.clone());
+            self.sender.try_send_to(trade_data, idx).unwrap_or(());
+        }
     }
     
     // 驱动Td运行
