@@ -78,7 +78,7 @@ pub enum StrategyMessage {
     OrderRequest(OrderRequest),
     CancelRequest(CancelRequest),
     QueryReq(QueryRequest),
-    MockTdTickData(&'static TickData),
+    MockTdTickData(TickData),
 }
 
 impl From<OrderRequest> for StrategyMessage {
@@ -99,8 +99,8 @@ impl From<QueryRequest> for StrategyMessage {
     }
 }
 
-impl From<&'static TickData> for StrategyMessage {
-    fn from(data: &'static TickData) -> Self {
+impl From<TickData> for StrategyMessage {
+    fn from(data: TickData) -> Self {
         Self::MockTdTickData(data)
     }
 }

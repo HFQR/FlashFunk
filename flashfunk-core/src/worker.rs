@@ -50,7 +50,7 @@ impl<I, M> MainWorker<I>
                     }
                     // MainWorker -> MockTdApi
                     StrategyMessage::MockTdTickData(quote) =>{
-                        interface.update_quote(quote);
+                        interface.update_quote(&quote);
                     }
                     _ => unimplemented!(),
                 });

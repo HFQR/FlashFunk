@@ -39,5 +39,5 @@ bindgen = "0.55.1"
 cc = "1.0"
 
 [[example]]
-name = "call"
-path = "../examples/call.rs"
+name = "backtest"
+path = "../examples/backtest_demo.rs"

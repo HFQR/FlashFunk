@@ -1,5 +1,5 @@
-/// This file provide how to build an back
-///
+#![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
+
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 
@@ -7,20 +7,18 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
-use crate::interface::Interface;
-use crate::structs::{LoginForm, TickData, CancelRequest, OrderRequest, OrderData};
-use crate::types::message::{MdApiMessage, TdApiMessage};
-use crate::util::channel::{GroupSender};
-use crate::account::Account;
-use chrono::NaiveDate;
-use flashfunk::structs::{TickData, LoginForm};
-use flashfunk::interface::Interface;
-use flashfunk::types::message::{MdApiMessage, StrategyMessage};
-use flashfunk_fetcher::{Tick, fetch_tick, Client};
-use flashfunk::ctp::td_api::TdApi;
-use flashfunk::prelude::{CtpbeeR, Context};
-use flashfunk::ac::Ac;
+use chrono::{Local, NaiveDateTime};
+use flashfunk_core::interface::Interface;
+use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
+use flashfunk_core::types::message::{TdApiMessage, MdApiMessage, StrategyMessage};
+use flashfunk_core::prelude::*;
+use flashfunk_core::ac::Ac;
+use flashfunk_core::constants::{Status, Direction};
+use flashfunk_core::{GroupSender,MockMdApi,MockTdApi};
+use flashfunk_fetcher::{Tick, fetch_tick};
+use flashfunk_codegen::Strategy;
 
+/*
 pub struct LocalMdApi {
     symbols: Vec<&'static str>,
     sender: Option<GroupSender<MdApiMessage>>,
@@ -44,24 +42,19 @@ impl Interface for LocalMdApi {
         _: impl Into<Vec<u8>>,
         _: impl Into<Vec<u8>>,
         symbols: Vec<&'static str>,
+        _: &LoginForm,
+        group_sender: GroupSender<Self::Message>,
     ) -> Self {
         LocalMdApi {
             symbols,
-            sender: None,
+            sender: Option::from(group_sender),
             shutdown: Arc::new(AtomicBool::new(false)),
             handle: None,
         }
     }
 
-    fn connect(&mut self, _: &LoginForm, sender: GroupSender<Self::Message>) {
-        self.sender = Some(sender);
-    }
-
     fn subscribe(&mut self) {
-        // In here we fetch data from clickhouse and write an algorithm to send data sync
-        let url = "tcp://10.0.0.34:9002/cy";
-        let client = Client::new(url);
-        let mut tick_vec = fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00", &client);
+        let mut ticks: Vec<Tick> = fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00").unwrap();
         let sender = self.sender.take().unwrap();
         let shutdown = self.shutdown.clone();
 
@@ -87,7 +80,7 @@ impl Interface for LocalMdApi {
                             tokio::time::sleep(Duration::from_millis(500)).await;
 
                             // 在这里修改tick data数据;
-                            let tick = TickData::from(tick_vec.remove(0));
+                            let tick = TickData::from(&ticks.remove(0));
                             let msg: &'static TickData = Box::leak(Box::new(tick));
                             sender.send_all(msg);
                         }
@@ -101,7 +94,7 @@ impl Interface for LocalMdApi {
         self.handle = Some(handle);
     }
 }
-
+*/
 #[derive(Strategy)]
 #[name("阿呆")]
 #[symbol("OI101")]
@@ -113,6 +106,7 @@ pub struct HelloFlash {
 
 impl Ac for HelloFlash {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
+        ctx.send(tick.clone());
         println!("code: {:?} {}", tick.symbol, tick.last_price)
     }
 }
@@ -130,8 +124,8 @@ fn main() {
         .production_info("");
     let hello = HelloFlash {
     };
-    CtpbeeR::builder::<LocalMdApi, TdApi, _>("ctpbee")
-        .strategies(vec![strategy_1.into_str()])
+    CtpbeeR::builder::<MockMdApi, MockTdApi, _>("ctpbee")
+        .strategies(vec![hello.into_str()])
         .id("name")
         .pwd("id")
         .path("bug")

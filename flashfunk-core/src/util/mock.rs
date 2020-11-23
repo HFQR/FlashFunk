@@ -14,6 +14,7 @@ use chrono::{NaiveDate, Utc};
 use crate::util::hash::HashMap;
 use crate::constants::{Status, Direction};
 use std::borrow::Cow;
+use flashfunk_fetcher::{Tick, fetch_tick};
 
 pub struct MockMdApi {
     symbols: Vec<&'static str>,
@@ -52,6 +53,7 @@ impl Interface for MockMdApi {
     fn connect(&mut self) {}
 
     fn subscribe(&mut self) {
+        let mut ticks: Vec<Tick> = fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00").unwrap();
         let sender = self.sender.take().unwrap();
         let shutdown = self.shutdown.clone();
         let handle = std::thread::spawn(move || {
@@ -76,8 +78,9 @@ impl Interface for MockMdApi {
                             tokio::time::sleep(Duration::from_millis(500)).await;
 
                             // 在这里修改tick data数据;
-
-                            let msg: &'static TickData = Box::leak(Box::new(TickData::default()));
+                            let tick = TickData::from(&ticks.remove(0));
+                            let msg: &'static TickData = Box::leak(Box::new(tick));
+                            //let msg: &'static TickData = Box::leak(Box::new(TickData::default()));
 
                             sender.send_all(msg);
                         }
@@ -124,14 +127,14 @@ impl MockTdApi {
     }
 
     // 估计盘口成交分布 -> (vol_on_ask,vol_on_bid)
-    fn calc_volume(&self) -> (f64, f64){
+    fn calc_volume(&self, size:f64) -> (f64, f64){
         let current_volume = self.current_tick.volume - self.old_tick.volume;
         let current_turnOver = self.current_tick.amount - self.old_tick.amount;
         let old_ask = self.old_tick.ask_price(0);
         let old_bid = self.old_tick.bid_price(0);
 
         if current_volume > 0{
-            let avg_price = current_turnOver / current_volume as f64 / self.acc.get_size_map(self.current_tick.symbol.as_ref());
+            let avg_price = current_turnOver / current_volume as f64 / size;
             let ratio = (avg_price - old_bid) / (old_ask - old_bid);
             let ratio = ratio.max(0.0);
             let ratio = ratio.min(1.0);
@@ -262,7 +265,9 @@ impl MockTdApi {
                     new_queue_num = self.get_vol_form_orderbook(&order, current_tick);
                     new_queue_num = new_queue_num.min(queue_num);
                     // 估算上一个时间段在买卖一档的成交量
-                    let ab_tuple: (f64, f64) = self.calc_volume();
+                    // fixme 这里需要acc支持获取合约乘数
+                    //let ab_tuple: (f64, f64) = self.calc_volume(self.acc.get_size_map(current_tick.symbol.as_ref()));
+                    let ab_tuple: (f64, f64) = self.calc_volume(10.0);
                     // 只有在发生上述成交时，订单持续维持在一档，才认为位置前移
                     // 前移后的值和当前挂单量取最优
                     if order_dir == Direction::LONG 
