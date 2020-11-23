@@ -16,6 +16,8 @@ use crate::constants::{Status, Direction};
 use std::borrow::Cow;
 use flashfunk_fetcher::{Tick, fetch_tick};
 
+const QUEUE_INIT: i32 = 888_888;
+
 pub struct MockMdApi {
     symbols: Vec<&'static str>,
     sender: Option<GroupSender<MdApiMessage>>,
@@ -166,7 +168,7 @@ impl MockTdApi {
                 return tick.bid_volume(4) as i32;
             }
             else{
-                return 8888;
+                return QUEUE_INIT;
             }
         }
         else {
@@ -186,7 +188,7 @@ impl MockTdApi {
                 return tick.ask_volume(4) as i32;
             }
             else {
-                return 8888;
+                return QUEUE_INIT;
             }
         }
     }
@@ -386,7 +388,7 @@ impl Interface for MockTdApi {
             // 冻结账户保证金
             self.acc.update_order(order_data.clone());
             self.active_order_map.insert(order_data.orderid.clone().unwrap(), order_data.clone());
-            self.queue_num_map.insert(order_data.orderid.clone().unwrap().clone(), 8888);
+            self.queue_num_map.insert(order_data.orderid.clone().unwrap().clone(), QUEUE_INIT);
             self.sender.try_send_to(order_data, idx).unwrap_or(());
         }
         else{
