@@ -9,11 +9,11 @@ use std::thread::JoinHandle;
 
 use chrono::{Local, NaiveDateTime};
 use flashfunk_core::interface::Interface;
-use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
+use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData, TradeData};
 use flashfunk_core::types::message::{TdApiMessage, MdApiMessage, StrategyMessage};
 use flashfunk_core::prelude::*;
 use flashfunk_core::ac::Ac;
-use flashfunk_core::constants::{Status, Direction};
+use flashfunk_core::constants::{Status, Direction, Exchange, OrderType, Offset};
 use flashfunk_core::{GroupSender,MockMdApi,MockTdApi};
 use flashfunk_fetcher::{Tick, fetch_tick};
 use flashfunk_codegen::Strategy;
@@ -107,12 +107,36 @@ pub struct HelloFlash {
 impl Ac for HelloFlash {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         ctx.send(tick.clone());
-        println!("code: {:?} {}", tick.symbol, tick.last_price)
+        println!("{:?} -- ask:{} bid:{}", tick.symbol, tick.ask_price(0), tick.bid_price(0));
+        let pos = ctx.get_position(&String::from("ni2102.SHFE"));
+        println!("current long pos: {}",pos.long_today_volume());
+        println!("current short pos: {}",pos.short_today_volume());
+        let req = OrderRequest {
+            symbol: "ni2102.SHFE".to_string(),
+            exchange: Exchange::SHFE,
+            direction: Direction::LONG,
+            order_type: OrderType::LIMIT,
+            volume: 1.0,
+            price: tick.last_price - 1.0,
+            offset: Offset::OPEN,
+            reference: None,
+        };
+        ctx.send(req);
+        
+    }
+
+    fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
+        println!("on order orderid:{}", order.orderid.as_ref().unwrap());
+    }
+
+    fn on_trade(&mut self, trade: &TradeData, ctx: &mut Context) {
+        println!("on trade tradeid:{}", trade.tradeid.as_ref().unwrap());
     }
 }
 
 
 fn main() {
+    println!("{}",std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap()));
     let login_form = LoginForm::new()
         .user_id("170874")
         .password("wi1015..")

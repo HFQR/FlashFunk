@@ -179,7 +179,6 @@ pub(crate) fn start_workers<I, I2>(mut builder: CtpBuilder<'_, I, I2>)
     i2.connect();
     i.connect();
 
-
     // 启动策略工人线程。分配剩余的核心id给工人。
     workers.into_iter().for_each(|worker| {
         let core = cores.pop().expect("Too many strategies");

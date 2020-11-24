@@ -52,10 +52,13 @@ impl Interface for MockMdApi {
         }
     }
 
-    fn connect(&mut self) {}
+    fn connect(&mut self) {
+        self.subscribe();
+    }
 
     fn subscribe(&mut self) {
-        let mut ticks: Vec<Tick> = fetch_tick("rb2101.SHFE", "2020-11-05 09:00:00", "2020-11-05 11:00:00").unwrap();
+        let mut ticks: Vec<Tick> = fetch_tick("ni2102.SHFE", "2020-11-04 09:00:00", "2020-11-04 10:00:00").unwrap();
+        println!("{}",ticks.len());
         let sender = self.sender.take().unwrap();
         let shutdown = self.shutdown.clone();
         let handle = std::thread::spawn(move || {
@@ -471,7 +474,7 @@ impl Interface for MockTdApi {
         // 判断可用保证金是否充足
         let need_forzen = order.volume * order.price * self.acc.get_size_map(order.symbol.as_str()) * self.acc.get_commission_ratio(order.symbol.as_str());
         let ava = self.acc.available();
-        if ava > need_forzen {
+        if ava >= need_forzen {
             // 下单成功
             let order_data = self.change_req_to_data(idx, self.req_id, order);
             // 冻结账户保证金
