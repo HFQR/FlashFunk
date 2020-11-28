@@ -27,8 +27,8 @@ pub mod prelude {
     pub use crate::types::message::StrategyMessage;
 }
 
+#[cfg(feature = "mock")]
 pub use util::mock::MockMdApi;
-
 
 fn get_home_path() -> PathBuf {
     let px = format!("{}/.HFQ/", var("HOME").unwrap().clone());
