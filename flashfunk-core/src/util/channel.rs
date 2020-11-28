@@ -36,6 +36,15 @@ pub struct GroupSender<M> {
     group: Vec<Vec<usize>>,
 }
 
+impl<M> Default for GroupSender<M> {
+    fn default() -> Self {
+        Self {
+            sender: Vec::with_capacity(0),
+            group: Vec::with_capacity(0)
+        }
+    }
+}
+
 impl<M> GroupSender<M> {
     pub(crate) fn new(sender: Vec<Sender<M>>, group: Vec<Vec<usize>>) -> Self {
         Self { sender, group }

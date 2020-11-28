@@ -42,3 +42,4 @@ pub trait Interface {
     /// 更新交易接口的訂單
     fn update_quote(&mut self, quote: &TickData) {}
 }
+

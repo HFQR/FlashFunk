@@ -16,12 +16,13 @@ use crate::ctp::func::QuoteApi;
 use crate::ctp::sys::{another_slice_to_string, check_slice_to_string, slice_to_string, CThostFtdcDepthMarketDataField, CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField, CThostFtdcMdApi, CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront, CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData, CThostFtdcMdSpi, CThostFtdcReqUserLoginField, CThostFtdcRspInfoField, CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField, CThostFtdcTraderApi, CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi, QuoteSpi_Destructor, TThostFtdcErrorIDType, TThostFtdcRequestIDType, parse_datetime_from_str, parse_datetime_from_str_with_mill, ToCSlice};
 use crate::interface::Interface;
 use crate::structs::{CancelRequest, LoginForm, OrderRequest, TickData};
-use crate::types::message::MdApiMessage;
+use crate::types::message::{MdApiMessage, StrategyMessage};
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use crate::{get_interface_path, get_home_path};
 use std::fs::create_dir;
 use std::path::PathBuf;
+use crate::builder::Interface2;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -308,14 +309,63 @@ impl Interface for MdApi {
     fn connect(&mut self) {
         self.collector.connect();
     }
-
-    fn subscribe(&mut self) {
-        self.collector.subscribe();
-    }
 }
 
 impl Drop for MdApi {
     fn drop(&mut self) {
         self.collector.release();
     }
+}
+
+impl Interface2 for MdApi {
+    type Factory = MdApiFactory;
+    type Message = MdApiMessage;
+    type Request = StrategyMessage;
+
+    fn ready(mut factory: MdApiFactory) -> Self {
+        let home_path = get_home_path();
+        let string = String::from_utf8(factory.id).unwrap();
+        let path = home_path.to_string_lossy().to_string() + string.as_str() + "//";
+        if !PathBuf::from(path.clone()).exists() {
+            create_dir(path.clone()).expect("create dir failed ");
+        }
+        let p = CString::new(path).unwrap();
+        let pwd = CString::new(factory.pwd).unwrap();
+        let flow_path_ptr = p.as_ptr();
+        let market_pointer = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
+        let sender = std::mem::take(&mut factory.sender);
+
+        let mut collector = DataCollector::new(
+            &factory.req,
+            factory.symbols.clone(),
+            sender,
+            market_pointer,
+        );
+
+        collector.subscribe();
+
+        // 创建了行情对象
+        MdApi {
+            user_id: p.clone(),
+            flow_path_ptr,
+            password: pwd,
+            request_id: 0,
+            collector,
+        }
+    }
+
+    fn call(&mut self, req: Self::Request) {
+        match req {
+            StrategyMessage::OrderRequest(req) => (),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+pub struct MdApiFactory {
+    id: Vec<u8>,
+    pwd: Vec<u8>,
+    symbols: Vec<&'static str>,
+    req: LoginForm,
+    sender: GroupSender<MdApiMessage>,
 }
