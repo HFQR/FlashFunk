@@ -15,6 +15,7 @@ use crate::util::hash::HashMap;
 use crate::constants::{Status, Direction};
 use std::borrow::Cow;
 use flashfunk_fetcher::{Tick, fetch_tick};
+use std::io::prelude::*;
 
 const QUEUE_INIT: i32 = 888_888;
 
@@ -57,8 +58,21 @@ impl Interface for MockMdApi {
     }
 
     fn subscribe(&mut self) {
-        let mut ticks: Vec<Tick> = fetch_tick("ni2102.SHFE", "2020-11-04 09:00:00", "2020-11-04 10:00:00").unwrap();
-        println!("{}",ticks.len());
+        // read config
+        let mut config_file = std::fs::File::open(std::env::var("CONFIG_FILE")
+            .expect("please input env:CONFIG_FILE"))
+            .expect("can not open config file");
+        let mut content = String::new();
+        config_file.read_to_string(&mut content).expect("can not read config");
+        let config_line = content.lines().nth(1).expect("can not get second line (config data line)");
+        let mut iter = config_line.split(",");
+        let symbol = iter.next().expect("can not find symbol");
+        let start = iter.next().expect("can not find start");
+        let end = iter.next().expect("can not find end");
+
+        //let mut ticks: Vec<Tick> = fetch_tick("ni2102.SHFE", "2020-11-04 09:00:00", "2020-11-04 10:00:00").unwrap();
+        let mut ticks: Vec<Tick> = fetch_tick(symbol, start, end).unwrap();
+        println!("{} tick num: {}", symbol, ticks.len());
         let sender = self.sender.take().unwrap();
         let shutdown = self.shutdown.clone();
         let handle = std::thread::spawn(move || {
@@ -111,7 +125,6 @@ pub struct MockTdApi {
     queue_num_map: HashMap<String, i32>,
     req_id: i32,
     trade_id: i32,
-    backtest_mode: u8,
 }
 
 impl MockTdApi {
@@ -134,12 +147,12 @@ impl MockTdApi {
     // 估计盘口成交分布 -> (vol_on_ask,vol_on_bid)
     fn calc_volume(&self, size:f64) -> (f64, f64){
         let current_volume = self.current_tick.volume - self.old_tick.volume;
-        let current_turnOver = self.current_tick.amount - self.old_tick.amount;
+        let current_turnover = self.current_tick.amount - self.old_tick.amount;
         let old_ask = self.old_tick.ask_price(0);
         let old_bid = self.old_tick.bid_price(0);
 
         if current_volume > 0{
-            let avg_price = current_turnOver / current_volume as f64 / size;
+            let avg_price = current_turnover / current_volume as f64 / size;
             let ratio = (avg_price - old_bid) / (old_ask - old_bid);
             let ratio = ratio.max(0.0);
             let ratio = ratio.min(1.0);
@@ -195,140 +208,10 @@ impl MockTdApi {
             }
         }
     }
-        
-    // 见价
-    fn match_order_mode_0(&mut self) {
-        for (id, order) in self.active_order_map.clone(){
-            let mut trade_price: f64 = 0.0;
-            if order.symbol != self.current_tick.symbol{
-                continue;
-            }
-            if (order.direction.unwrap() == Direction::LONG) && (order.price >= self.current_tick.bid_price(0)){
-                trade_price = order.price.min(self.current_tick.ask_price(0));
-            }
-            else if (order.direction.unwrap() == Direction::SHORT) && (order.price <= self.current_tick.ask_price(0)){
-                trade_price = order.price.max(self.current_tick.bid_price(0));
-            }
-            else{
-                continue;
-            }
-            self.trade_id += 1;
-            // 生成成交数据
-            let trade_data = TradeData{
-                symbol: Cow::from(order.symbol.clone()),
-                exchange: Some(order.exchange),
-                datetime: self.current_tick.datetime,
-                orderid: Option::from(id.clone()),
-                direction: order.direction,
-                offset: Some(order.offset),
-                price: trade_price,
-                volume: order.volume as i32,
-                tradeid: Some(self.trade_id.to_string()),
-            };
-            // 处理 order
-            let mut order_data = self.active_order_map.remove(&id).unwrap();
-            self.queue_num_map.remove(&id);
-            let temp_vec: Vec<&str> = id.split("_").collect();
-            let idx = temp_vec[0].to_string().parse::<usize>().unwrap();
-            order_data.status = Status::ALLTRADED;
-            self.acc.update_order(order_data.clone());
-            self.sender.try_send_to(order_data, idx).unwrap_or(());
-            // 处理 trade
-            self.acc.update_trade(trade_data.clone());
-            self.sender.try_send_to(trade_data, idx).unwrap_or(());
-        }
-    }
 
-    // 排队最差（排在前方订单不撤单，仅在一档分离成交量，仅支持全部成交）
-    fn match_order_mode_1(&mut self) {
-        for (id, order) in self.active_order_map.clone(){
-            let order_price: f64 = order.price;
-            let order_dir: Direction = order.direction.unwrap();
-            let mut trade_price: f64 = 0.0;
-
-            let queue_num: i32 = self.queue_num_map.get(&id).unwrap().clone();
-            let mut new_queue_num: i32 = 0;
-        
-            let current_tick: &TickData = &self.current_tick;
-            let old_tick: &TickData = &self.old_tick;
-
-            if order.symbol != current_tick.symbol{
-                continue;
-            }
-            if (order.direction.unwrap() == Direction::LONG) && (order.price >= self.current_tick.bid_price(0)){
-                trade_price = order.price.min(self.current_tick.ask_price(0));
-            }
-            else if (order.direction.unwrap() == Direction::SHORT) && (order.price <= self.current_tick.ask_price(0)){
-                trade_price = order.price.max(self.current_tick.bid_price(0));
-            }
-            else {
-                // 排队位置向前变化只有两种情况：
-                // 1.前面的订单成交（只可能存在于一档）
-                // 2.撤单导致位置向前（目前挂单量比之前排队位置还要少的情况）
-                if queue_num > 0{
-                    // 获取该订单价格在订单簿上的挂单量
-                    new_queue_num = self.get_vol_form_orderbook(&order, current_tick);
-                    new_queue_num = new_queue_num.min(queue_num);
-                    // 估算上一个时间段在买卖一档的成交量
-                    // fixme 这里需要acc支持获取合约乘数
-                    //let ab_tuple: (f64, f64) = self.calc_volume(self.acc.get_size_map(current_tick.symbol.as_ref()));
-                    let ab_tuple: (f64, f64) = self.calc_volume(10.0);
-                    // 只有在发生上述成交时，订单持续维持在一档，才认为位置前移
-                    // 前移后的值和当前挂单量取最优
-                    if order_dir == Direction::LONG 
-                        && current_tick.bid_price(0) == order_price && old_tick.bid_price(0) == order_price{
-                        new_queue_num = new_queue_num.min(queue_num - ab_tuple.1 as i32);
-                    }
-                    if order_dir == Direction::SHORT 
-                        && current_tick.ask_price(0) == order_price && old_tick.ask_price(0) == order_price{
-                        new_queue_num = new_queue_num.min(queue_num - ab_tuple.0 as i32);
-                    }
-                    if new_queue_num > 0{
-                        // 更新排队位置
-                        self.queue_num_map.insert(id, new_queue_num);
-                        continue;
-                    }
-                    else{
-                        // 成交
-                        trade_price = order_price;
-                    }
-                }
-                else{
-                    // 不应该出现这种情况
-                    println!("请检查排队撮合逻辑");
-                    trade_price = order_price;
-                }
-            }
-            self.trade_id += 1;
-            // 生成成交数据
-            let trade_data = TradeData{
-                symbol: Cow::from(order.symbol),
-                exchange: Some(order.exchange),
-                datetime: current_tick.datetime,
-                orderid: Option::from(id.clone()),
-                direction: order.direction,
-                offset: Some(order.offset),
-                price: trade_price,
-                volume: order.volume as i32,
-                tradeid: Some(self.trade_id.to_string()),
-            };
-            // 处理 order
-            let mut order_data = self.active_order_map.remove(&id).unwrap();
-            self.queue_num_map.remove(&id);
-            let temp_vec: Vec<&str> = id.split("_").collect();
-            let idx = temp_vec[0].to_string().parse::<usize>().unwrap();
-            order_data.status = Status::ALLTRADED;
-            self.acc.update_order(order_data.clone());
-            self.sender.try_send_to(order_data, idx).unwrap_or(());
-            // 处理 trade
-            self.acc.update_trade(trade_data.clone());
-            self.sender.try_send_to(trade_data, idx).unwrap_or(());
-        }
-    }
-
-    // todo 排队精细（考虑委托数量，支持部分成交）
-    fn match_order_mode_2(&mut self) {
-        for (id, order) in self.active_order_map.clone(){
+    // 撮合逻辑（一档排在前面的都不撤单）：
+    fn match_order(&mut self) {
+        for (id, order) in self.active_order_map.clone() {
             let order_price: f64 = order.price;
             let order_dir: Direction = order.direction.unwrap();
             let order_vol: i32 = order.volume as i32;
@@ -344,30 +227,36 @@ impl MockTdApi {
             if order.symbol != current_tick.symbol{
                 continue;
             }
-            if (order.direction.unwrap() == Direction::LONG) && (order.price >= self.current_tick.bid_price(0)){
-                trade_price = order.price.min(self.current_tick.ask_price(0));
+            // 没有出现在订单簿上（这时已经是下一个tick），认为已经成交
+            if (order_dir == Direction::LONG) && (order_price >= self.current_tick.bid_price(0)){
+                trade_price = order_price.min(self.current_tick.ask_price(0));
+                trade_vol = order_vol;
             }
-            else if (order.direction.unwrap() == Direction::SHORT) && (order.price <= self.current_tick.ask_price(0)){
-                trade_price = order.price.max(self.current_tick.bid_price(0));
+            else if (order_dir == Direction::SHORT) && (order_price <= self.current_tick.ask_price(0)){
+                trade_price = order_price.max(self.current_tick.bid_price(0));
+                trade_vol = order_vol;
             }
             else {
                 if queue_num > 0{
                     // 获取该订单价格在订单簿上的挂单量，考虑自身长度
                     new_queue_num_head = self.get_vol_form_orderbook(&order, current_tick) - order_vol;
                     new_queue_num_head = new_queue_num_head.min(queue_num);
-                    // fixme 这里需要acc支持获取合约乘数
-                    //let ab_tuple: (f64, f64) = self.calc_volume(self.acc.get_size_map(current_tick.symbol.as_ref()));
-                    let ab_tuple: (f64, f64) = self.calc_volume(10.0);
+                    let size = self.acc.get_size_map(current_tick.symbol.as_ref());
+                    assert_ne!(size, 0.0, "size can not be 0.0!");
+                    let ab_tuple: (f64, f64) = self.calc_volume(size);
+                    // 连续在一档，才可能将位置更新到：当前位置 - 期间一档成交
                     if order_dir == Direction::LONG 
-                        && current_tick.bid_price(0) == order_price && old_tick.bid_price(0) == order_price{
+                        && current_tick.bid_price(0) == order_price 
+                        && old_tick.bid_price(0) == order_price {
                             new_queue_num_head = new_queue_num_head.min(queue_num - ab_tuple.1 as i32);
                     }
                     if order_dir == Direction::SHORT 
-                        && current_tick.ask_price(0) == order_price && old_tick.ask_price(0) == order_price{
+                        && current_tick.ask_price(0) == order_price 
+                        && old_tick.ask_price(0) == order_price {
                             new_queue_num_head = new_queue_num_head.min(queue_num - ab_tuple.0 as i32);
                     }
                     if new_queue_num_head > 0{
-                        self.queue_num_map.insert(id, new_queue_num_head);
+                        self.queue_num_map.insert(id.clone(), new_queue_num_head);
                         continue;
                     }
                     else{
@@ -396,17 +285,19 @@ impl MockTdApi {
                 tradeid: Some(self.trade_id.to_string()),
             };
             // 处理 order
-            let mut order_data = self.active_order_map.remove(&id).unwrap();
-            self.queue_num_map.remove(&id);
+            let mut order_data = self.active_order_map.remove(&id).expect("can not find the order");
 
             if trade_vol == order_vol {
                 order_data.status = Status::ALLTRADED;
+                order_data.traded = trade_vol.into();
+                self.queue_num_map.remove(&id);
             }
             else {
                 order_data.status = Status::PARTTRADED;
+                order_data.traded = trade_vol.into();
                 order_data.volume = (order_vol - trade_vol) as f64;
-                self.active_order_map.insert(id.clone(), order_data.clone());
                 self.queue_num_map.insert(id.clone(), 1);
+                self.active_order_map.insert(id.clone(), order_data.clone());
             }
             let temp_vec: Vec<&str> = id.split("_").collect();
             let idx = temp_vec[0].to_string().parse::<usize>().unwrap();
@@ -422,22 +313,7 @@ impl MockTdApi {
     
     // 驱动Td运行
     fn check(&mut self) {
-        // 
-        // 根据回测模式选择撮合逻辑
-        match self.backtest_mode{
-            0 => {
-                self.match_order_mode_0();
-            }
-            1 => {
-                self.match_order_mode_1();
-            }
-            2 => {
-                self.match_order_mode_2();
-            }
-            _ => {
-                self.match_order_mode_0();
-            }
-        }
+        self.match_order();
     }
 }
 
@@ -447,10 +323,10 @@ impl Interface for MockTdApi {
     type Message = TdApiMessage;
 
     fn new(
-        id: impl Into<Vec<u8>>,
-        pwd: impl Into<Vec<u8>>,
-        symbols: Vec<&'static str>,
-        req: &LoginForm,
+        _id: impl Into<Vec<u8>>,
+        _pwd: impl Into<Vec<u8>>,
+        _symbols: Vec<&'static str>,
+        _req: &LoginForm,
         sender: GroupSender<Self::Message>,
     ) -> Self {
         MockTdApi {
@@ -464,7 +340,6 @@ impl Interface for MockTdApi {
             queue_num_map: Default::default(),
             req_id: 0,
             trade_id: 0,
-            backtest_mode: 0,
         }
     }
 
@@ -480,7 +355,7 @@ impl Interface for MockTdApi {
             // 冻结账户保证金
             self.acc.update_order(order_data.clone());
             self.active_order_map.insert(order_data.orderid.clone().unwrap(), order_data.clone());
-            self.queue_num_map.insert(order_data.orderid.clone().unwrap().clone(), QUEUE_INIT);
+            self.queue_num_map.insert(order_data.orderid.clone().unwrap(), QUEUE_INIT);
             self.sender.try_send_to(order_data, idx).unwrap_or(());
         }
         else{
@@ -498,7 +373,7 @@ impl Interface for MockTdApi {
             let mut order_data = self.active_order_map.remove(&req.order_id).unwrap();
             self.queue_num_map.remove(&req.order_id);
             let temp_vec: Vec<&str> = req.order_id.split("_").collect();
-            let idx = temp_vec[0].to_string().parse::<usize>().unwrap();
+            let idx: usize = temp_vec[0].to_string().parse().unwrap();
             order_data.status = Status::CANCELLED;
             // 解冻账户保证金
             self.acc.update_order(order_data.clone());
