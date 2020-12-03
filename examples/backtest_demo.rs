@@ -108,16 +108,16 @@ impl Ac for HelloFlash {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         ctx.send(tick.clone());
         println!("{:?} -- ask:{} bid:{}", tick.symbol, tick.ask_price(0), tick.bid_price(0));
-        let pos = ctx.get_position(&String::from("ni2102.SHFE"));
-        println!("current long pos: {}",pos.long_today_volume());
-        println!("current short pos: {}",pos.short_today_volume());
+        let pos = ctx.get_position(&tick.symbol);
+        println!("pos: -- long:{} short:{}",pos.long_volume, pos.short_volume);
         let req = OrderRequest {
-            symbol: "ni2102.SHFE".to_string(),
+            //symbol: "ni2102.SHFE".to_string(),
+            symbol: tick.symbol.clone(),
             exchange: Exchange::SHFE,
             direction: Direction::LONG,
             order_type: OrderType::LIMIT,
             volume: 1.0,
-            price: tick.last_price - 1.0,
+            price: tick.ask_price(0),
             offset: Offset::OPEN,
             reference: None,
         };
@@ -126,17 +126,18 @@ impl Ac for HelloFlash {
     }
 
     fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
-        println!("on order orderid:{}", order.orderid.as_ref().unwrap());
+        println!("on order orderid:{} status:{:?}", order.orderid.as_ref().unwrap(), order.status);
     }
 
     fn on_trade(&mut self, trade: &TradeData, ctx: &mut Context) {
-        println!("on trade tradeid:{}", trade.tradeid.as_ref().unwrap());
+        println!("on trade tradeid:{} orderid:{}", trade.tradeid.as_ref().unwrap(), trade.orderid.as_ref().unwrap());
     }
 }
 
 
 fn main() {
     println!("{}",std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap()));
+    println!("{}",std::env::var("CONFIG_FILE").unwrap());
     let login_form = LoginForm::new()
         .user_id("170874")
         .password("wi1015..")

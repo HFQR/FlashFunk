@@ -5,6 +5,7 @@ use crate::constants::{Direction, Offset, Status};
 use crate::structs::PositionData;
 use crate::structs::{DailyResult, OrderData, Params, TickData, TradeData};
 use crate::util::hash::HashMap;
+use std::io::prelude::*;
 
 pub trait PositionManager {
     fn get_all_positions(&self) -> Vec<PositionData>;
@@ -43,12 +44,35 @@ pub struct Account {
 
 impl Account {
     pub(crate) fn new() -> Self {
+        // read config
+        let mut config_file = std::fs::File::open(std::env::var("CONFIG_FILE")
+            .expect("please input env:CONFIG_FILE"))
+            .expect("can not open config file");
+        let mut content = String::new();
+        config_file.read_to_string(&mut content).expect("can not read config");
+        let config_line = content.lines().nth(1).expect("can not get second line (config data line)");
+        let mut iter = config_line.split(",");
+        let symbol = iter.next().expect("can not find symbol");
+        let _ = iter.next();
+        let _ = iter.next();
+        let size: f64 = iter.next().expect("can not find size")
+            .parse().expect("size should be f64");
+        let margin_ratio: f64 = iter.next().expect("can not find margin_ratio")
+            .parse().expect("margin_ratio should be f64");
+        let commission_ratio: f64 = iter.next().expect("can not find commission_ratio")
+            .parse().expect("commission_ratio should be f64");
+        let mut config_size_map: HashMap<String, f64> = HashMap::new();
+        let mut config_commission_ratio_map: HashMap<String, f64> = HashMap::new();
+        let mut config_margin_ratio_map: HashMap<String, f64> = HashMap::new();
+        config_size_map.insert(symbol.to_string(), size);
+        config_margin_ratio_map.insert(symbol.to_string(), size);
+        config_commission_ratio_map.insert(symbol.to_string(), size);
         Account {
             name: "FlashFunk".to_owned(),
-            pre_balance: 0.0,
-            commission_ratio: Default::default(),
-            margin_ratio: Default::default(),
-            size_map: Default::default(),
+            pre_balance: 1_000_000.0,
+            commission_ratio: config_commission_ratio_map,
+            margin_ratio: config_margin_ratio_map,
+            size_map: config_size_map,
             frozen_fee: Default::default(),
             fee: Default::default(),
             close_profit: Default::default(),

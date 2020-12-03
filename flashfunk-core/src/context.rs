@@ -135,11 +135,9 @@ impl ContextInner {
 
     pub fn insert_order(&mut self, order: &OrderData) {
         // fix an complex calulation
-        println!("insert order");
         match order.status {
             Status::NOTTRADED => {}
             Status::ALLTRADED => {
-                println!("update_trade ");
                 self.update_trade(order);
             }
             Status::PARTTRADED => {
