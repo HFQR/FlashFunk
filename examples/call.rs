@@ -56,7 +56,7 @@ impl Quote {
 
 #[derive(Strategy)]
 #[name("阿呆")]
-#[symbol("OI101")]
+#[symbol("IC2011")]
 struct Strategy {
     quote: Quote,
 }
@@ -64,8 +64,11 @@ struct Strategy {
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         let pos = ctx.get_position(&tick.symbol);
-        let is_send_long = true;
-        let is_send_short = true;
+        let account = ctx.get_account();
+        println!("account: {} balance:{}", account.accountid, account.balance);
+        //let is_send_long = true;
+        //let is_send_short = true;
+        /*
         let req = OrderRequest {
             symbol: "OI101".to_string(),
             exchange: Exchange::SHFE,
@@ -106,8 +109,8 @@ impl Ac for Strategy {
                 };
                 x.send(req);
             }
-        });
-        self.quote.update_tick(tick);
+        });*/
+        //self.quote.update_tick(tick);
         println!("dur: {}", tick.instant.elapsed().as_nanos());
     }
 
@@ -118,12 +121,12 @@ impl Ac for Strategy {
 
 fn main() {
     let login_form = LoginForm::new()
-        .user_id("170874")
-        .password("wi1015..")
+        .user_id("152333")
+        .password("mychmych")
         .broke_id("9999")
         .app_id("simnow_client_test")
-        .md_address("tcp://180.168.146.187:10131")
-        .td_address("tcp://180.168.146.187:10130")
+        .md_address("tcp://180.168.146.187:10111")
+        .td_address("tcp://180.168.146.187:10101")
         .auth_code("0000000000000000")
         .production_info("");
     let strategy_1 = Strategy {
