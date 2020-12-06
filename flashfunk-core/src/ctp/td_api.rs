@@ -3055,14 +3055,9 @@ impl TdCallApi for CallDataCollector {
         pRspInfo: *mut CThostFtdcRspInfoField,
     ) {
         let order = *pInputOrder;
-
         let order_id = slice_to_string(&order.OrderRef);
         println!("insert order err id: {}", order_id);
         let (idx, refs) = split_into_vec(order_id.as_str());
-
-        // FixMe: 这里是否必须调用api?
-        // self.api.order_ref = max(refs, self.api.order_ref);
-
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => println!(">>> Order Insert failed, id: {} msg: {}", e.id, e.msg),
@@ -3092,6 +3087,8 @@ fn get_order_type(order: OrderType) -> c_char {
     match order {
         OrderType::LIMIT => THOST_FTDC_OPT_LimitPrice as i8,
         OrderType::MARKET => THOST_FTDC_OPT_AnyPrice as i8,
+        OrderType::FOK => THOST_FTDC_OPT_LimitPrice as i8,
+        OrderType::FAK => THOST_FTDC_OPT_LimitPrice as i8,
         _ => panic!("This Interface do not support this order direction"),
     }
 }
@@ -3322,6 +3319,18 @@ impl CallDataCollector {
         self.order_ref.fetch_add(1, Ordering::SeqCst);
 
         let form = &(self.login_form);
+
+        let (time_condition, volume_condition) = match order.order_type {
+            OrderType::FOK => (
+                THOST_FTDC_TC_IOC as i8, THOST_FTDC_VC_CV as i8
+            ),
+            OrderType::FAK => (
+                THOST_FTDC_TC_IOC as i8, THOST_FTDC_VC_AV as i8
+            ),
+            _ => (
+                THOST_FTDC_TC_GFD as i8, THOST_FTDC_VC_AV as i8
+            )
+        };
         let req = CThostFtdcInputOrderField {
             InstrumentID: order.symbol.as_str().to_c_slice(),
             LimitPrice: order.price,
@@ -3341,8 +3350,8 @@ impl CallDataCollector {
             ContingentCondition: THOST_FTDC_CC_Immediately as i8,
             ForceCloseReason: THOST_FTDC_FCC_NotForceClose as i8,
             IsAutoSuspend: 0 as c_int,
-            TimeCondition: THOST_FTDC_TC_GFD as i8,
-            VolumeCondition: THOST_FTDC_VC_AV as i8,
+            TimeCondition: time_condition,
+            VolumeCondition: volume_condition,
             MinVolume: 1 as c_int,
             ExchangeID: get_order_exchange(order.exchange).to_c_slice(),
             ..CThostFtdcInputOrderField::default()
