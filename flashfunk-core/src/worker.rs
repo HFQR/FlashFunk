@@ -10,8 +10,9 @@ use crate::interface::Interface;
 use crate::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
 use crate::util::channel::{channel, GroupSender, Receiver, Sender};
 use core_affinity::CoreId;
+use std::ops::Deref;
 
-// 主线程工人。阻塞主线程，接收策略消息并向Interface（tdapi）发出相应请求。
+// 主线程工人。阻塞主线程，接收策略消息并发起api的回调。
 struct MainWorker<Interface> {
     receiver: Vec<Receiver<StrategyMessage>>,
     _i: PhantomData<Interface>,
@@ -37,8 +38,6 @@ impl<I, M> MainWorker<I>
             self.receiver
                 .iter()
                 .enumerate()
-                // msg映射为（idx，msg）并且处理使得 Result -> Option
-                // 从而忽略RecvErr（没从spsc队列pop出来不是问题，策略没发而已）
                 .filter_map(|(idx, c)| c.recv().map(|msg| (idx, msg)).ok())
                 // 此处idx为策略通道的index，可以交给回调用以确认回程消息的策略
                 .for_each(|(idx, msg)| match msg {
@@ -47,10 +46,6 @@ impl<I, M> MainWorker<I>
                     }
                     StrategyMessage::CancelRequest(req) => {
                         interface.cancel_order(req);
-                    }
-                    // MainWorker -> MockTdApi
-                    StrategyMessage::MockTdTickData(quote) =>{
-                        interface.update_quote(&quote);
                     }
                     _ => unimplemented!(),
                 });
@@ -135,6 +130,10 @@ impl StrategyWorker {
                             .insert_exchange(data.symbol.as_str(), data.exchange.unwrap());
                         self.st.on_contract(&data, &mut ctx);
                     }
+                    TdApiMessage::ExtraOrder(ref data) => {
+                        ctx.add_order(data.deref().clone());
+                    }
+                    TdApiMessage::ExtraTrade(ref data) => {}
                 }
             }
         }
@@ -179,6 +178,7 @@ pub(crate) fn start_workers<I, I2>(mut builder: CtpBuilder<'_, I, I2>)
     i2.connect();
     i.connect();
 
+
     // 启动策略工人线程。分配剩余的核心id给工人。
     workers.into_iter().for_each(|worker| {
         let core = cores.pop().expect("Too many strategies");
@@ -191,7 +191,7 @@ pub(crate) fn start_workers<I, I2>(mut builder: CtpBuilder<'_, I, I2>)
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。
-const MESSAGE_LIMIT: usize = 4024usize;
+const MESSAGE_LIMIT: usize = 10024usize;
 
 // 帮助函数
 fn prepare_worker_channel<I, I2>(

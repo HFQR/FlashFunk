@@ -1,7 +1,4 @@
-use crate::structs::{
-    AccountData, CancelRequest, ContractData, OrderData, OrderRequest, PositionData, QueryRequest,
-    SubscribeRequest, TickData, TradeData,
-};
+use crate::structs::{AccountData, CancelRequest, ContractData, OrderData, OrderRequest, PositionData, QueryRequest, SubscribeRequest, TickData, TradeData, ExtraOrder, ExtraTrade};
 
 
 pub enum MdApiMessage {
@@ -27,12 +24,26 @@ pub enum TdApiMessage {
     AccountData(AccountData),
     PositionData(PositionData),
     ContractData(ContractData),
+    ExtraOrder(ExtraOrder),
+    ExtraTrade(ExtraTrade),
 }
 
 
 impl From<OrderData> for TdApiMessage {
     fn from(data: OrderData) -> Self {
         Self::OrderData(data)
+    }
+}
+
+impl From<ExtraOrder> for TdApiMessage {
+    fn from(data: ExtraOrder) -> Self {
+        Self::ExtraOrder(data)
+    }
+}
+
+impl From<ExtraTrade> for TdApiMessage {
+    fn from(data: ExtraTrade) -> Self {
+        Self::ExtraTrade(data)
     }
 }
 
@@ -58,19 +69,6 @@ impl From<ContractData> for TdApiMessage {
     fn from(data: ContractData) -> Self {
         Self::ContractData(data)
     }
-}
-
-pub enum TdOtherApiMessage {
-    OrderData(OrderData),
-    TradeData(TradeData),
-}
-
-impl From<OrderData> for TdOtherApiMessage {
-    fn from(data: OrderData) -> Self { Self::OrderData(data) }
-}
-
-impl From<TradeData> for TdOtherApiMessage {
-    fn from(data: TradeData) -> Self { Self::TradeData(data) }
 }
 
 

@@ -13,10 +13,7 @@ use chrono::{Date, NaiveDateTime, Utc, Timelike};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{
-    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
-    TradeData,
-};
+use crate::structs::{AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData, TradeData, ExtraTrade, ExtraOrder};
 use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
@@ -3002,10 +2999,8 @@ impl TdCallApi for CallDataCollector {
         // 这里控制接收order data的策略index
         match idx {
             10000000usize => {
-                // Fixme: 如果不帶idx send_all or ignore it ?
-                // println!("broadcast message");
-                // self.sender.try_send_to(order, 0);
-                // self.sender.send_all(order);
+                let ex = ExtraOrder::from(order);
+                self.sender.try_send_to(ex, 0).unwrap_or(());
             }
             _ => {
                 // todo: why order sender error
@@ -3039,9 +3034,8 @@ impl TdCallApi for CallDataCollector {
         // 这里控制接收order data的策略index
         match idx {
             10000000usize => {
-                // Fixme: 如果不帶idx send_all or ignore it ?
-                // println!("broadcast message");
-                // self.api.producer.send_all(trade)
+                let trade = ExtraTrade::from(trade);
+                self.sender.try_send_to(trade, 0).unwrap_or(());
             }
             _ => {
                 self.sender.try_send_to(trade, idx).unwrap_or(());

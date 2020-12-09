@@ -2,7 +2,7 @@
 //! Author: Aaron Qiu
 #![allow(dead_code)]
 
-use std::borrow::Cow;
+use std::borrow::{Cow, Borrow, BorrowMut};
 
 use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 
@@ -10,6 +10,7 @@ use crate::constants::*;
 use bitflags::_core::cmp::{max, min};
 use std::time::Instant;
 use flashfunk_fetcher::Tick;
+use bitflags::_core::ops::{Deref, DerefMut};
 
 /// Tick Data
 #[derive(Clone)]
@@ -97,6 +98,56 @@ pub struct OrderData {
     pub status: Status,
 }
 
+pub struct ExtraOrder {
+    n: OrderData
+}
+
+impl From<OrderData> for ExtraOrder {
+    fn from(data: OrderData) -> Self {
+        Self {
+            n: data
+        }
+    }
+}
+
+impl Deref for ExtraOrder {
+    type Target = OrderData;
+
+    fn deref(&self) -> &Self::Target {
+        self.n.borrow()
+    }
+}
+
+impl DerefMut for ExtraOrder {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.n.borrow_mut()
+    }
+}
+
+pub struct ExtraTrade {
+    n: TradeData
+}
+
+impl From<TradeData> for ExtraTrade {
+    fn from(data: TradeData) -> Self {
+        Self { n: data }
+    }
+}
+
+
+impl Deref for ExtraTrade {
+    type Target = TradeData;
+
+    fn deref(&self) -> &Self::Target {
+        self.n.borrow()
+    }
+}
+
+impl DerefMut for ExtraTrade {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.n.borrow_mut()
+    }
+}
 
 impl From<&Tick> for TickData {
     fn from(tick: &Tick) -> Self {
