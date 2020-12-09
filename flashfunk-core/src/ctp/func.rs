@@ -1,4 +1,3 @@
-use crate::app::CtpbeeR;
 /// This module implement all the c functions to be called in rust
 use crate::ctp::sys::*;
 use core::ffi::c_void;

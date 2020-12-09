@@ -4,24 +4,24 @@ use core::marker::PhantomData;
 use std::borrow::Cow;
 
 use crate::account::Account;
-use crate::builder::CtpBuilder;
+use crate::builder::Builder;
 use crate::util::hash::HashMap;
 
 /// ctpbee核心运行器
 /// 作为该运行器
-pub struct CtpbeeR {
+pub struct Flash {
     name: String,
     acc: Account,
     login_info: HashMap<String, String>,
 }
 
-impl CtpbeeR {
+impl Flash {
     // Interface类型需要作为类型提示传入. N类型可以为自动推导
-    pub fn builder<'a, I, I2, N>(name: N) -> CtpBuilder<'a, I, I2>
+    pub fn builder<'a, I, I2, N>(name: N) -> Builder<'a, I, I2>
     where
         N: Into<Cow<'a, str>>,
     {
-        CtpBuilder {
+        Builder {
             name: name.into(),
             id: Default::default(),
             pwd: Default::default(),
@@ -47,8 +47,8 @@ impl CtpbeeR {
     }
 }
 
-impl Debug for CtpbeeR {
+impl Debug for Flash {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        write!(f, "Ctpbee >>> : {}", self.name)
+        write!(f, "Flash >>> : {}", self.name)
     }
 }

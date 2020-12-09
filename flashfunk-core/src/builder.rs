@@ -8,7 +8,7 @@ use crate::structs::LoginForm;
 use crate::types::message::{MdApiMessage, TdApiMessage};
 use crate::worker::start_workers;
 
-pub struct CtpBuilder<'a, Interface, Interface2> {
+pub struct Builder<'a, Interface, Interface2> {
     pub(crate) name: Cow<'a, str>,
     pub(crate) id: Cow<'a, str>,
     pub(crate) pwd: Cow<'a, str>,
@@ -19,7 +19,7 @@ pub struct CtpBuilder<'a, Interface, Interface2> {
     pub(crate) _i2: PhantomData<Interface2>,
 }
 
-impl<'a, I, I2> CtpBuilder<'a, I, I2>
+impl<'a, I, I2> Builder<'a, I, I2>
 where
     I: Interface<Message = MdApiMessage>,
     I2: Interface<Message = TdApiMessage>,

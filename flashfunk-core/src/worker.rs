@@ -4,7 +4,7 @@ use core::time::Duration;
 use std::time::Instant;
 
 use crate::ac::__Strategy;
-use crate::builder::CtpBuilder;
+use crate::builder::Builder;
 use crate::context::{new_context, ContextTrait};
 use crate::interface::Interface;
 use crate::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
@@ -150,7 +150,7 @@ impl Drop for StrategyWorker {
 }
 
 // 为builder建立工人并启动
-pub(crate) fn start_workers<I, I2>(mut builder: CtpBuilder<'_, I, I2>)
+pub(crate) fn start_workers<I, I2>(mut builder: Builder<'_, I, I2>)
     where
     // ToDo: 消息类型应该由构造器CtpBuilder传入
         I: Interface<Message=MdApiMessage>,
@@ -195,7 +195,7 @@ const MESSAGE_LIMIT: usize = 10024usize;
 
 // 帮助函数
 fn prepare_worker_channel<I, I2>(
-    builder: &mut CtpBuilder<'_, I, I2>,
+    builder: &mut Builder<'_, I, I2>,
 ) -> (
     Vec<&'static str>,
     Vec<StrategyWorker>,

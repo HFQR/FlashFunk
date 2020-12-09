@@ -22,7 +22,7 @@ pub mod types;
 
 pub mod prelude {
     pub use crate::ac::{Ac, IntoStrategy};
-    pub use crate::app::CtpbeeR;
+    pub use crate::app::Flash;
     pub use crate::context::{Context, ContextTrait};
     pub use crate::types::message::StrategyMessage;
 }
