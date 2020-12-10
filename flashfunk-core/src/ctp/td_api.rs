@@ -2728,7 +2728,6 @@ impl TdApiBlocker {
 
 pub struct CallDataCollector {
     session_id: i32,
-
     login_status: bool,
     connect_status: bool,
     sender: GroupSender<TdApiMessage>,

@@ -1,8 +1,6 @@
-[profile.dev]
-codegen-units = 4
-
 [workspace]
 members = [
+    "./timer",
     "./flashfunk-codegen",
     "./flashfunk-core",
     #    "./flashfunk-interface",
@@ -10,5 +8,3 @@ members = [
 ]
 
 
-#[[example]]
-#name = "call"
