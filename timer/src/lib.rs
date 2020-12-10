@@ -31,8 +31,10 @@ impl Timer {
         let mut n = command.spawn().expect("Process run failed, please check your code or command");
         loop {
             let current = Local::now().naive_local().time();
+
+            let alive = n.try_wait().is_ok() && n.try_wait().unwrap().is_none();
             for t in self.rest.iter() {
-                if t.minute().eq(&current.minute()) && t.second().eq(&current.second()) && n.try_wait().is_ok() && n.try_wait().unwrap().is_none() {
+                if t.minute().eq(&current.minute()) && t.second().eq(&current.second()) && alive {
                     println!("===> Time is: {}, process should be kill", current);
                     n.kill();
                 }
@@ -40,6 +42,9 @@ impl Timer {
 
             for s in self.rost.iter() {
                 if s.minute().eq(&current.minute()) && s.second().eq(&current.second()) {
+                    if alive {
+                        n.kill()
+                    }
                     n = command.spawn().expect("Process run failed, please check your code or command");
                     println!("===> Time is: {}, process should be start", current);
                 }
