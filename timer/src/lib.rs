@@ -43,7 +43,7 @@ impl Timer {
             for s in self.rost.iter() {
                 if s.minute().eq(&current.minute()) && s.second().eq(&current.second()) {
                     if alive {
-                        n.kill()
+                        n.kill();
                     }
                     n = command.spawn().expect("Process run failed, please check your code or command");
                     println!("===> Time is: {}, process should be start", current);
