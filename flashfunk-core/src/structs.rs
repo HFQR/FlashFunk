@@ -432,6 +432,26 @@ impl Default for ContractData {
     }
 }
 
+pub struct ContractVec {
+    n: Vec<ContractData>
+}
+
+impl From<Vec<ContractData>> for ContractVec {
+    fn from(n: Vec<ContractData>) -> Self {
+        ContractVec {
+            n
+        }
+    }
+}
+
+impl Deref for ContractVec {
+    type Target = Vec<ContractData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.n
+    }
+}
+
 /// Subscribe Request
 #[derive(Clone, Debug)]
 pub struct SubscribeRequest {

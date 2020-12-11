@@ -15,7 +15,7 @@ use std::ops::Deref;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
-const MESSAGE_LIMIT: usize = 10024usize;
+const MESSAGE_LIMIT: usize = 2024usize;
 
 // 主线程工人。阻塞主线程，接收策略消息并发起api的回调。
 struct MainWorker<Interface> {
@@ -130,15 +130,18 @@ impl StrategyWorker {
                         ctx.update_position_by_pos(data);
                         self.st.on_position(data, &mut ctx);
                     }
-                    TdApiMessage::ContractData(ref data) => {
-                        ctx.1
-                            .insert_exchange(data.symbol.as_str(), data.exchange.unwrap());
-                        self.st.on_contract(&data, &mut ctx);
-                    }
+                    TdApiMessage::ContractData(ref data) => {}
                     TdApiMessage::ExtraOrder(ref data) => {
                         ctx.add_order(data.deref().clone());
                     }
                     TdApiMessage::ExtraTrade(ref data) => {}
+                    TdApiMessage::ContractVec(ref data) => {
+                        for contract in data.iter() {
+                            ctx.1
+                                .insert_exchange(contract.symbol.as_str(), contract.exchange.unwrap());
+                            self.st.on_contract(contract, &mut ctx);
+                        }
+                    }
                 }
             }
         }

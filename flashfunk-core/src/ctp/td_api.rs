@@ -13,7 +13,7 @@ use chrono::{Date, NaiveDateTime, Utc, Timelike};
 use crate::constants::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::interface::Interface;
-use crate::structs::{AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData, TradeData, ExtraTrade, ExtraOrder};
+use crate::structs::{AccountData, CancelRequest, ContractData, LoginForm, OrderData, ContractVec, OrderRequest, PositionData, TradeData, ExtraTrade, ExtraOrder};
 use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
@@ -2741,6 +2741,7 @@ pub struct CallDataCollector {
     symbols: Vec<&'static str>,
     pub request_id: i32,
     pub front_id: i32,
+    contracts: Vec<ContractData>,
 }
 
 
@@ -2954,7 +2955,11 @@ impl TdCallApi for CallDataCollector {
             Cow::Owned(contract.symbol.clone()),
             contract.exchange.unwrap(),
         );
-        self.sender.send_all(contract);
+        self.contracts.push(contract);
+        if bIsLast {
+            let con = std::mem::take(&mut self.contracts);
+            self.sender.try_send_to(ContractVec::from(con), 0).unwrap_or(());
+        }
 
         if bIsLast {
             self.blocker.as_ref().unwrap().0.step4.unblock();
@@ -3298,6 +3303,7 @@ impl CallDataCollector {
             trade_pointer: trader_pointer,
             login_form: req.clone(),
             symbols,
+            contracts: vec![]
         }
     }
 
