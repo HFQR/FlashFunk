@@ -12,6 +12,11 @@ use crate::util::channel::{channel, GroupSender, Receiver, Sender};
 use core_affinity::CoreId;
 use std::ops::Deref;
 
+
+// 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
+// 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
+const MESSAGE_LIMIT: usize = 10024usize;
+
 // 主线程工人。阻塞主线程，接收策略消息并发起api的回调。
 struct MainWorker<Interface> {
     receiver: Vec<Receiver<StrategyMessage>>,
@@ -189,9 +194,6 @@ pub(crate) fn start_workers<I, I2>(mut builder: Builder<'_, I, I2>)
     c_st.block_handle(i2);
 }
 
-// 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
-// 只影响内存占用。
-const MESSAGE_LIMIT: usize = 10024usize;
 
 // 帮助函数
 fn prepare_worker_channel<I, I2>(

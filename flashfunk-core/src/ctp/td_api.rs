@@ -2786,12 +2786,6 @@ impl TdCallApi for CallDataCollector {
                 let login = *pRspUserLogin;
 
                 println!(">>> Td Login successful");
-
-                println!(
-                    "session {} frontid: {}",
-                    login.SessionID as f64, login.FrontID as f64
-                );
-
                 let blocker = self.blocker.as_ref().unwrap();
 
                 blocker.0.front_id.store(login.FrontID, Ordering::SeqCst);

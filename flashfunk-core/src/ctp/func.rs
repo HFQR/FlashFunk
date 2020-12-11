@@ -46,9 +46,7 @@ pub trait QuoteApi {
         pRspInfo: *mut CThostFtdcRspInfoField,
         request_id: TThostFtdcRequestIDType,
         is_last: bool,
-    ) {
-        println!("订阅行情回调信息");
-    }
+    ) {}
 
     fn on_rsp_un_sub_market_data(
         &mut self,

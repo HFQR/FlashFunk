@@ -76,7 +76,7 @@ impl QuoteApi for DataCollector {
     }
 
     fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
-        println!("MdApi front disconnected, please check your network");
+        println!(">>> MdApi front disconnected, please check your network");
         self.blocker = Option::from(MdApiBlocker::new());
     }
 
@@ -191,8 +191,6 @@ impl DataCollector {
     // 底层发起主动连接逻辑
     pub fn connect(&mut self) {
         // 阻塞器交给data collector
-
-        println!("Begin to connect Market Quote");
         self.register_spi();
 
         let addr = CString::new(self.login_form._md_address()).unwrap();
@@ -203,7 +201,7 @@ impl DataCollector {
         // 等待 login完成后才发送订阅
         self.blocker.as_mut().unwrap().0.step2.block();
 
-        println!("MdApi init successful");
+        println!(">>> MdApi init successful");
     }
 
     pub fn subscribe(&mut self) {
@@ -251,7 +249,7 @@ impl DataCollector {
 
     /// 注册前置地址
     fn register_fronted_address(&mut self, register_addr: CString) {
-        println!("Connect to {:?}", register_addr.clone().into_string().unwrap());
+        println!(">>> Connect to {:?}", register_addr.clone().into_string().unwrap());
         let front_socket_address_ptr = register_addr.into_raw();
         unsafe { CThostFtdcMdApi_RegisterFront(self.market_pointer, front_socket_address_ptr) };
     }
