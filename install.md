@@ -12,7 +12,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
 ```console
-$ curl -sSf https://static.rust-lang.org/rustup.sh | sh
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 
