@@ -12,5 +12,6 @@ chrono = "0.4"
 chrono-tz = { version = "0.5", features = ["serde"] }
 clickhouse-rs = { git = "https://github.com/suharev7/clickhouse-rs/", branch = "async-await" }
 futures = "0.3.8"
-tokio = "0.2.23"
+tokio = { version = "1.5", feature = ["rt"] }
 once_cell = ""
+

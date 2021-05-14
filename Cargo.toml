@@ -4,7 +4,7 @@ members = [
     "./flashfunk-codegen",
     "./flashfunk-core",
     #    "./flashfunk-interface",
-    "./flashfunk-fetcher",
+   "./flashfunk-fetcher"
 ]
 
 

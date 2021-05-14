@@ -20,7 +20,7 @@ flashfunk-fetcher = { path = "../flashfunk-fetcher" }
 
 [dev-dependencies]
 flashfunk-codegen = { path = "../flashfunk-codegen" }
-flashfunk-fetcher = { path = "../flashfunk-fetcher" }
+# flashfunk-fetcher = { path = "../flashfunk-fetcher" }
 
 
 [profile.release]
