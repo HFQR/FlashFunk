@@ -24,9 +24,9 @@ pub trait Ac {
 
     fn on_l2_trade(&mut self, order: &TradeData, ctx: &mut Context) {}
 
-    fn local_symbols<'a>(&mut self) -> Vec<&'a str> { unimplemented!("please set local_symbol"); }
+    fn local_symbols<'a>(&mut self) -> Vec<&'a str>;
 
-    fn name<'a>(&mut self) -> &'a str { unimplemented!("please set name "); }
+    fn name<'a>(&mut self) -> &'a str;
 }
 
 

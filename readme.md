@@ -11,8 +11,6 @@
 
 - fix backtest and add test.
 
-- 将`ctp`里面的代码替换到`flashfunk-interface`
-
 - 測試覆盖
 
 - 日志
@@ -37,60 +35,54 @@
 无须你处理任何事情 专注写策略即可  我们已经为你实现绝大部分功能, 唯一需要你关注的是如何写出赚钱的策略
 
 ```rust
-use chrono::{Local, NaiveDateTime, Timelike};
+#![allow(dead_code, unused_imports, unused_must_use, unused_variables)]
 
-use flashfunk_core::constants::{Direction, Offset, Exchange, OrderType, Status};
-use flashfunk_core::interface::Interface;
-use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
-use flashfunk_core::prelude::{Ac, IntoStrategy, Context, ContextTrait, Flash};
-use flashfunk_core::ctp::md_api::MdApi;
-use flashfunk_core::ctp::td_api::TdApi;
-use flashfunk_codegen::Strategy;
+use std::fmt::Pointer;
+use std::thread;
 
-#[derive(Strategy)]
-#[name("flash_ni")]
-#[symbol("ni2102")]
-pub struct Collector{
-    ticks: Vec<TickData>
+use chrono::{Local, NaiveDateTime};
+use flashfunk_level::CtpMdApi;
+use flashfunk_level::CtpTdApi;
+use flashfunk_core::prelude::*;
+
+struct Strategy {
+    local_symbol: Vec<String>,
 }
 
-impl Ac for Collector {
-    fn on_tick(&mut self, tick:&TickData, ctx: &mut Context){
-        println!("{} {}", tick.datetime, tick.last_price);    
-    }   
-    
-    fn on_order(&mut self, order: &OrderData, ctx: &mut Context){
-        // get your order back infomation   
-    }   
+impl Ac for Strategy {
+    fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
+        println!("dur: {}", tick.instant.elapsed().as_nanos());
+    }
 
+    // 此处我们需要返还静态的引用 推荐使用此函数即可 
+    fn local_symbols<'a>(&mut self) -> Vec<&'a str> { 
+        let mut strs: Vec<&'static str> = Vec::new();
+        self.local_symbol.iter().for_each(|x| strs.push(Box::leak(x.clone().into_boxed_str())));
+        strs
+    }
+
+    fn name<'a>(&mut self) -> &'a str { "oi" }
 }
 
 fn main() {
-    // build a strategy instance 
-    let tor = Collector {
-            ticks: vec![]
-    };
-    // get the login infomation
     let login_form = LoginForm::new()
-        .user_id("089131")
-        .password("350888")
+        .user_id("170874")
+        .password("wi1015..")
         .broke_id("9999")
         .app_id("simnow_client_test")
-        .md_address("tcp://180.168.146.187:10131")   // simnow24小时环境
-        .td_address("tcp://180.168.146.187:10130")
-        // .md_address("tcp://218.202.237.33:10112")  // simnow移动正常环境
-        // .td_address("tcp://218.202.237.33:10102")
+        .md_address("tcp://218.202.237.33:10213")
+        .td_address("tcp://218.202.237.33:10203")
         .auth_code("0000000000000000")
         .production_info("");
-    
-    // build running environment to run strategy and start
-    Flash::builder::<MdApi, TdApi, _>("flash")
-        .strategies(vec![tor.into_str()])
-        .id("flash")
+    let strategy_1 = Strategy {
+        local_symbol: vec!["rb2110".to_string()]
+    };
+    Flash::builder::<CtpMdApi, CtpTdApi, _>("ctpbee")
+        .strategies(vec![Box::new(strategy_1)])
+        .id("flashfunk")
         .login_form(login_form)
         .start();
 }
-
 
 ```
 

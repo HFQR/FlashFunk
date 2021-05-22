@@ -71,6 +71,7 @@ struct DataCollector {
 impl QuoteApi for DataCollector {
     fn on_front_connected(&mut self) {
         // 当前置连上后 开始进行登录
+        println!(">>> Md Front Connected");
         self.blocker.as_ref().unwrap().0.step1.unblock();
         self.login();
     }
@@ -285,7 +286,7 @@ impl Interface for CtpMdApi {
     ) -> Self {
         let home_path = os_path("ctp");
         let string = String::from_utf8(id.into()).unwrap();
-        let path = home_path.join(string).to_string_lossy().to_string() +"//";
+        let path = home_path.join(string).to_string_lossy().to_string() + "//";
         if !PathBuf::from(path.clone()).exists() {
             create_dir(path.clone()).expect("create dir failed ");
         }
