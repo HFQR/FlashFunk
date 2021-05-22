@@ -105,6 +105,11 @@ impl Ac for Strategy {
     fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
         println!("Order 回報: {:?}", order);
     }
+    fn local_symbols<'a>(&mut self) -> Vec<&'a str> {
+        vec!["rb2110"]
+    }
+
+    fn name<'a>(&mut self) -> &'a str { "hello" }
 }
 
 fn main() {

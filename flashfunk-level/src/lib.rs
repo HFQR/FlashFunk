@@ -29,23 +29,19 @@ pub mod types;
 
 
 #[cfg(not(target_os = "windows"))]
-fn os_path() -> String {
-    var("HOME").unwrap()
+fn os_path(target: &str) -> String {
+    let path = var("HOME").unwrap();
+    path.join(".HFQ").join(target)
 }
 
 #[cfg(target_os = "windows")]
-fn os_path() -> PathBuf {
-    PathBuf::from(format!("{}{}", var("HOMEDRIVE").unwrap(), var("HOMEPATH").unwrap()))
+fn os_path(target: &str) -> PathBuf {
+    let path = PathBuf::from(format!("{}{}", var("HOMEDRIVE").unwrap(), var("HOMEPATH").unwrap()));
+    path.join(".HFQ").join(target)
 }
 
 
-#[cfg(not(target_os = "windows"))]
-fn os_path() -> PathBuf {
-    PathBuf::from(var("HOME").unwrap())
-}
-
-#[cfg(target_os = "windows")]
 fn get_interface_path(interface: &str) -> PathBuf {
-    let home = os_path();
-    home.join(interface).join("bindings.rs")
+    let home = os_path(interface);
+    home.join("bindings.rs")
 }

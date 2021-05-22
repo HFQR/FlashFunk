@@ -283,9 +283,9 @@ impl Interface for CtpMdApi {
         req: &LoginForm,
         sender: GroupSender<Self::Message>,
     ) -> Self {
-        let home_path = os_path();
+        let home_path = os_path("ctp");
         let string = String::from_utf8(id.into()).unwrap();
-        let path = home_path.to_string_lossy().to_string() + string.as_str() + "//";
+        let path = home_path.join(string).to_string_lossy().to_string() +"//";
         if !PathBuf::from(path.clone()).exists() {
             create_dir(path.clone()).expect("create dir failed ");
         }
