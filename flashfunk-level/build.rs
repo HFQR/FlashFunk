@@ -69,11 +69,12 @@ fn file_name(name: String) -> String {
 #[cfg(target_os = "windows")]
 fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
     let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).parent().unwrap().to_path_buf();
-    let lib_dir = format!("{}/flashfunk-level/sdk_sources/{}/lib", current_dir.to_str().unwrap(), sdk);
-    let dll_dir = format!("{}/flashfunk-level/sdk_sources/{}/win", current_dir.to_str().unwrap(), sdk);
+    let lib_dir = format!("{}\\flashfunk-level\\sdk_sources\\{}\\lib", current_dir.to_str().unwrap(), sdk);
+    let dll_dir = format!("{}\\flashfunk-level\\sdk_sources\\{}\\win", current_dir.to_str().unwrap(), sdk);
     let mut v = vec![];
     for entry in fs::read_dir(dll_dir.clone()).unwrap() {
         let filename = entry.unwrap().file_name().into_string().unwrap();
+
         v.push(file_name(filename))
     }
     (lib_dir, dll_dir, v.first().unwrap().clone(), v.last().unwrap().clone())
@@ -109,15 +110,21 @@ fn build(target: &str) {
     output_file.write_all(bindings.as_bytes()).map_err(|e| format!("cannot write struct file, {}", e));
 
     // link to file
+    #[cfg(not(target_os = "windows"))]
     println!("cargo:rustc-link-lib=dylib=stdc++");
+
     println!("cargo:rustc-link-search={}", path.to_str().unwrap());
-    println!("cargo:rustc-link-lib=dylib={}", target);
-    println!("cargo:rustc-link-search={}", path.to_str().unwrap());
+    // println!("cargo:rustc-link-search={}", path.to_str().unwrap());
     let (lib, dll, md, td) = sdk_source_path(target);
-    println!("==============>  {} {} {} {}", lib, dll, md, td);
+
+    // add  link search .lib  file path
     println!("cargo:rustc-link-search={}", lib);
+
+    // add link search .dll/.so file path
     println!("cargo:rustc-link-search={}", dll);
 
+    // link to dll/so
+    println!("cargo:rustc-flags=-L {}", dll);
     println!("cargo:rustc-link-lib=dylib={}", td);
     println!("cargo:rustc-link-lib=dylib={}", md);
 }
@@ -125,6 +132,6 @@ fn build(target: &str) {
 
 fn main() {
     #[cfg(feature = "ctp")]
-    build("ctp");
+        build("ctp");
 }
 

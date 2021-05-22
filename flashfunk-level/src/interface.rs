@@ -1,5 +1,3 @@
-use core::ops::{Deref, DerefMut};
-
 use crate::context::Context;
 use crate::data_type::{ContractData, PositionData, TradeData, OrderData, AccountData, CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::util::channel::GroupSender;

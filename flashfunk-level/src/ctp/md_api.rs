@@ -49,7 +49,7 @@ struct MdApiBlockerInner {
 }
 
 
-pub struct MdApi {
+pub struct CtpMdApi {
     user_id: CString,
     password: CString,
     request_id: i32,
@@ -76,7 +76,7 @@ impl QuoteApi for DataCollector {
     }
 
     fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
-        println!(">>> MdApi front disconnected, please check your network");
+        println!(">>> CtpMdApi front disconnected, please check your network");
         self.blocker = Option::from(MdApiBlocker::new());
     }
 
@@ -171,7 +171,7 @@ impl QuoteApi for DataCollector {
     }
 }
 
-unsafe impl Send for MdApi {}
+unsafe impl Send for CtpMdApi {}
 
 /// Now we get a very useful spi, and we get use the most important things to let everything works well
 impl DataCollector {
@@ -201,7 +201,7 @@ impl DataCollector {
         // 等待 login完成后才发送订阅
         self.blocker.as_mut().unwrap().0.step2.block();
 
-        println!(">>> MdApi init successful");
+        println!(">>> CtpMdApi init successful");
     }
 
     pub fn subscribe(&mut self) {
@@ -273,7 +273,7 @@ impl DataCollector {
     }
 }
 
-impl Interface for MdApi {
+impl Interface for CtpMdApi {
     type Message = MdApiMessage;
 
     fn new(
@@ -294,7 +294,7 @@ impl Interface for MdApi {
         let flow_path_ptr = p.as_ptr();
         let market_pointer = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
         // 创建了行情对象
-        MdApi {
+        CtpMdApi {
             user_id: p.clone(),
             flow_path_ptr,
             password: pwd,
@@ -312,7 +312,7 @@ impl Interface for MdApi {
     }
 }
 
-impl Drop for MdApi {
+impl Drop for CtpMdApi {
     fn drop(&mut self) {
         self.collector.release();
     }

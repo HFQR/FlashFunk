@@ -19,9 +19,9 @@ pub mod interface;
 mod ctp;
 
 #[cfg(feature = "ctp")]
-pub use ctp::md_api::MdApi;
+pub use ctp::md_api::CtpMdApi;
 #[cfg(feature = "ctp")]
-pub use ctp::td_api::TdApi;
+pub use ctp::td_api::CtpTdApi;
 
 
 pub mod util;

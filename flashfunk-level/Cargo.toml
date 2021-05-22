@@ -3,7 +3,7 @@ name = "flashfunk-level"
 version = "0.5.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
-include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
+include = ["src/**/*", "sdk_sources/*", "Cargo.toml", "build.rs"]
 
 build = "build.rs"
 [profile.release]
@@ -38,5 +38,4 @@ rpath = true
 [build-dependencies]
 bindgen = "0.55.1"
 cc = "1.0"
-
 

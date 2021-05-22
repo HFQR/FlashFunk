@@ -4,15 +4,9 @@ use std::fmt::Pointer;
 use std::thread;
 
 use chrono::{Local, NaiveDateTime};
-use flashfunk_core::constants::{Direction, Exchange, Offset, OrderType};
-use flashfunk_core::ctp::md_api::MdApi;
-use flashfunk_core::ctp::td_api::TdApi;
-use flashfunk_core::interface::Interface;
+use flashfunk_level::CtpMdApi;
+use flashfunk_level::CtpTdApi;
 use flashfunk_core::prelude::*;
-use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData};
-use flashfunk_core::types::message::TdApiMessage;
-use flashfunk_core::MockMdApi;
-use flashfunk_codegen::Strategy;
 
 /// 價格
 /// Now we build a order book and calculate the  trend power
@@ -54,9 +48,6 @@ impl Quote {
     }
 }
 
-#[derive(Strategy)]
-#[name("阿呆")]
-#[symbol("OI101")]
 struct Strategy {
     quote: Quote,
 }
@@ -79,7 +70,7 @@ impl Ac for Strategy {
         ctx.send(req);
 
         ctx.enter(|x, v| {
-            let pos = v.position_mut(&"OI101".to_string());
+            let pos = v.get_position(&"OI101".to_string());
             if pos.short_volume != 0.0 && is_send_long == false {
                 let req = OrderRequest {
                     symbol: "OI101".to_string(),
@@ -129,8 +120,8 @@ fn main() {
     let strategy_1 = Strategy {
         quote: Quote::new(),
     };
-    Flash::builder::<MdApi, TdApi, _>("ctpbee")
-        .strategies(vec![strategy_1.into_str()])
+    Flash::builder::<CtpMdApi, CtpTdApi, _>("ctpbee")
+        .strategies(vec![Box::new(strategy_1)])
         .id("name")
         .pwd("id")
         .login_form(login_form)

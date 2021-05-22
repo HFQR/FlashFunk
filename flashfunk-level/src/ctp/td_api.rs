@@ -2676,14 +2676,14 @@ pub trait TdCallApi {
 }
 
 /// 交易API
-pub struct TdApi {
+pub struct CtpTdApi {
     data_collector: CallDataCollector,
     request_id: i32,
     front_id: i32,
     session_id: i32,
 }
 
-impl TdApi {
+impl CtpTdApi {
     pub(crate) fn session_id(&self) -> i32 {
         self.session_id
     }
@@ -3458,11 +3458,11 @@ impl CallDataCollector {
     }
 }
 
-impl Drop for TdApi {
+impl Drop for CtpTdApi {
     fn drop(&mut self) {}
 }
 
-impl Interface for TdApi {
+impl Interface for CtpTdApi {
     type Message = TdApiMessage;
 
     fn new(
@@ -3481,7 +3481,7 @@ impl Interface for TdApi {
         let p = CString::new(path).unwrap();
         let flow_path_ptr = p.as_ptr();
         let api = unsafe { CThostFtdcTraderApi::CreateFtdcTraderApi(flow_path_ptr) };
-        TdApi {
+        CtpTdApi {
             data_collector: CallDataCollector::new(req, symbols, sender, api),
             request_id: 0,
             front_id: 0,

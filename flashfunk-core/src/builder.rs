@@ -11,7 +11,7 @@ pub struct Builder<'a, MdApi, TdApi> {
     pub(crate) id: Cow<'a, str>,
     pub(crate) pwd: Cow<'a, str>,
     pub(crate) path: Cow<'a, str>,
-    pub(crate) strategy: Vec<dyn Ac>,
+    pub(crate) strategy: Vec<Box<dyn Ac + Send>>,
     pub(crate) login_form: LoginForm,
     pub(crate) _md: PhantomData<MdApi>,
     pub(crate) _td: PhantomData<TdApi>,
@@ -37,12 +37,12 @@ impl<'a, I, I2> Builder<'a, I, I2>
         self
     }
 
-    pub fn strategy(mut self, strategy: impl Ac) -> Self {
+    pub fn strategy(mut self, strategy: Box<dyn Ac + Send>) -> Self {
         self.strategy.push(strategy);
         self
     }
 
-    pub fn strategies(mut self, strategy: Vec<impl Ac>) -> Self {
+    pub fn strategies(mut self, strategy: Vec<Box<dyn Ac + Send>>) -> Self {
         self.strategy = strategy;
         self
     }

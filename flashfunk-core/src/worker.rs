@@ -68,7 +68,7 @@ impl<I, M> MainWorker<I>
 
 // 策略工人，接收api的回调并处理，之后可发送消息给主线程工人。每个工人占据一个线程
 struct StrategyWorker {
-    st: &'static dyn Ac,
+    st: Box<dyn Ac + Send>,
     c_md: Receiver<MdApiMessage>,
     c_td: Receiver<TdApiMessage>,
     pub p_st: Sender<StrategyMessage>,
@@ -76,7 +76,7 @@ struct StrategyWorker {
 
 impl StrategyWorker {
     fn new(
-        st: &'static dyn Ac,
+        st: Box<dyn Ac + Send>,
         c_md: Receiver<MdApiMessage>,
         c_td: Receiver<TdApiMessage>,
         p_st: Sender<StrategyMessage>,
@@ -158,7 +158,6 @@ impl Drop for StrategyWorker {
 // 为builder建立工人并启动
 pub(crate) fn start_workers<I, I2>(mut builder: Builder<'_, I, I2>)
     where
-    // ToDo: 消息类型应该由构造器CtpBuilder传入
         I: Interface<Message=MdApiMessage>,
         I2: Interface<Message=TdApiMessage>,
 {
@@ -230,7 +229,7 @@ fn prepare_worker_channel<I, I2>(
     // groups为与symbols相对应(vec index)的策略们的发送端vec，该vec保存策略发送端在producer_md vec中的index
     let mut groups: Vec<Vec<usize>> = Vec::new();
 
-    sts.into_iter().enumerate().for_each(|(st_index, st)| {
+    sts.into_iter().enumerate().for_each(|(st_index, mut st)| {
         st.local_symbols().iter().for_each(|symbol| {
             symbols
                 .iter()
