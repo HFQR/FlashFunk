@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use crate::account::Account;
 use crate::builder::Builder;
-use crate::util::hash::HashMap;
+use flashfunk_level::util::hash::HashMap;
 
 /// ctpbee核心运行器
 /// 作为该运行器
@@ -28,8 +28,8 @@ impl Flash {
             path: Default::default(),
             strategy: vec![],
             login_form: Default::default(),
-            _i: PhantomData,
-            _i2: PhantomData,
+            _md: PhantomData,
+            _td: PhantomData,
         }
     }
 

@@ -1,10 +1,9 @@
 [workspace]
 members = [
-    "./timer",
-    "./flashfunk-codegen",
+    #    "./flashfunk-codegen",
     "./flashfunk-core",
-    #    "./flashfunk-interface",
-   "./flashfunk-fetcher"
+    "./flashfunk-level"
+    #   "./flashfunk-fetcher"
 ]
 
 

@@ -1,28 +1,26 @@
 use core::marker::PhantomData;
 
 use std::borrow::Cow;
-
-use crate::ac::{IntoStrategy, __Strategy};
-use crate::interface::Interface;
-use crate::structs::LoginForm;
-use crate::types::message::{MdApiMessage, TdApiMessage};
+use flashfunk_level::interface::{Ac, Interface};
+use flashfunk_level::data_type::LoginForm;
+use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
 use crate::worker::start_workers;
 
-pub struct Builder<'a, Interface, Interface2> {
+pub struct Builder<'a, MdApi, TdApi> {
     pub(crate) name: Cow<'a, str>,
     pub(crate) id: Cow<'a, str>,
     pub(crate) pwd: Cow<'a, str>,
     pub(crate) path: Cow<'a, str>,
-    pub(crate) strategy: Vec<__Strategy>,
+    pub(crate) strategy: Vec<dyn Ac>,
     pub(crate) login_form: LoginForm,
-    pub(crate) _i: PhantomData<Interface>,
-    pub(crate) _i2: PhantomData<Interface2>,
+    pub(crate) _md: PhantomData<MdApi>,
+    pub(crate) _td: PhantomData<TdApi>,
 }
 
 impl<'a, I, I2> Builder<'a, I, I2>
-where
-    I: Interface<Message = MdApiMessage>,
-    I2: Interface<Message = TdApiMessage>,
+    where
+        I: Interface<Message=MdApiMessage>,
+        I2: Interface<Message=TdApiMessage>,
 {
     pub fn id(mut self, id: impl Into<Cow<'a, str>>) -> Self {
         self.id = id.into();
@@ -39,12 +37,12 @@ where
         self
     }
 
-    pub fn strategy(mut self, strategy: impl IntoStrategy) -> Self {
-        self.strategy.push(strategy.into_str());
+    pub fn strategy(mut self, strategy: impl Ac) -> Self {
+        self.strategy.push(strategy);
         self
     }
 
-    pub fn strategies(mut self, strategy: Vec<__Strategy>) -> Self {
+    pub fn strategies(mut self, strategy: Vec<impl Ac>) -> Self {
         self.strategy = strategy;
         self
     }

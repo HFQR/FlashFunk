@@ -10,6 +10,8 @@
       <sourceFolder url="file://$MODULE_DIR$/flashfunk-codegen/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/flashfunk-ctp/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/flashfunk-fetcher/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/flashfunk-interface/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/flashfunk-level/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/examples/call/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

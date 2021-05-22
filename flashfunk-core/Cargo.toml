@@ -1,27 +1,22 @@
 [package]
 name = "flashfunk-core"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
-include = ["src/**/*", "sdk_sources/**/*", "Cargo.toml", "build.rs"]
-
-build = "build.rs"
 
 [dependencies]
 ahash = "0.4.5"
-bitflags = "1.2.1"
-cache-padded = "1.1.1"
 chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
 core_affinity = "0.5.10"
 encoding = "0.2.33"
 libc = "0.2.0"
-tokio = { version = "0.3", features = ["rt", "time"] }
-flashfunk-fetcher = { path = "../flashfunk-fetcher" }
-
-[dev-dependencies]
-flashfunk-codegen = { path = "../flashfunk-codegen" }
-# flashfunk-fetcher = { path = "../flashfunk-fetcher" }
-
+flashfunk-level = { path = "../flashfunk-level", features = ["ctp"] }
+async-trait = ""
+chrono-tz = { version = "0.5", features = ["serde"] }
+clickhouse-rs = { git = "https://github.com/suharev7/clickhouse-rs/", branch = "async-await" }
+futures = "0.3.8"
+tokio = { version = "1.5"}
+once_cell = ""
 
 [profile.release]
 lto = "fat"
@@ -31,12 +26,6 @@ debug-assertions = false
 overflow-checks = false
 panic = "abort"
 
-[profile.dev]
-rpath = true
-
-[build-dependencies]
-bindgen = "0.55.1"
-cc = "1.0"
 
 [[example]]
 name = "backtest"

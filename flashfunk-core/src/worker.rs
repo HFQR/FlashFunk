@@ -2,13 +2,11 @@ use core::marker::PhantomData;
 use core::time::Duration;
 
 use std::time::Instant;
-
-use crate::ac::__Strategy;
 use crate::builder::Builder;
-use crate::context::{new_context, ContextTrait};
-use crate::interface::Interface;
-use crate::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
-use crate::util::channel::{channel, GroupSender, Receiver, Sender};
+use flashfunk_level::context::{new_context, ContextTrait};
+use flashfunk_level::interface::{Interface, Ac};
+use flashfunk_level::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
+use flashfunk_level::util::channel::{channel, GroupSender, Receiver, Sender};
 use core_affinity::CoreId;
 use std::ops::Deref;
 
@@ -70,7 +68,7 @@ impl<I, M> MainWorker<I>
 
 // 策略工人，接收api的回调并处理，之后可发送消息给主线程工人。每个工人占据一个线程
 struct StrategyWorker {
-    st: __Strategy,
+    st: &'static dyn Ac,
     c_md: Receiver<MdApiMessage>,
     c_td: Receiver<TdApiMessage>,
     pub p_st: Sender<StrategyMessage>,
@@ -78,7 +76,7 @@ struct StrategyWorker {
 
 impl StrategyWorker {
     fn new(
-        st: __Strategy,
+        st: &'static dyn Ac,
         c_md: Receiver<MdApiMessage>,
         c_td: Receiver<TdApiMessage>,
         p_st: Sender<StrategyMessage>,
@@ -233,7 +231,7 @@ fn prepare_worker_channel<I, I2>(
     let mut groups: Vec<Vec<usize>> = Vec::new();
 
     sts.into_iter().enumerate().for_each(|(st_index, st)| {
-        st.symbols().iter().for_each(|symbol| {
+        st.local_symbols().iter().for_each(|symbol| {
             symbols
                 .iter()
                 .enumerate()
