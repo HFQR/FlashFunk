@@ -123,7 +123,8 @@ impl SqlQueryMessage {
 
 // 静态tokio handle。第一次调用的时候会惰性生成 clickhouse客户端和tokio运行时。并返回通道入口。
 static HANDLE: Lazy<UnboundedSender<SqlQueryMessage>> = Lazy::new(|| {
-    let url = std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap());
+    let url =
+        std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap());
     let pool = Pool::new(url);
 
     let (tx, mut rx) = unbounded::<SqlQueryMessage>();
@@ -172,4 +173,3 @@ pub fn get_ticks(
         .take()
         .unwrap()
 }
-

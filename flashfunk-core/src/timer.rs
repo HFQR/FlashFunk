@@ -1,6 +1,6 @@
 /// Auto Run Tools
-use chrono::{NaiveTime, Local, Timelike};
-use std::process::{Command};
+use chrono::{Local, NaiveTime, Timelike};
+use std::process::Command;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -9,27 +9,24 @@ pub struct Timer {
     rost: Vec<NaiveTime>,
 }
 
-
 impl Timer {
     pub fn new(stop: &str, start: &str) -> Timer {
         let st = Self::parse(stop);
         let sd = Self::parse(start);
 
-
-        Timer {
-            rest: st,
-            rost: sd,
-        }
+        Timer { rest: st, rost: sd }
     }
 
     fn parse(n: &str) -> Vec<NaiveTime> {
-        n.split(",").map(|x| {
-            NaiveTime::parse_from_str(x, "%H:%M:%S").expect("TIME STR FORMATTER ERROR")
-        }).collect::<Vec<NaiveTime>>()
+        n.split(",")
+            .map(|x| NaiveTime::parse_from_str(x, "%H:%M:%S").expect("TIME STR FORMATTER ERROR"))
+            .collect::<Vec<NaiveTime>>()
     }
 
     pub fn run(&mut self, mut command: Command) {
-        let mut n = command.spawn().expect("Process run failed, please check your code or command");
+        let mut n = command
+            .spawn()
+            .expect("Process run failed, please check your code or command");
         loop {
             let current = Local::now().naive_local().time();
 
@@ -46,11 +43,12 @@ impl Timer {
                     if alive {
                         n.kill();
                     }
-                    n = command.spawn().expect("Process run failed, please check your code or command");
+                    n = command
+                        .spawn()
+                        .expect("Process run failed, please check your code or command");
                     println!("===> Time is: {}, process should be start", current);
                 }
             }
-
 
             sleep(Duration::from_secs(1));
             println!("===> Now T am checking it {}", current);

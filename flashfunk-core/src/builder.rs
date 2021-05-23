@@ -1,10 +1,10 @@
 use core::marker::PhantomData;
 
-use std::borrow::Cow;
-use flashfunk_level::interface::{Ac, Interface};
-use flashfunk_level::data_type::LoginForm;
-use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
 use crate::worker::start_workers;
+use flashfunk_level::data_type::LoginForm;
+use flashfunk_level::interface::{Ac, Interface};
+use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
+use std::borrow::Cow;
 
 pub struct Builder<'a, MdApi, TdApi> {
     pub(crate) name: Cow<'a, str>,
@@ -18,9 +18,9 @@ pub struct Builder<'a, MdApi, TdApi> {
 }
 
 impl<'a, I, I2> Builder<'a, I, I2>
-    where
-        I: Interface<Message=MdApiMessage>,
-        I2: Interface<Message=TdApiMessage>,
+where
+    I: Interface<Message = MdApiMessage>,
+    I2: Interface<Message = TdApiMessage>,
 {
     pub fn id(mut self, id: impl Into<Cow<'a, str>>) -> Self {
         self.id = id.into();

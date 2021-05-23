@@ -5,16 +5,18 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
-use flashfunk_level::interface::Interface;
-use flashfunk_level::data_type::{Tick, LoginForm, TickData, CancelRequest, OrderRequest, OrderData, TradeData};
-use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
-use flashfunk_level::util::channel::{GroupSender};
 use crate::account::Account;
+use crate::get_ticks;
 use chrono::{NaiveDate, Utc};
+use flashfunk_level::constant::{Direction, Status};
+use flashfunk_level::data_type::{
+    CancelRequest, LoginForm, OrderData, OrderRequest, Tick, TickData, TradeData,
+};
+use flashfunk_level::interface::Interface;
+use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
+use flashfunk_level::util::channel::GroupSender;
 use flashfunk_level::util::hash::HashMap;
-use flashfunk_level::constant::{Status, Direction};
 use std::borrow::Cow;
-use crate::{get_ticks};
 use std::io::prelude::*;
 
 const QUEUE_INIT: i32 = 888_888;
@@ -59,12 +61,18 @@ impl Interface for MockMdApi {
 
     fn subscribe(&mut self) {
         // read config
-        let mut config_file = std::fs::File::open(std::env::var("CONFIG_FILE")
-            .expect("please input env:CONFIG_FILE"))
-            .expect("can not open config file");
+        let mut config_file = std::fs::File::open(
+            std::env::var("CONFIG_FILE").expect("please input env:CONFIG_FILE"),
+        )
+        .expect("can not open config file");
         let mut content = String::new();
-        config_file.read_to_string(&mut content).expect("can not read config");
-        let config_line = content.lines().nth(1).expect("can not get second line (config data line)");
+        config_file
+            .read_to_string(&mut content)
+            .expect("can not read config");
+        let config_line = content
+            .lines()
+            .nth(1)
+            .expect("can not get second line (config data line)");
         let mut iter = config_line.split(",");
         let symbol = iter.next().expect("can not find symbol");
         let start = iter.next().expect("can not find start");
@@ -113,7 +121,6 @@ impl Interface for MockMdApi {
         self.handle = Some(handle);
     }
 }
-
 
 pub struct MockTdApi {
     acc: Account,
@@ -219,13 +226,16 @@ impl MockTdApi {
             if (order_dir == Direction::LONG) && (order_price >= self.current_tick.bid_price(0)) {
                 trade_price = order_price.min(self.current_tick.ask_price(0));
                 trade_vol = order_vol;
-            } else if (order_dir == Direction::SHORT) && (order_price <= self.current_tick.ask_price(0)) {
+            } else if (order_dir == Direction::SHORT)
+                && (order_price <= self.current_tick.ask_price(0))
+            {
                 trade_price = order_price.max(self.current_tick.bid_price(0));
                 trade_vol = order_vol;
             } else {
                 if queue_num > 0 {
                     // 获取该订单价格在订单簿上的挂单量，考虑自身长度
-                    new_queue_num_head = self.get_vol_form_orderbook(&order, current_tick) - order_vol;
+                    new_queue_num_head =
+                        self.get_vol_form_orderbook(&order, current_tick) - order_vol;
                     new_queue_num_head = new_queue_num_head.min(queue_num);
                     let size = self.acc.get_size_map(current_tick.symbol.as_ref());
                     assert_ne!(size, 0.0, "size can not be 0.0!");
@@ -233,12 +243,14 @@ impl MockTdApi {
                     // 连续在一档，才可能将位置更新到：当前位置 - 期间一档成交
                     if order_dir == Direction::LONG
                         && current_tick.bid_price(0) == order_price
-                        && old_tick.bid_price(0) == order_price {
+                        && old_tick.bid_price(0) == order_price
+                    {
                         new_queue_num_head = new_queue_num_head.min(queue_num - ab_tuple.1 as i32);
                     }
                     if order_dir == Direction::SHORT
                         && current_tick.ask_price(0) == order_price
-                        && old_tick.ask_price(0) == order_price {
+                        && old_tick.ask_price(0) == order_price
+                    {
                         new_queue_num_head = new_queue_num_head.min(queue_num - ab_tuple.0 as i32);
                     }
                     if new_queue_num_head > 0 {
@@ -269,7 +281,10 @@ impl MockTdApi {
                 tradeid: Some(self.trade_id.to_string()),
             };
             // 处理 order
-            let mut order_data = self.active_order_map.remove(&id).expect("can not find the order");
+            let mut order_data = self
+                .active_order_map
+                .remove(&id)
+                .expect("can not find the order");
 
             if trade_vol == order_vol {
                 order_data.status = Status::ALLTRADED;
@@ -330,15 +345,20 @@ impl Interface for MockTdApi {
     fn send_order(&mut self, idx: usize, order: OrderRequest) {
         self.req_id += 1;
         // 判断可用保证金是否充足
-        let need_forzen = order.volume * order.price * self.acc.get_size_map(order.symbol.as_str()) * self.acc.get_commission_ratio(order.symbol.as_str());
+        let need_forzen = order.volume
+            * order.price
+            * self.acc.get_size_map(order.symbol.as_str())
+            * self.acc.get_commission_ratio(order.symbol.as_str());
         let ava = self.acc.available();
         if ava >= need_forzen {
             // 下单成功
             let order_data = self.change_req_to_data(idx, self.req_id, order);
             // 冻结账户保证金
             self.acc.update_order(order_data.clone());
-            self.active_order_map.insert(order_data.orderid.clone().unwrap(), order_data.clone());
-            self.queue_num_map.insert(order_data.orderid.clone().unwrap(), QUEUE_INIT);
+            self.active_order_map
+                .insert(order_data.orderid.clone().unwrap(), order_data.clone());
+            self.queue_num_map
+                .insert(order_data.orderid.clone().unwrap(), QUEUE_INIT);
             self.sender.try_send_to(order_data, idx).unwrap_or(());
         } else {
             // 拒单

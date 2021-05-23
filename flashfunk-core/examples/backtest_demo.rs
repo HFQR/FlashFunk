@@ -8,15 +8,17 @@ use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use chrono::{Local, NaiveDateTime};
-use flashfunk_core::interface::Interface;
-use flashfunk_core::structs::{CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData, TradeData};
-use flashfunk_core::types::message::{TdApiMessage, MdApiMessage, StrategyMessage};
-use flashfunk_core::prelude::*;
-use flashfunk_core::ac::Ac;
-use flashfunk_core::constants::{Status, Direction, Exchange, OrderType, Offset};
-use flashfunk_core::{GroupSender, MockMdApi, MockTdApi};
-use flashfunk_fetcher::{Tick, fetch_tick};
 use flashfunk_codegen::Strategy;
+use flashfunk_core::ac::Ac;
+use flashfunk_core::constants::{Direction, Exchange, Offset, OrderType, Status};
+use flashfunk_core::interface::Interface;
+use flashfunk_core::prelude::*;
+use flashfunk_core::structs::{
+    CancelRequest, Generator, LoginForm, OrderData, OrderRequest, TickData, TradeData,
+};
+use flashfunk_core::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
+use flashfunk_core::{GroupSender, MockMdApi, MockTdApi};
+use flashfunk_fetcher::{fetch_tick, Tick};
 
 /*
 pub struct LocalMdApi {
@@ -89,13 +91,20 @@ impl Interface for LocalMdApi {
 #[symbol("OI101")]
 pub struct HelloFlash {}
 
-
 impl Ac for HelloFlash {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
         ctx.send(tick.clone());
-        println!("{:?} -- ask:{} bid:{}", tick.symbol, tick.ask_price(0), tick.bid_price(0));
+        println!(
+            "{:?} -- ask:{} bid:{}",
+            tick.symbol,
+            tick.ask_price(0),
+            tick.bid_price(0)
+        );
         let pos = ctx.get_position(&tick.symbol);
-        println!("pos: -- long:{} short:{}", pos.long_volume, pos.short_volume);
+        println!(
+            "pos: -- long:{} short:{}",
+            pos.long_volume, pos.short_volume
+        );
         let req = OrderRequest {
             //symbol: "ni2102.SHFE".to_string(),
             symbol: tick.symbol.clone(),
@@ -111,17 +120,27 @@ impl Ac for HelloFlash {
     }
 
     fn on_order(&mut self, order: &OrderData, ctx: &mut Context) {
-        println!("on order orderid:{} status:{:?}", order.orderid.as_ref().unwrap(), order.status);
+        println!(
+            "on order orderid:{} status:{:?}",
+            order.orderid.as_ref().unwrap(),
+            order.status
+        );
     }
 
     fn on_trade(&mut self, trade: &TradeData, ctx: &mut Context) {
-        println!("on trade tradeid:{} orderid:{}", trade.tradeid.as_ref().unwrap(), trade.orderid.as_ref().unwrap());
+        println!(
+            "on trade tradeid:{} orderid:{}",
+            trade.tradeid.as_ref().unwrap(),
+            trade.orderid.as_ref().unwrap()
+        );
     }
 }
 
-
 fn main() {
-    println!("{}", std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap()));
+    println!(
+        "{}",
+        std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap())
+    );
     println!("{}", std::env::var("CONFIG_FILE").unwrap());
     let login_form = LoginForm::new()
         .user_id("170874")

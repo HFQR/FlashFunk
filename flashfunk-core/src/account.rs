@@ -45,22 +45,37 @@ pub struct Account {
 impl Account {
     pub(crate) fn new() -> Self {
         // read config
-        let mut config_file = std::fs::File::open(std::env::var("CONFIG_FILE")
-            .expect("please input env:CONFIG_FILE"))
-            .expect("can not open config file");
+        let mut config_file = std::fs::File::open(
+            std::env::var("CONFIG_FILE").expect("please input env:CONFIG_FILE"),
+        )
+        .expect("can not open config file");
         let mut content = String::new();
-        config_file.read_to_string(&mut content).expect("can not read config");
-        let config_line = content.lines().nth(1).expect("can not get second line (config data line)");
+        config_file
+            .read_to_string(&mut content)
+            .expect("can not read config");
+        let config_line = content
+            .lines()
+            .nth(1)
+            .expect("can not get second line (config data line)");
         let mut iter = config_line.split(",");
         let symbol = iter.next().expect("can not find symbol");
         let _ = iter.next();
         let _ = iter.next();
-        let size: f64 = iter.next().expect("can not find size")
-            .parse().expect("size should be f64");
-        let margin_ratio: f64 = iter.next().expect("can not find margin_ratio")
-            .parse().expect("margin_ratio should be f64");
-        let commission_ratio: f64 = iter.next().expect("can not find commission_ratio")
-            .parse().expect("commission_ratio should be f64");
+        let size: f64 = iter
+            .next()
+            .expect("can not find size")
+            .parse()
+            .expect("size should be f64");
+        let margin_ratio: f64 = iter
+            .next()
+            .expect("can not find margin_ratio")
+            .parse()
+            .expect("margin_ratio should be f64");
+        let commission_ratio: f64 = iter
+            .next()
+            .expect("can not find commission_ratio")
+            .parse()
+            .expect("commission_ratio should be f64");
         let mut config_size_map: HashMap<String, f64> = HashMap::new();
         let mut config_commission_ratio_map: HashMap<String, f64> = HashMap::new();
         let mut config_margin_ratio_map: HashMap<String, f64> = HashMap::new();
@@ -95,7 +110,7 @@ impl Account {
             - self.margin()
             - self.frozen_margin()
     }
-    
+
     pub fn get_fee_sum(&self) -> f64 {
         self.fee.values().sum()
     }
@@ -187,7 +202,7 @@ impl Account {
                 self.margin_frozen_container
                     .remove(&data.orderid.clone().unwrap());
             }
-            _ => {},
+            _ => {}
         }
 
         match data.offset {
@@ -197,7 +212,7 @@ impl Account {
                 self.margin_frozen_container
                     .insert(data.orderid.unwrap(), data.volume * data.price * ratio);
             }
-            _ => {},
+            _ => {}
         }
 
         self.frozen_fee
