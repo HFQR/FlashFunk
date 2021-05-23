@@ -1,12 +1,12 @@
-use std::borrow::{Cow, Borrow, BorrowMut};
+use std::borrow::{Borrow, BorrowMut, Cow};
 
 use crate::constant::*;
-use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 use bitflags::_core::cmp::{max, min};
-use std::time::Instant;
 use bitflags::_core::ops::{Deref, DerefMut};
+use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 use chrono_tz::Tz;
 use clickhouse_rs::types::{Block, Complex, Row};
+use std::time::Instant;
 
 /// Tick Data
 #[derive(Clone)]
@@ -95,14 +95,12 @@ pub struct OrderData {
 }
 
 pub struct ExtraOrder {
-    n: OrderData
+    n: OrderData,
 }
 
 impl From<OrderData> for ExtraOrder {
     fn from(data: OrderData) -> Self {
-        Self {
-            n: data
-        }
+        Self { n: data }
     }
 }
 
@@ -121,7 +119,7 @@ impl DerefMut for ExtraOrder {
 }
 
 pub struct ExtraTrade {
-    n: TradeData
+    n: TradeData,
 }
 
 impl From<TradeData> for ExtraTrade {
@@ -129,7 +127,6 @@ impl From<TradeData> for ExtraTrade {
         Self { n: data }
     }
 }
-
 
 impl Deref for ExtraTrade {
     type Target = TradeData;
@@ -163,10 +160,34 @@ impl From<&Tick> for TickData {
             high_price: 0.0,
             low_price: 0.0,
             pre_close: 0.0,
-            bid_price: [tick.bid_price_1.clone(), tick.bid_price_2.clone(), tick.bid_price_3.clone(), tick.bid_price_4.clone(), tick.bid_price_5.clone()],
-            ask_price: [tick.ask_price_1.clone(), tick.ask_price_2.clone(), tick.ask_price_3.clone(), tick.ask_price_4.clone(), tick.ask_price_5.clone()],
-            bid_volume: [tick.bid_volume_1.clone(), tick.bid_volume_2.clone(), tick.bid_volume_3.clone(), tick.bid_volume_4.clone(), tick.bid_volume_5.clone()],
-            ask_volume: [tick.ask_volume_1.clone(), tick.ask_volume_2.clone(), tick.ask_volume_3.clone(), tick.ask_volume_4.clone(), tick.ask_volume_5.clone()],
+            bid_price: [
+                tick.bid_price_1.clone(),
+                tick.bid_price_2.clone(),
+                tick.bid_price_3.clone(),
+                tick.bid_price_4.clone(),
+                tick.bid_price_5.clone(),
+            ],
+            ask_price: [
+                tick.ask_price_1.clone(),
+                tick.ask_price_2.clone(),
+                tick.ask_price_3.clone(),
+                tick.ask_price_4.clone(),
+                tick.ask_price_5.clone(),
+            ],
+            bid_volume: [
+                tick.bid_volume_1.clone(),
+                tick.bid_volume_2.clone(),
+                tick.bid_volume_3.clone(),
+                tick.bid_volume_4.clone(),
+                tick.bid_volume_5.clone(),
+            ],
+            ask_volume: [
+                tick.ask_volume_1.clone(),
+                tick.ask_volume_2.clone(),
+                tick.ask_volume_3.clone(),
+                tick.ask_volume_4.clone(),
+                tick.ask_volume_5.clone(),
+            ],
             instant: Instant::now(),
         }
     }
@@ -429,14 +450,12 @@ impl Default for ContractData {
 }
 
 pub struct ContractVec {
-    n: Vec<ContractData>
+    n: Vec<ContractData>,
 }
 
 impl From<Vec<ContractData>> for ContractVec {
     fn from(n: Vec<ContractData>) -> Self {
-        ContractVec {
-            n
-        }
+        ContractVec { n }
     }
 }
 
@@ -628,8 +647,8 @@ impl Generator {
     }
 
     pub fn update_tick<F>(&mut self, tick: &TickData, f: F)
-        where
-            F: FnOnce(&mut Self, Bar),
+    where
+        F: FnOnce(&mut Self, Bar),
     {
         let time = tick.datetime;
         if self.last.is_none() {
@@ -666,7 +685,6 @@ impl Generator {
         min((i * 10000.0) as i32, (v * 10000.0) as i32) as f64 / 10000.0
     }
 }
-
 
 #[derive(Clone, Debug)]
 pub struct Tick {

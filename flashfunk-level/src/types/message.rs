@@ -1,5 +1,7 @@
-use crate::data_type::{AccountData, CancelRequest, ContractData, OrderData, OrderRequest, PositionData, QueryRequest, SubscribeRequest, TickData, TradeData, ExtraOrder, ExtraTrade, ContractVec};
-
+use crate::data_type::{
+    AccountData, CancelRequest, ContractData, ContractVec, ExtraOrder, ExtraTrade, OrderData,
+    OrderRequest, PositionData, QueryRequest, SubscribeRequest, TickData, TradeData,
+};
 
 pub enum MdApiMessage {
     TickData(&'static TickData),
@@ -29,7 +31,6 @@ pub enum TdApiMessage {
     ContractVec(ContractVec),
 }
 
-
 impl From<OrderData> for TdApiMessage {
     fn from(data: OrderData) -> Self {
         Self::OrderData(data)
@@ -41,7 +42,6 @@ impl From<ContractVec> for TdApiMessage {
         Self::ContractVec(data)
     }
 }
-
 
 impl From<ExtraOrder> for TdApiMessage {
     fn from(data: ExtraOrder) -> Self {
@@ -78,7 +78,6 @@ impl From<ContractData> for TdApiMessage {
         Self::ContractData(data)
     }
 }
-
 
 pub enum StrategyMessage {
     OrderRequest(OrderRequest),

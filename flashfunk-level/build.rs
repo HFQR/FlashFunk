@@ -15,7 +15,6 @@ use std::{env, fs};
 
 // 衔接层  Rust ->  C -> C++
 
-
 #[cfg(not(target_os = "windows"))]
 fn os_path() -> String {
     var("HOME").unwrap()
@@ -43,17 +42,32 @@ fn mkdir_path(path: &str) -> PathBuf {
 
 #[cfg(not(target_os = "windows"))]
 fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
-    let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).parent().unwrap().to_path_buf();
-    let lib_dir = format!("{}/flashfunk-level/sdk_sources/{}/lib", current_dir.to_str().unwrap(), sdk);
-    let dll_dir = format!("{}/flashfunk-level/sdk_sources/{}/linux", current_dir.to_str().unwrap(), sdk);
+    let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap())
+        .parent()
+        .unwrap()
+        .to_path_buf();
+    let lib_dir = format!(
+        "{}/flashfunk-level/sdk_sources/{}/lib",
+        current_dir.to_str().unwrap(),
+        sdk
+    );
+    let dll_dir = format!(
+        "{}/flashfunk-level/sdk_sources/{}/linux",
+        current_dir.to_str().unwrap(),
+        sdk
+    );
     let mut v1 = vec![];
     for entry in fs::read_dir(dll_dir.clone()).unwrap() {
         let filename = entry.unwrap().file_name().into_string().unwrap();
         v1.push(file_name(filename))
     }
-    (lib_dir, dll_dir, v1.first().unwrap().clone(), v1.last().unwrap().clone())
+    (
+        lib_dir,
+        dll_dir,
+        v1.first().unwrap().clone(),
+        v1.last().unwrap().clone(),
+    )
 }
-
 
 fn file_name(name: String) -> String {
     if name.starts_with("lib") {
@@ -68,16 +82,42 @@ fn file_name(name: String) -> String {
 
 #[cfg(target_os = "windows")]
 fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
-    let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).parent().unwrap().to_path_buf();
-    let lib_dir = format!("{}\\flashfunk-level\\sdk_sources\\{}\\lib", current_dir.to_str().unwrap(), sdk);
-    let dll_dir = format!("{}\\flashfunk-level\\sdk_sources\\{}\\win", current_dir.to_str().unwrap(), sdk);
+    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap())
+        .parent()
+        .unwrap()
+        .to_path_buf();
+    let lib_dir = format!(
+        "{}\\flashfunk-level\\sdk_sources\\{}\\lib",
+        current_dir.to_str().unwrap(),
+        sdk
+    );
+    let dll_dir = format!(
+        "{}\\flashfunk-level\\sdk_sources\\{}\\win",
+        current_dir.to_str().unwrap(),
+        sdk
+    );
     let mut v = vec![];
     for entry in fs::read_dir(dll_dir.clone()).unwrap() {
-        let filename = entry.unwrap().file_name().into_string().unwrap();
+        let file = entry.unwrap();
+        let filepath = file.path();
+        let filename = file.file_name().into_string().unwrap();
+        let destination = format!("{}/{}", out_dir, filename);
+
+
+        std::fs::copy(filepath, &destination).expect("failed to copy so to outdir");
+
+        println!("cargo:resource={}", destination);
 
         v.push(file_name(filename))
     }
-    (lib_dir, dll_dir, v.first().unwrap().clone(), v.last().unwrap().clone())
+    println!("cargo:rustc-link-search=native={}", out_dir);
+    (
+        lib_dir,
+        dll_dir,
+        v.first().unwrap().clone(),
+        v.last().unwrap().clone(),
+    )
 }
 
 /// 遍历命令
@@ -86,7 +126,19 @@ fn build(target: &str) {
     let file_path = path.join("bindings.rs");
 
     let c = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
-    cc::Build::new()
+
+    #[cfg(target_os = "windows")]
+        cc::Build::new()
+        .file(format!("src/{}/src/{}.cpp", target, target))
+        .cpp(true)
+        .warnings(false)
+        .out_dir(path.clone())
+        .include("/usr/include/")
+        .flag(format!("-L {}/sdk_sources/{}/win", c.to_str().unwrap(), target).as_str())
+        .compile(format!("{}", target).as_str());
+
+    #[cfg(not(target_os = "windows"))]
+        cc::Build::new()
         .file(format!("src/{}/src/{}.cpp", target, target))
         .cpp(true)
         .warnings(false)
@@ -107,7 +159,9 @@ fn build(target: &str) {
     let mut output_file = std::fs::File::create(file_path.as_path())
         .map_err(|e| format!("cannot create struct file, {}", e))
         .unwrap();
-    output_file.write_all(bindings.as_bytes()).map_err(|e| format!("cannot write struct file, {}", e));
+    output_file
+        .write_all(bindings.as_bytes())
+        .map_err(|e| format!("cannot write struct file, {}", e));
 
     // link to file
     #[cfg(not(target_os = "windows"))]
@@ -120,18 +174,21 @@ fn build(target: &str) {
     // add  link search .lib  file path
     println!("cargo:rustc-link-search={}", lib);
 
-    // add link search .dll/.so file path
-    println!("cargo:rustc-link-search={}", dll);
 
-    // link to dll/so
-    println!("cargo:rustc-flags=-L {}", dll);
     println!("cargo:rustc-link-lib=dylib={}", td);
     println!("cargo:rustc-link-lib=dylib={}", md);
 }
 
-
 fn main() {
     #[cfg(feature = "ctp")]
         build("ctp");
-}
 
+    #[cfg(feature = "ctp_mini")]
+        build("ctp_mini");
+
+    #[cfg(feature = "ess")]
+        build("ess");
+
+    #[cfg(feature = "rohon")]
+        build("rohon");
+}

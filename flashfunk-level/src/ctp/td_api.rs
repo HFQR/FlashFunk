@@ -8,21 +8,24 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 use std::sync::Arc;
 
-use chrono::{Date, NaiveDateTime, Utc, Timelike};
+use chrono::{Date, NaiveDateTime, Timelike, Utc};
 
 use crate::constant::{Direction, Exchange, Offset, OrderType, Status};
 use crate::ctp::sys::*;
+use crate::data_type::{
+    AccountData, CancelRequest, ContractData, ContractVec, ExtraOrder, ExtraTrade, LoginForm,
+    OrderData, OrderRequest, PositionData, TradeData,
+};
 use crate::interface::Interface;
-use crate::data_type::{AccountData, CancelRequest, ContractData, LoginForm, OrderData, ContractVec, OrderRequest, PositionData, TradeData, ExtraTrade, ExtraOrder};
 use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use crate::util::hash::HashMap;
 use crate::{get_interface_path, os_path};
+use bitflags::_core::ops::Deref;
 use std::fs::create_dir;
 use std::path::PathBuf;
 use std::process::id;
-use bitflags::_core::ops::Deref;
 
 const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
 const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
@@ -2711,7 +2714,6 @@ impl Clone for TdApiBlocker {
     }
 }
 
-
 impl TdApiBlocker {
     fn new() -> Self {
         Self(Arc::new(TdApiBlockerInner {
@@ -2743,7 +2745,6 @@ pub struct CallDataCollector {
     pub front_id: i32,
     contracts: Vec<ContractData>,
 }
-
 
 impl TdCallApi for CallDataCollector {
     fn on_front_connected(&mut self) {
@@ -2897,7 +2898,6 @@ impl TdCallApi for CallDataCollector {
         }
     }
 
-
     unsafe fn on_rsp_qry_trading_account(
         &mut self,
         pTradingAccount: *mut CThostFtdcTradingAccountField,
@@ -2914,9 +2914,12 @@ impl TdCallApi for CallDataCollector {
                 date: Utc::today(),
             };
             self.sender.send_all(account_data);
-        } else {}
-        if self.blocker.is_some() {
-            self.blocker.take().unwrap().0.step5.unblock();
+        } else {
+
+        }
+
+        if let Some(block) = self.blocker.take() {
+            block.0.step5.unblock();
         }
     }
 
@@ -2958,7 +2961,9 @@ impl TdCallApi for CallDataCollector {
         self.contracts.push(contract);
         if bIsLast {
             let con = std::mem::take(&mut self.contracts);
-            self.sender.try_send_to(ContractVec::from(con), 0).unwrap_or(());
+            self.sender
+                .try_send_to(ContractVec::from(con), 0)
+                .unwrap_or(());
         }
 
         if bIsLast {
@@ -2974,8 +2979,8 @@ impl TdCallApi for CallDataCollector {
             let (idx, refs) = split_into_vec(order_ref.as_str());
 
             self.order_ref.fetch_max(refs, Ordering::SeqCst);
-            let (date, time) = parse_datetime_from_str(order.InsertDate.as_ptr(),
-                                                       order.InsertTime.as_ptr());
+            let (date, time) =
+                parse_datetime_from_str(order.InsertDate.as_ptr(), order.InsertTime.as_ptr());
             let exchange = Exchange::from(order.ExchangeID);
             (
                 OrderData {
@@ -3010,8 +3015,8 @@ impl TdCallApi for CallDataCollector {
     unsafe fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
         let (trade, idx) = {
             let trade = *pTrade;
-            let (date, time) = parse_datetime_from_str(trade.TradeDate.as_ptr(),
-                                                       trade.TradeTime.as_ptr());
+            let (date, time) =
+                parse_datetime_from_str(trade.TradeDate.as_ptr(), trade.TradeTime.as_ptr());
             let order_ref = slice_to_string(&trade.OrderRef);
             let (idx, refs) = split_into_vec(order_ref.as_str());
             (
@@ -3253,9 +3258,7 @@ impl CallDataCollector {
         true
     }
 
-    fn register_spi(
-        &mut self,
-    ) {
+    fn register_spi(&mut self) {
         let trait_object_box: Box<Box<&mut TdCallApi>> = Box::new(Box::new(self));
         let trait_object_pointer =
             Box::into_raw(trait_object_box) as *mut Box<&mut dyn TdCallApi> as *mut c_void;
@@ -3286,7 +3289,12 @@ impl CallDataCollector {
         }
     }
 
-    pub fn new(req: &LoginForm, symbols: Vec<&'static str>, sender: GroupSender<TdApiMessage>, trader_pointer: *mut CThostFtdcTraderApi) -> Self {
+    pub fn new(
+        req: &LoginForm,
+        symbols: Vec<&'static str>,
+        sender: GroupSender<TdApiMessage>,
+        trader_pointer: *mut CThostFtdcTraderApi,
+    ) -> Self {
         let blocker = TdApiBlocker::new();
         CallDataCollector {
             session_id: 0,
@@ -3303,7 +3311,7 @@ impl CallDataCollector {
             trade_pointer: trader_pointer,
             login_form: req.clone(),
             symbols,
-            contracts: vec![]
+            contracts: vec![],
         }
     }
 
@@ -3314,15 +3322,9 @@ impl CallDataCollector {
         let form = &(self.login_form);
 
         let (time_condition, volume_condition) = match order.order_type {
-            OrderType::FOK => (
-                THOST_FTDC_TC_IOC as i8, THOST_FTDC_VC_CV as i8
-            ),
-            OrderType::FAK => (
-                THOST_FTDC_TC_IOC as i8, THOST_FTDC_VC_AV as i8
-            ),
-            _ => (
-                THOST_FTDC_TC_GFD as i8, THOST_FTDC_VC_AV as i8
-            )
+            OrderType::FOK => (THOST_FTDC_TC_IOC as i8, THOST_FTDC_VC_CV as i8),
+            OrderType::FAK => (THOST_FTDC_TC_IOC as i8, THOST_FTDC_VC_AV as i8),
+            _ => (THOST_FTDC_TC_GFD as i8, THOST_FTDC_VC_AV as i8),
         };
         let req = CThostFtdcInputOrderField {
             InstrumentID: order.symbol.as_str().to_c_slice(),
@@ -3336,7 +3338,8 @@ impl CallDataCollector {
             CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
                 .unwrap()
                 .to_c_slice(),
-            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.load(Ordering::SeqCst), idx).to_c_slice(),
+            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.load(Ordering::SeqCst), idx)
+                .to_c_slice(),
             CombHedgeFlag: String::from_utf8(Vec::from([THOST_FTDC_HF_Speculation]))
                 .unwrap()
                 .to_c_slice(),
@@ -3359,7 +3362,6 @@ impl CallDataCollector {
     }
 
     fn connect(&mut self) {
-
         // 阻塞器交给data collector
         self.register_spi();
 
@@ -3382,18 +3384,25 @@ impl CallDataCollector {
         self.blocker.as_mut().unwrap().0.step3.block();
 
         // on_rsp_user_login 完成时会写入atomic i32至blocker，我们读取并赋予TdApi.
-        self.session_id = self.blocker.as_mut().unwrap().0.session_id.load(Ordering::SeqCst);
-        self.front_id = self.blocker.as_mut().unwrap().0.front_id.load(Ordering::SeqCst);
+        self.session_id = self
+            .blocker
+            .as_mut()
+            .unwrap()
+            .0
+            .session_id
+            .load(Ordering::SeqCst);
+        self.front_id = self
+            .blocker
+            .as_mut()
+            .unwrap()
+            .0
+            .front_id
+            .load(Ordering::SeqCst);
 
         self.req_settle();
-
         self.req_instrument();
-        self.req_position();
-
-        //阻塞等待合約查詢完畢
         self.blocker.as_mut().unwrap().0.step4.block();
-        // println!("第四步解封");
-
+        self.req_position();
         self.req_account();
         // 阻塞等待賬戶查詢完畢
         self.blocker.as_mut().unwrap().0.step5.block();
@@ -3474,7 +3483,7 @@ impl Interface for CtpTdApi {
     ) -> Self {
         let home_path = os_path("ctp");
         let string = String::from_utf8(id.into()).unwrap();
-        let path = home_path.join(string).to_string_lossy().to_string() +"//";
+        let path = home_path.join(string).to_string_lossy().to_string() + "//";
         if !PathBuf::from(path.clone()).exists() {
             create_dir(path.clone()).expect("create dir failed ");
         }

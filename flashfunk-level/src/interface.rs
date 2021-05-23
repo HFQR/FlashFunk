@@ -1,5 +1,8 @@
 use crate::context::Context;
-use crate::data_type::{ContractData, PositionData, TradeData, OrderData, AccountData, CancelRequest, LoginForm, OrderRequest, TickData};
+use crate::data_type::{
+    AccountData, CancelRequest, ContractData, LoginForm, OrderData, OrderRequest, PositionData,
+    TickData, TradeData,
+};
 use crate::util::channel::GroupSender;
 
 /// Core trait
@@ -28,7 +31,6 @@ pub trait Ac {
 
     fn name<'a>(&mut self) -> &'a str;
 }
-
 
 /// 用户登录接口,包含用户的
 pub trait Interface {

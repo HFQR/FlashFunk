@@ -43,8 +43,8 @@ impl<M> GroupSender<M> {
 
     // 发送至所有sender
     pub fn send_all<MM>(&self, mm: MM)
-        where
-            MM: Into<M> + Clone,
+    where
+        MM: Into<M> + Clone,
     {
         self.sender.iter().for_each(|s| s.send(mm.clone().into()))
     }
@@ -52,15 +52,15 @@ impl<M> GroupSender<M> {
     // 发送至指定index的sender. 失败会panic
     pub fn send_to(&self, m: impl Into<M>, sender_index: usize) {
         match self.sender.get(sender_index) {
-            Some(t) => { t.send(m.into()) }
-            None => println!("can find index strategy")
+            Some(t) => t.send(m.into()),
+            None => println!("can find index strategy"),
         }
     }
 
     // 发送至指定index的sender. 失败会返回消息
     pub fn try_send_to<MM>(&self, m: MM, sender_index: usize) -> Result<(), ChannelError<MM>>
-        where
-            MM: Into<M>,
+    where
+        MM: Into<M>,
     {
         match self.sender.get(sender_index) {
             Some(s) => {
@@ -72,13 +72,9 @@ impl<M> GroupSender<M> {
     }
 
     // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
-    pub fn try_send_group<MM>(
-        &self,
-        mm: MM,
-        group_index: usize,
-    ) -> Result<(), ChannelError<MM>>
-        where
-            MM: Into<M> + Clone,
+    pub fn try_send_group<MM>(&self, mm: MM, group_index: usize) -> Result<(), ChannelError<MM>>
+    where
+        MM: Into<M> + Clone,
     {
         match self.group.get(group_index) {
             Some(g) => {

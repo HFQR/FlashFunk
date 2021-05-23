@@ -14,7 +14,11 @@ include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
 // format!("{}{}", var("HOMEDRIVE").unwrap(), var("HOMEPATH").unwrap()
 
 #[cfg(target_os = "windows")]
-include!(concat!(env!("HOMEDRIVE"), env!("HOMEPATH"), "/.HFQ/ctp/bindings.rs"));
+include!(concat!(
+    env!("HOMEDRIVE"),
+    env!("HOMEPATH"),
+    "/.HFQ/ctp/bindings.rs"
+));
 // pub fn to_c_ptr(string: String) -> *const i8 {
 //     CString::new(string).unwrap().as_ptr()
 // }
@@ -119,7 +123,11 @@ pub fn another_slice_to_string(v: &[i8]) -> String {
 }
 
 /// This function provide a high-speed parse time to build a  ( NaiveDate, and NaiveTime)
-pub fn parse_datetime_from_str_with_mill(date: *const i8, time: *const i8, mill: c_int) -> (NaiveDate, NaiveTime) {
+pub fn parse_datetime_from_str_with_mill(
+    date: *const i8,
+    time: *const i8,
+    mill: c_int,
+) -> (NaiveDate, NaiveTime) {
     unsafe {
         let a = CStr::from_ptr(date).to_str().unwrap();
         let u = CStr::from_ptr(time).to_str().unwrap();
@@ -135,8 +143,8 @@ pub fn parse_datetime_from_str_with_mill(date: *const i8, time: *const i8, mill:
             u[3..5].parse().unwrap(),
             u[6..].parse().unwrap(),
         )
-            .with_nanosecond(sub_t)
-            .unwrap();
+        .with_nanosecond(sub_t)
+        .unwrap();
 
         (date, time)
     }
@@ -161,7 +169,6 @@ pub fn parse_datetime_from_str(date: *const i8, time: *const i8) -> (NaiveDate, 
         (date, time)
     }
 }
-
 
 pub fn check_slice_to_string(v: &[i8]) -> String {
     let r = v
@@ -254,7 +261,6 @@ mod test {
         let (index, id) = split_into_vec(data);
         assert_eq!(index, 0usize);
         assert_eq!(id, 0i32);
-
 
         let data2 = "450201";
         let (id, index) = split_into_vec(data2);

@@ -1,8 +1,8 @@
+use crate::constant::{Direction, Exchange, Offset, Status};
+use crate::data_type::{AccountData, ContractData, OrderData, Position, PositionData};
 use crate::types::message::StrategyMessage;
 use crate::util::channel::Sender;
 use crate::util::hash::HashMap;
-use crate::data_type::{OrderData, ContractData, PositionData, AccountData, Position};
-use crate::constant::{Exchange, Status, Direction, Offset};
 
 pub type Context<'a> = (&'a Sender<StrategyMessage>, ContextInner);
 
@@ -31,7 +31,7 @@ impl ContextInner {
         self.order_map.insert(order.orderid.clone().unwrap(), order);
     }
 
-    pub fn get_active_orders(&self) -> impl Iterator<Item=&OrderData> {
+    pub fn get_active_orders(&self) -> impl Iterator<Item = &OrderData> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
@@ -42,14 +42,14 @@ impl ContextInner {
         self.order_map.get(order_id)
     }
 
-    pub fn get_active_ids(&self) -> impl Iterator<Item=&str> {
+    pub fn get_active_ids(&self) -> impl Iterator<Item = &str> {
         self.order_map
             .iter()
             .filter(|(_, v)| Status::ACTIVE_IN.contains(v.status))
             .map(|(i, _)| i.as_str())
     }
 
-    pub fn get_order_ids(&self) -> impl Iterator<Item=&str> {
+    pub fn get_order_ids(&self) -> impl Iterator<Item = &str> {
         self.order_map.iter().map(|(i, _)| i.as_str())
     }
 
@@ -152,7 +152,10 @@ impl ContextInner {
 
     fn update_trade(&mut self, order: &OrderData) {
         // should check the update logic
-        let mut pos = self.position_map.entry(order.symbol.to_owned()).or_insert_with(|| Position::new_with_symbol(&order.symbol));
+        let mut pos = self
+            .position_map
+            .entry(order.symbol.to_owned())
+            .or_insert_with(|| Position::new_with_symbol(&order.symbol));
         match order.direction.unwrap() {
             Direction::LONG => {
                 match order.offset {
@@ -276,20 +279,20 @@ impl ContextInner {
 
 pub trait ContextTrait {
     fn enter<F>(&mut self, f: F)
-        where
-            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
+    where
+        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner);
 
     fn send(&self, m: impl Into<StrategyMessage>);
 
     fn add_order(&mut self, order: OrderData);
 
-    fn get_active_orders(&self) -> Box<dyn Iterator<Item=&OrderData> + '_>;
+    fn get_active_orders(&self) -> Box<dyn Iterator<Item = &OrderData> + '_>;
 
     fn get_order(&self, order_id: &str) -> Option<&OrderData>;
 
-    fn get_active_ids(&self) -> Box<dyn Iterator<Item=&str> + '_>;
+    fn get_active_ids(&self) -> Box<dyn Iterator<Item = &str> + '_>;
 
-    fn get_order_ids(&self) -> Box<dyn Iterator<Item=&str> + '_>;
+    fn get_order_ids(&self) -> Box<dyn Iterator<Item = &str> + '_>;
 
     fn get_exchange(&self, symbol: &str) -> Option<&Exchange>;
 
@@ -308,8 +311,8 @@ pub trait ContextTrait {
 
 impl ContextTrait for Context<'_> {
     fn enter<F>(&mut self, f: F)
-        where
-            F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
+    where
+        F: FnOnce(&Sender<StrategyMessage>, &mut ContextInner),
     {
         let (sender, inner) = self;
         f(*sender, inner);
@@ -324,7 +327,7 @@ impl ContextTrait for Context<'_> {
         self.1.add_order(order);
     }
 
-    fn get_active_orders(&self) -> Box<dyn Iterator<Item=&OrderData> + '_> {
+    fn get_active_orders(&self) -> Box<dyn Iterator<Item = &OrderData> + '_> {
         Box::new(self.1.get_active_orders())
     }
 
@@ -332,11 +335,11 @@ impl ContextTrait for Context<'_> {
         self.1.get_order(order_id)
     }
 
-    fn get_active_ids(&self) -> Box<dyn Iterator<Item=&str> + '_> {
+    fn get_active_ids(&self) -> Box<dyn Iterator<Item = &str> + '_> {
         Box::new(self.1.get_active_ids())
     }
 
-    fn get_order_ids(&self) -> Box<dyn Iterator<Item=&str> + '_> {
+    fn get_order_ids(&self) -> Box<dyn Iterator<Item = &str> + '_> {
         Box::new(self.1.get_order_ids())
     }
 
