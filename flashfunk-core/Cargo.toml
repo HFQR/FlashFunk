@@ -10,7 +10,7 @@ chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
 core_affinity = "0.5.10"
 encoding = "0.2.33"
 libc = "0.2.0"
-flashfunk-level = { path = "../flashfunk-level", features = ["ctpmini"] }
+flashfunk-level = { path = "../flashfunk-level", features = ["ctp"] }
 async-trait = ""
 chrono-tz = { version = "0.5", features = ["serde"] }
 clickhouse-rs = { git = "https://github.com/suharev7/clickhouse-rs/", branch = "async-await" }

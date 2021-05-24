@@ -17,16 +17,11 @@ impl Ac for Strategy {
         println!("dur: {}", tick.instant.elapsed().as_nanos());
     }
 
-    fn local_symbols<'a>(&mut self) -> Vec<&'a str> {
-        let mut strs: Vec<&'static str> = Vec::new();
-        self.local_symbol
-            .iter()
-            .for_each(|x| strs.push(Box::leak(x.clone().into_boxed_str())));
-        strs
+    fn codes(&mut self) -> Vec<String> {
+        self.local_symbol.iter().map(|x| x.clone()).collect()
     }
-
-    fn name<'a>(&mut self) -> &'a str {
-        "oi"
+    fn flash_name(&mut self) -> String {
+        "oi".to_string()
     }
 }
 

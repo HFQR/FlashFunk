@@ -12,7 +12,7 @@ use std::time::Instant;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
-const MESSAGE_LIMIT: usize = 2024usize;
+const MESSAGE_LIMIT: usize = 3024usize;
 
 // 主线程工人。阻塞主线程，接收策略消息并发起api的回调。
 struct MainWorker<Interface> {
@@ -21,8 +21,8 @@ struct MainWorker<Interface> {
 }
 
 impl<I, M> MainWorker<I>
-where
-    I: Interface<Message = M>,
+    where
+        I: Interface<Message=M>,
 {
     fn new(receiver: Vec<Receiver<StrategyMessage>>) -> Self {
         Self {
@@ -158,9 +158,9 @@ impl Drop for StrategyWorker {
 
 // 为builder建立工人并启动
 pub(crate) fn start_workers<I, I2>(mut builder: Builder<'_, I, I2>)
-where
-    I: Interface<Message = MdApiMessage>,
-    I2: Interface<Message = TdApiMessage>,
+    where
+        I: Interface<Message=MdApiMessage>,
+        I2: Interface<Message=TdApiMessage>,
 {
     // 准备所有策略工人，并返回对应的通道制造（消费）端 和订阅symbols集合
     // * 策略已被此函数消费无法再次调用。
@@ -212,9 +212,9 @@ fn prepare_worker_channel<I, I2>(
     GroupSender<TdApiMessage>,
     MainWorker<I2>,
 )
-where
-    I: Interface<Message = MdApiMessage>,
-    I2: Interface<Message = TdApiMessage>,
+    where
+        I: Interface<Message=MdApiMessage>,
+        I2: Interface<Message=TdApiMessage>,
 {
     let sts = std::mem::take(&mut builder.strategy);
 
