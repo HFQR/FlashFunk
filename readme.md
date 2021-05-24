@@ -3,36 +3,28 @@
 > High Frequency Trading Framework
 
 
-## 为什么选择`Rust`
+## Why choose `Rust`
 
-速度快 安全 写的爽
+not reason 
 
-## 任务队列 
+## Todo List
+- Test Coverage
 
-- fix backtest and add test.
+- Logger Need
 
-- 測試覆盖
+-  fix waring and remove clippy error
 
-- 日志
-
-- 移除所有警告以及修复clippy错误
-
-### 接口编译  
-本项目最终采用`rust-indgen` 作为`c++`接口封装
-
-### 如何安装
+### Install
  
-参见 [Install](./install.md)
+See [Install](./install.md)
 
 ### 系统要求
 
-- linux 提供了安装教程 
+- linux 
 
-- windows 需要安装llvm环境, 自行折腾 ~~ 
+- windows visual studio and llvm 
 
-
-### 简单上手
-无须你处理任何事情 专注写策略即可  我们已经为你实现绝大部分功能, 唯一需要你关注的是如何写出赚钱的策略
+### Easy Start
 
 ```rust
 #![allow(dead_code, unused_imports, unused_must_use, unused_variables)]

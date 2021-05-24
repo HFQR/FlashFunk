@@ -13,7 +13,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-// 衔接层  Rust ->  C -> C++
+// ?��??  Rust ->  C -> C++
 
 #[cfg(not(target_os = "windows"))]
 fn os_path() -> String {
@@ -25,15 +25,14 @@ fn os_path() -> String {
     format!("{}{}", var("HOMEDRIVE").unwrap(), var("HOMEPATH").unwrap())
 }
 
-fn mkdir_path(path: &str) -> PathBuf {
+fn mkdir_path(sdk: &str) -> PathBuf {
     let os_path = os_path();
-    println!("{}", os_path);
     let px = format!("{}/.HFQ", os_path);
     let home = Path::new(px.as_str());
     if !home.exists() {
         fs::create_dir(home);
     }
-    let pw = home.join(path);
+    let pw = home.join(sdk);
     if !pw.exists() {
         fs::create_dir(pw.clone());
     }
@@ -56,16 +55,26 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
         current_dir.to_str().unwrap(),
         sdk
     );
-    let mut v1 = vec![];
+    let mut v = vec![];
+
+    let destination = mkdir_path(sdk.clone().as_ref()).to_str().unwrap().to_string();
+
     for entry in fs::read_dir(dll_dir.clone()).unwrap() {
-        let filename = entry.unwrap().file_name().into_string().unwrap();
-        v1.push(file_name(filename))
+        let file = entry.unwrap();
+        let filepath = file.path();
+        let filename = file.file_name().into_string().unwrap();
+        println!("{} ----> {}", filepath.to_str().unwrap(), destination);
+        std::fs::copy(filepath, destination.clone()).expect(&*format!("Failed to copy Library File  to the Local Address {}", destination));
+        println!("cargo:resource={}", destination);
+        v.push(file_name(filename))
     }
+
+    println!("cargo:rustc-link-search=native={}", destination);
     (
         lib_dir,
         dll_dir,
-        v1.first().unwrap().clone(),
-        v1.last().unwrap().clone(),
+        v.first().unwrap().clone(),
+        v.last().unwrap().clone(),
     )
 }
 
@@ -82,7 +91,6 @@ fn file_name(name: String) -> String {
 
 #[cfg(target_os = "windows")]
 fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
-    let out_dir = std::env::var("OUT_DIR").unwrap();
     let current_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap())
         .parent()
         .unwrap()
@@ -98,20 +106,19 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
         sdk
     );
     let mut v = vec![];
+
+    let destination = mkdir_path(sdk.clone().as_ref()).to_str().unwrap().to_string();
+
     for entry in fs::read_dir(dll_dir.clone()).unwrap() {
         let file = entry.unwrap();
         let filepath = file.path();
         let filename = file.file_name().into_string().unwrap();
-        let destination = format!("{}/{}", out_dir, filename);
-
-
-        std::fs::copy(filepath, &destination).expect("failed to copy so to outdir");
-
+        println!("{} ----> {}", filepath.to_str().unwrap(), destination);
+        std::fs::copy(filepath, destination.clone()).expect(&*format!("Failed to copy Library File  to the Local Address {}", destination));
         println!("cargo:resource={}", destination);
-
         v.push(file_name(filename))
     }
-    println!("cargo:rustc-link-search=native={}", out_dir);
+    println!("cargo:rustc-link-search=native={}", destination);
     (
         lib_dir,
         dll_dir,
@@ -120,7 +127,7 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
     )
 }
 
-/// 遍历命令
+/// ????????
 fn build(target: &str) {
     let path = mkdir_path(target);
     let file_path = path.join("bindings.rs");
@@ -170,11 +177,8 @@ fn build(target: &str) {
     println!("cargo:rustc-link-search={}", path.to_str().unwrap());
     // println!("cargo:rustc-link-search={}", path.to_str().unwrap());
     let (lib, dll, md, td) = sdk_source_path(target);
-
     // add  link search .lib  file path
     println!("cargo:rustc-link-search={}", lib);
-
-
     println!("cargo:rustc-link-lib=dylib={}", td);
     println!("cargo:rustc-link-lib=dylib={}", md);
 }
@@ -184,7 +188,7 @@ fn main() {
         build("ctp");
 
     #[cfg(feature = "ctp_mini")]
-        build("ctp_mini");
+        build("ctpmini");
 
     #[cfg(feature = "ess")]
         build("ess");

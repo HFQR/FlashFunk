@@ -1,408 +1,510 @@
-# include "../../../sdk_sources/ctpmini/include/ThostFtdcMdApi.h
-# include "../../../sdk_sources/ctpmini/include/ThostFtdcTraderApi.h
-# include "../../../sdk_sources/ctpmini/include/ThostFtdcUserApiDataType.h
-# include "../../../sdk_sources/ctpmini/include/ThostFtdcUserApiStruct.h
+# include "../../../sdk_sources/ctpmini/include/ThostFtdcMdApi.h"
+# include "../../../sdk_sources/ctpmini/include/ThostFtdcTraderApi.h"
+# include "../../../sdk_sources/ctpmini/include/ThostFtdcUserApiDataType.h"
+# include "../../../sdk_sources/ctpmini/include/ThostFtdcUserApiStruct.h"
 
-extern "C" void CThostFtdcTraderApi_CreateFtdcTraderApi(CThostFtdcTraderApi * self , const char * pszFlowPath) {
+static CThostFtdcTraderApi * CThostFtdcTraderApiCreateFtdcTraderApi(CThostFtdcTraderApi * self , const char * pszFlowPath) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->CreateFtdcTraderApi(pszFlowPath);
+    return instance->CreateFtdcTraderApi(pszFlowPath);
 }
         
-extern "C" void CThostFtdcTraderApi_GetApiVersion(CThostFtdcTraderApi * self ) {
+static const char * CThostFtdcTraderApiGetApiVersion(CThostFtdcTraderApi * self ) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->GetApiVersion();
+    return instance->GetApiVersion();
 }
         
-extern "C" void CThostFtdcTraderApi_Release(CThostFtdcTraderApi * self ) {
+void CThostFtdcTraderApiRelease(CThostFtdcTraderApi * self ) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->Release();
 }
         
-extern "C" void CThostFtdcTraderApi_Init(CThostFtdcTraderApi * self , bool bContinuous) {
+void CThostFtdcTraderApiInit(CThostFtdcTraderApi * self , bool bContinuous) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->Init(bContinuous);
 }
         
-extern "C" void CThostFtdcTraderApi_Join(CThostFtdcTraderApi * self ) {
+int CThostFtdcTraderApiJoin(CThostFtdcTraderApi * self ) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->Join();
+    return instance->Join();
 }
         
-extern "C" void CThostFtdcTraderApi_GetTradingDay(CThostFtdcTraderApi * self ) {
+const char * CThostFtdcTraderApiGetTradingDay(CThostFtdcTraderApi * self ) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->GetTradingDay();
+    return instance->GetTradingDay();
 }
         
-extern "C" void CThostFtdcTraderApi_RegisterFront(CThostFtdcTraderApi * self , char * pszFrontAddress) {
+void CThostFtdcTraderApiRegisterFront(CThostFtdcTraderApi * self , char * pszFrontAddress) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->RegisterFront(pszFrontAddress);
 }
         
-extern "C" void CThostFtdcTraderApi_RegisterNameServer(CThostFtdcTraderApi * self , char * pszNsAddress) {
+void CThostFtdcTraderApiRegisterNameServer(CThostFtdcTraderApi * self , char * pszNsAddress) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->RegisterNameServer(pszNsAddress);
 }
         
-extern "C" void CThostFtdcTraderApi_RegisterFensUserInfo(CThostFtdcTraderApi * self , CThostFtdcFensUserInfoField * pFensUserInfo) {
+void CThostFtdcTraderApiRegisterFensUserInfo(CThostFtdcTraderApi * self , CThostFtdcFensUserInfoField * pFensUserInfo) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->RegisterFensUserInfo(pFensUserInfo);
 }
         
-extern "C" void CThostFtdcTraderApi_RegisterSpi(CThostFtdcTraderApi * self , CThostFtdcTraderSpi * pSpi) {
+void CThostFtdcTraderApiRegisterSpi(CThostFtdcTraderApi * self , CThostFtdcTraderSpi * pSpi) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->RegisterSpi(pSpi);
 }
         
-extern "C" void CThostFtdcTraderApi_SubscribePrivateTopic(CThostFtdcTraderApi * self , THOST_TE_RESUME_TYPE nResumeType) {
+void CThostFtdcTraderApiSubscribePrivateTopic(CThostFtdcTraderApi * self , THOST_TE_RESUME_TYPE nResumeType) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->SubscribePrivateTopic(nResumeType);
 }
         
-extern "C" void CThostFtdcTraderApi_SubscribePublicTopic(CThostFtdcTraderApi * self , THOST_TE_RESUME_TYPE nResumeType) {
+void CThostFtdcTraderApiSubscribePublicTopic(CThostFtdcTraderApi * self , THOST_TE_RESUME_TYPE nResumeType) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
     instance->SubscribePublicTopic(nResumeType);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqAuthenticate(CThostFtdcTraderApi * self , CThostFtdcReqAuthenticateField * pReqAuthenticateField,int nRequestID) {
+int CThostFtdcTraderApiReqAuthenticate(CThostFtdcTraderApi * self , CThostFtdcReqAuthenticateField * pReqAuthenticateField,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqAuthenticate(pReqAuthenticateField, nRequestID);
+    return instance->ReqAuthenticate(pReqAuthenticateField, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqUserLogin(CThostFtdcTraderApi * self , CThostFtdcReqUserLoginField * pReqUserLoginField,int nRequestID) {
+int CThostFtdcTraderApiReqUserLogin(CThostFtdcTraderApi * self , CThostFtdcReqUserLoginField * pReqUserLoginField,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqUserLogin(pReqUserLoginField, nRequestID);
+    return instance->ReqUserLogin(pReqUserLoginField, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqUserLoginEncrypt(CThostFtdcTraderApi * self , CThostFtdcReqUserLoginField * pReqUserLoginField,int nRequestID) {
+int CThostFtdcTraderApiReqUserLoginEncrypt(CThostFtdcTraderApi * self , CThostFtdcReqUserLoginField * pReqUserLoginField,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqUserLoginEncrypt(pReqUserLoginField, nRequestID);
+    return instance->ReqUserLoginEncrypt(pReqUserLoginField, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqUserLogout(CThostFtdcTraderApi * self , CThostFtdcUserLogoutField * pUserLogout,int nRequestID) {
+int CThostFtdcTraderApiReqUserLogout(CThostFtdcTraderApi * self , CThostFtdcUserLogoutField * pUserLogout,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqUserLogout(pUserLogout, nRequestID);
+    return instance->ReqUserLogout(pUserLogout, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqUserPasswordUpdate(CThostFtdcTraderApi * self , CThostFtdcUserPasswordUpdateField * pUserPasswordUpdate,int nRequestID) {
+int CThostFtdcTraderApiReqUserPasswordUpdate(CThostFtdcTraderApi * self , CThostFtdcUserPasswordUpdateField * pUserPasswordUpdate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqUserPasswordUpdate(pUserPasswordUpdate, nRequestID);
+    return instance->ReqUserPasswordUpdate(pUserPasswordUpdate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqTradingAccountPasswordUpdate(CThostFtdcTraderApi * self , CThostFtdcTradingAccountPasswordUpdateField * pTradingAccountPasswordUpdate,int nRequestID) {
+int CThostFtdcTraderApiReqTradingAccountPasswordUpdate(CThostFtdcTraderApi * self , CThostFtdcTradingAccountPasswordUpdateField * pTradingAccountPasswordUpdate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqTradingAccountPasswordUpdate(pTradingAccountPasswordUpdate, nRequestID);
+    return instance->ReqTradingAccountPasswordUpdate(pTradingAccountPasswordUpdate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqOrderInsert(CThostFtdcTraderApi * self , CThostFtdcInputOrderField * pInputOrder,int nRequestID) {
+int CThostFtdcTraderApiReqOrderInsert(CThostFtdcTraderApi * self , CThostFtdcInputOrderField * pInputOrder,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqOrderInsert(pInputOrder, nRequestID);
+    return instance->ReqOrderInsert(pInputOrder, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqParkedOrderInsert(CThostFtdcTraderApi * self , CThostFtdcParkedOrderField * pParkedOrder,int nRequestID) {
+int CThostFtdcTraderApiReqParkedOrderInsert(CThostFtdcTraderApi * self , CThostFtdcParkedOrderField * pParkedOrder,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqParkedOrderInsert(pParkedOrder, nRequestID);
+    return instance->ReqParkedOrderInsert(pParkedOrder, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqParkedOrderAction(CThostFtdcTraderApi * self , CThostFtdcParkedOrderActionField * pParkedOrderAction,int nRequestID) {
+int CThostFtdcTraderApiReqParkedOrderAction(CThostFtdcTraderApi * self , CThostFtdcParkedOrderActionField * pParkedOrderAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqParkedOrderAction(pParkedOrderAction, nRequestID);
+    return instance->ReqParkedOrderAction(pParkedOrderAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqOrderAction(CThostFtdcTraderApi * self , CThostFtdcInputOrderActionField * pInputOrderAction,int nRequestID) {
+int CThostFtdcTraderApiReqOrderAction(CThostFtdcTraderApi * self , CThostFtdcInputOrderActionField * pInputOrderAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqOrderAction(pInputOrderAction, nRequestID);
+    return instance->ReqOrderAction(pInputOrderAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQueryMaxOrderVolume(CThostFtdcTraderApi * self , CThostFtdcQueryMaxOrderVolumeField * pQueryMaxOrderVolume,int nRequestID) {
+int CThostFtdcTraderApiReqQueryMaxOrderVolume(CThostFtdcTraderApi * self , CThostFtdcQueryMaxOrderVolumeField * pQueryMaxOrderVolume,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQueryMaxOrderVolume(pQueryMaxOrderVolume, nRequestID);
+    return instance->ReqQueryMaxOrderVolume(pQueryMaxOrderVolume, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqSettlementInfoConfirm(CThostFtdcTraderApi * self , CThostFtdcSettlementInfoConfirmField * pSettlementInfoConfirm,int nRequestID) {
+int CThostFtdcTraderApiReqSettlementInfoConfirm(CThostFtdcTraderApi * self , CThostFtdcSettlementInfoConfirmField * pSettlementInfoConfirm,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqSettlementInfoConfirm(pSettlementInfoConfirm, nRequestID);
+    return instance->ReqSettlementInfoConfirm(pSettlementInfoConfirm, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqRemoveParkedOrder(CThostFtdcTraderApi * self , CThostFtdcRemoveParkedOrderField * pRemoveParkedOrder,int nRequestID) {
+int CThostFtdcTraderApiReqRemoveParkedOrder(CThostFtdcTraderApi * self , CThostFtdcRemoveParkedOrderField * pRemoveParkedOrder,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqRemoveParkedOrder(pRemoveParkedOrder, nRequestID);
+    return instance->ReqRemoveParkedOrder(pRemoveParkedOrder, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqRemoveParkedOrderAction(CThostFtdcTraderApi * self , CThostFtdcRemoveParkedOrderActionField * pRemoveParkedOrderAction,int nRequestID) {
+int CThostFtdcTraderApiReqRemoveParkedOrderAction(CThostFtdcTraderApi * self , CThostFtdcRemoveParkedOrderActionField * pRemoveParkedOrderAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqRemoveParkedOrderAction(pRemoveParkedOrderAction, nRequestID);
+    return instance->ReqRemoveParkedOrderAction(pRemoveParkedOrderAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqExecOrderInsert(CThostFtdcTraderApi * self , CThostFtdcInputExecOrderField * pInputExecOrder,int nRequestID) {
+int CThostFtdcTraderApiReqExecOrderInsert(CThostFtdcTraderApi * self , CThostFtdcInputExecOrderField * pInputExecOrder,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqExecOrderInsert(pInputExecOrder, nRequestID);
+    return instance->ReqExecOrderInsert(pInputExecOrder, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqExecOrderAction(CThostFtdcTraderApi * self , CThostFtdcInputExecOrderActionField * pInputExecOrderAction,int nRequestID) {
+int CThostFtdcTraderApiReqExecOrderAction(CThostFtdcTraderApi * self , CThostFtdcInputExecOrderActionField * pInputExecOrderAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqExecOrderAction(pInputExecOrderAction, nRequestID);
+    return instance->ReqExecOrderAction(pInputExecOrderAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqForQuoteInsert(CThostFtdcTraderApi * self , CThostFtdcInputForQuoteField * pInputForQuote,int nRequestID) {
+int CThostFtdcTraderApiReqForQuoteInsert(CThostFtdcTraderApi * self , CThostFtdcInputForQuoteField * pInputForQuote,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqForQuoteInsert(pInputForQuote, nRequestID);
+    return instance->ReqForQuoteInsert(pInputForQuote, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQuoteInsert(CThostFtdcTraderApi * self , CThostFtdcInputQuoteField * pInputQuote,int nRequestID) {
+int CThostFtdcTraderApiReqQuoteInsert(CThostFtdcTraderApi * self , CThostFtdcInputQuoteField * pInputQuote,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQuoteInsert(pInputQuote, nRequestID);
+    return instance->ReqQuoteInsert(pInputQuote, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQuoteAction(CThostFtdcTraderApi * self , CThostFtdcInputQuoteActionField * pInputQuoteAction,int nRequestID) {
+int CThostFtdcTraderApiReqQuoteAction(CThostFtdcTraderApi * self , CThostFtdcInputQuoteActionField * pInputQuoteAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQuoteAction(pInputQuoteAction, nRequestID);
+    return instance->ReqQuoteAction(pInputQuoteAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqBatchOrderAction(CThostFtdcTraderApi * self , CThostFtdcInputBatchOrderActionField * pInputBatchOrderAction,int nRequestID) {
+int CThostFtdcTraderApiReqBatchOrderAction(CThostFtdcTraderApi * self , CThostFtdcInputBatchOrderActionField * pInputBatchOrderAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqBatchOrderAction(pInputBatchOrderAction, nRequestID);
+    return instance->ReqBatchOrderAction(pInputBatchOrderAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqOptionSelfCloseInsert(CThostFtdcTraderApi * self , CThostFtdcInputOptionSelfCloseField * pInputOptionSelfClose,int nRequestID) {
+int CThostFtdcTraderApiReqOptionSelfCloseInsert(CThostFtdcTraderApi * self , CThostFtdcInputOptionSelfCloseField * pInputOptionSelfClose,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqOptionSelfCloseInsert(pInputOptionSelfClose, nRequestID);
+    return instance->ReqOptionSelfCloseInsert(pInputOptionSelfClose, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqOptionSelfCloseAction(CThostFtdcTraderApi * self , CThostFtdcInputOptionSelfCloseActionField * pInputOptionSelfCloseAction,int nRequestID) {
+int CThostFtdcTraderApiReqOptionSelfCloseAction(CThostFtdcTraderApi * self , CThostFtdcInputOptionSelfCloseActionField * pInputOptionSelfCloseAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqOptionSelfCloseAction(pInputOptionSelfCloseAction, nRequestID);
+    return instance->ReqOptionSelfCloseAction(pInputOptionSelfCloseAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqTransFund(CThostFtdcTraderApi * self , CThostFtdcTransFundField * pFtdcTransFund,int nRequestID) {
+int CThostFtdcTraderApiReqTransFund(CThostFtdcTraderApi * self , CThostFtdcTransFundField * pFtdcTransFund,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqTransFund(pFtdcTransFund, nRequestID);
+    return instance->ReqTransFund(pFtdcTransFund, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryOrder(CThostFtdcTraderApi * self , CThostFtdcQryOrderField * pQryOrder,int nRequestID) {
+int CThostFtdcTraderApiReqQryOrder(CThostFtdcTraderApi * self , CThostFtdcQryOrderField * pQryOrder,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryOrder(pQryOrder, nRequestID);
+    return instance->ReqQryOrder(pQryOrder, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryTrade(CThostFtdcTraderApi * self , CThostFtdcQryTradeField * pQryTrade,int nRequestID) {
+int CThostFtdcTraderApiReqQryTrade(CThostFtdcTraderApi * self , CThostFtdcQryTradeField * pQryTrade,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryTrade(pQryTrade, nRequestID);
+    return instance->ReqQryTrade(pQryTrade, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInvestorPosition(CThostFtdcTraderApi * self , CThostFtdcQryInvestorPositionField * pQryInvestorPosition,int nRequestID) {
+int CThostFtdcTraderApiReqQryInvestorPosition(CThostFtdcTraderApi * self , CThostFtdcQryInvestorPositionField * pQryInvestorPosition,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInvestorPosition(pQryInvestorPosition, nRequestID);
+    return instance->ReqQryInvestorPosition(pQryInvestorPosition, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryTradingAccount(CThostFtdcTraderApi * self , CThostFtdcQryTradingAccountField * pQryTradingAccount,int nRequestID) {
+int CThostFtdcTraderApiReqQryTradingAccount(CThostFtdcTraderApi * self , CThostFtdcQryTradingAccountField * pQryTradingAccount,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryTradingAccount(pQryTradingAccount, nRequestID);
+    return instance->ReqQryTradingAccount(pQryTradingAccount, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInvestor(CThostFtdcTraderApi * self , CThostFtdcQryInvestorField * pQryInvestor,int nRequestID) {
+int CThostFtdcTraderApiReqQryInvestor(CThostFtdcTraderApi * self , CThostFtdcQryInvestorField * pQryInvestor,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInvestor(pQryInvestor, nRequestID);
+    return instance->ReqQryInvestor(pQryInvestor, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryTradingCode(CThostFtdcTraderApi * self , CThostFtdcQryTradingCodeField * pQryTradingCode,int nRequestID) {
+int CThostFtdcTraderApiReqQryTradingCode(CThostFtdcTraderApi * self , CThostFtdcQryTradingCodeField * pQryTradingCode,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryTradingCode(pQryTradingCode, nRequestID);
+    return instance->ReqQryTradingCode(pQryTradingCode, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInstrumentMarginRate(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentMarginRateField * pQryInstrumentMarginRate,int nRequestID) {
+int CThostFtdcTraderApiReqQryInstrumentMarginRate(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentMarginRateField * pQryInstrumentMarginRate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInstrumentMarginRate(pQryInstrumentMarginRate, nRequestID);
+    return instance->ReqQryInstrumentMarginRate(pQryInstrumentMarginRate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInstrumentCommissionRate(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentCommissionRateField * pQryInstrumentCommissionRate,int nRequestID) {
+int CThostFtdcTraderApiReqQryInstrumentCommissionRate(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentCommissionRateField * pQryInstrumentCommissionRate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInstrumentCommissionRate(pQryInstrumentCommissionRate, nRequestID);
+    return instance->ReqQryInstrumentCommissionRate(pQryInstrumentCommissionRate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryExchange(CThostFtdcTraderApi * self , CThostFtdcQryExchangeField * pQryExchange,int nRequestID) {
+int CThostFtdcTraderApiReqQryExchange(CThostFtdcTraderApi * self , CThostFtdcQryExchangeField * pQryExchange,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryExchange(pQryExchange, nRequestID);
+    return instance->ReqQryExchange(pQryExchange, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryProduct(CThostFtdcTraderApi * self , CThostFtdcQryProductField * pQryProduct,int nRequestID) {
+int CThostFtdcTraderApiReqQryProduct(CThostFtdcTraderApi * self , CThostFtdcQryProductField * pQryProduct,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryProduct(pQryProduct, nRequestID);
+    return instance->ReqQryProduct(pQryProduct, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInstrument(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentField * pQryInstrument,int nRequestID) {
+int CThostFtdcTraderApiReqQryInstrument(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentField * pQryInstrument,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInstrument(pQryInstrument, nRequestID);
+    return instance->ReqQryInstrument(pQryInstrument, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryDepthMarketData(CThostFtdcTraderApi * self , CThostFtdcQryDepthMarketDataField * pQryDepthMarketData,int nRequestID) {
+int CThostFtdcTraderApiReqQryDepthMarketData(CThostFtdcTraderApi * self , CThostFtdcQryDepthMarketDataField * pQryDepthMarketData,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryDepthMarketData(pQryDepthMarketData, nRequestID);
+    return instance->ReqQryDepthMarketData(pQryDepthMarketData, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryOptionSelfClose(CThostFtdcTraderApi * self , CThostFtdcQryOptionSelfCloseField * pQryOptionSelfClose,int nRequestID) {
+int CThostFtdcTraderApiReqQryOptionSelfClose(CThostFtdcTraderApi * self , CThostFtdcQryOptionSelfCloseField * pQryOptionSelfClose,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryOptionSelfClose(pQryOptionSelfClose, nRequestID);
+    return instance->ReqQryOptionSelfClose(pQryOptionSelfClose, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQrySettlementInfo(CThostFtdcTraderApi * self , CThostFtdcQrySettlementInfoField * pQrySettlementInfo,int nRequestID) {
+int CThostFtdcTraderApiReqQrySettlementInfo(CThostFtdcTraderApi * self , CThostFtdcQrySettlementInfoField * pQrySettlementInfo,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQrySettlementInfo(pQrySettlementInfo, nRequestID);
+    return instance->ReqQrySettlementInfo(pQrySettlementInfo, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInstrumentStatus(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentStatusField * pQryInstrumentStatus,int nRequestID) {
+int CThostFtdcTraderApiReqQryInstrumentStatus(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentStatusField * pQryInstrumentStatus,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInstrumentStatus(pQryInstrumentStatus, nRequestID);
+    return instance->ReqQryInstrumentStatus(pQryInstrumentStatus, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryTransferBank(CThostFtdcTraderApi * self , CThostFtdcQryTransferBankField * pQryTransferBank,int nRequestID) {
+int CThostFtdcTraderApiReqQryTransferBank(CThostFtdcTraderApi * self , CThostFtdcQryTransferBankField * pQryTransferBank,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryTransferBank(pQryTransferBank, nRequestID);
+    return instance->ReqQryTransferBank(pQryTransferBank, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInvestorPositionDetail(CThostFtdcTraderApi * self , CThostFtdcQryInvestorPositionDetailField * pQryInvestorPositionDetail,int nRequestID) {
+int CThostFtdcTraderApiReqQryInvestorPositionDetail(CThostFtdcTraderApi * self , CThostFtdcQryInvestorPositionDetailField * pQryInvestorPositionDetail,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInvestorPositionDetail(pQryInvestorPositionDetail, nRequestID);
+    return instance->ReqQryInvestorPositionDetail(pQryInvestorPositionDetail, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryNotice(CThostFtdcTraderApi * self , CThostFtdcQryNoticeField * pQryNotice,int nRequestID) {
+int CThostFtdcTraderApiReqQryNotice(CThostFtdcTraderApi * self , CThostFtdcQryNoticeField * pQryNotice,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryNotice(pQryNotice, nRequestID);
+    return instance->ReqQryNotice(pQryNotice, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQrySettlementInfoConfirm(CThostFtdcTraderApi * self , CThostFtdcQrySettlementInfoConfirmField * pQrySettlementInfoConfirm,int nRequestID) {
+int CThostFtdcTraderApiReqQrySettlementInfoConfirm(CThostFtdcTraderApi * self , CThostFtdcQrySettlementInfoConfirmField * pQrySettlementInfoConfirm,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQrySettlementInfoConfirm(pQrySettlementInfoConfirm, nRequestID);
+    return instance->ReqQrySettlementInfoConfirm(pQrySettlementInfoConfirm, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInvestorPositionCombineDetail(CThostFtdcTraderApi * self , CThostFtdcQryInvestorPositionCombineDetailField * pQryInvestorPositionCombineDetail,int nRequestID) {
+int CThostFtdcTraderApiReqQryInvestorPositionCombineDetail(CThostFtdcTraderApi * self , CThostFtdcQryInvestorPositionCombineDetailField * pQryInvestorPositionCombineDetail,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInvestorPositionCombineDetail(pQryInvestorPositionCombineDetail, nRequestID);
+    return instance->ReqQryInvestorPositionCombineDetail(pQryInvestorPositionCombineDetail, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryCFMMCTradingAccountKey(CThostFtdcTraderApi * self , CThostFtdcQryCFMMCTradingAccountKeyField * pQryCFMMCTradingAccountKey,int nRequestID) {
+int CThostFtdcTraderApiReqQryCFMMCTradingAccountKey(CThostFtdcTraderApi * self , CThostFtdcQryCFMMCTradingAccountKeyField * pQryCFMMCTradingAccountKey,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryCFMMCTradingAccountKey(pQryCFMMCTradingAccountKey, nRequestID);
+    return instance->ReqQryCFMMCTradingAccountKey(pQryCFMMCTradingAccountKey, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryEWarrantOffset(CThostFtdcTraderApi * self , CThostFtdcQryEWarrantOffsetField * pQryEWarrantOffset,int nRequestID) {
+int CThostFtdcTraderApiReqQryEWarrantOffset(CThostFtdcTraderApi * self , CThostFtdcQryEWarrantOffsetField * pQryEWarrantOffset,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryEWarrantOffset(pQryEWarrantOffset, nRequestID);
+    return instance->ReqQryEWarrantOffset(pQryEWarrantOffset, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInvestorProductGroupMargin(CThostFtdcTraderApi * self , CThostFtdcQryInvestorProductGroupMarginField * pQryInvestorProductGroupMargin,int nRequestID) {
+int CThostFtdcTraderApiReqQryInvestorProductGroupMargin(CThostFtdcTraderApi * self , CThostFtdcQryInvestorProductGroupMarginField * pQryInvestorProductGroupMargin,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInvestorProductGroupMargin(pQryInvestorProductGroupMargin, nRequestID);
+    return instance->ReqQryInvestorProductGroupMargin(pQryInvestorProductGroupMargin, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryExchangeMarginRate(CThostFtdcTraderApi * self , CThostFtdcQryExchangeMarginRateField * pQryExchangeMarginRate,int nRequestID) {
+int CThostFtdcTraderApiReqQryExchangeMarginRate(CThostFtdcTraderApi * self , CThostFtdcQryExchangeMarginRateField * pQryExchangeMarginRate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryExchangeMarginRate(pQryExchangeMarginRate, nRequestID);
+    return instance->ReqQryExchangeMarginRate(pQryExchangeMarginRate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryExchangeMarginRateAdjust(CThostFtdcTraderApi * self , CThostFtdcQryExchangeMarginRateAdjustField * pQryExchangeMarginRateAdjust,int nRequestID) {
+int CThostFtdcTraderApiReqQryExchangeMarginRateAdjust(CThostFtdcTraderApi * self , CThostFtdcQryExchangeMarginRateAdjustField * pQryExchangeMarginRateAdjust,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryExchangeMarginRateAdjust(pQryExchangeMarginRateAdjust, nRequestID);
+    return instance->ReqQryExchangeMarginRateAdjust(pQryExchangeMarginRateAdjust, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryExchangeRate(CThostFtdcTraderApi * self , CThostFtdcQryExchangeRateField * pQryExchangeRate,int nRequestID) {
+int CThostFtdcTraderApiReqQryExchangeRate(CThostFtdcTraderApi * self , CThostFtdcQryExchangeRateField * pQryExchangeRate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryExchangeRate(pQryExchangeRate, nRequestID);
+    return instance->ReqQryExchangeRate(pQryExchangeRate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQrySecAgentACIDMap(CThostFtdcTraderApi * self , CThostFtdcQrySecAgentACIDMapField * pQrySecAgentACIDMap,int nRequestID) {
+int CThostFtdcTraderApiReqQrySecAgentACIDMap(CThostFtdcTraderApi * self , CThostFtdcQrySecAgentACIDMapField * pQrySecAgentACIDMap,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQrySecAgentACIDMap(pQrySecAgentACIDMap, nRequestID);
+    return instance->ReqQrySecAgentACIDMap(pQrySecAgentACIDMap, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryOptionInstrTradeCost(CThostFtdcTraderApi * self , CThostFtdcQryOptionInstrTradeCostField * pQryOptionInstrTradeCost,int nRequestID) {
+int CThostFtdcTraderApiReqQryOptionInstrTradeCost(CThostFtdcTraderApi * self , CThostFtdcQryOptionInstrTradeCostField * pQryOptionInstrTradeCost,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryOptionInstrTradeCost(pQryOptionInstrTradeCost, nRequestID);
+    return instance->ReqQryOptionInstrTradeCost(pQryOptionInstrTradeCost, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryOptionInstrCommRate(CThostFtdcTraderApi * self , CThostFtdcQryOptionInstrCommRateField * pQryOptionInstrCommRate,int nRequestID) {
+int CThostFtdcTraderApiReqQryOptionInstrCommRate(CThostFtdcTraderApi * self , CThostFtdcQryOptionInstrCommRateField * pQryOptionInstrCommRate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryOptionInstrCommRate(pQryOptionInstrCommRate, nRequestID);
+    return instance->ReqQryOptionInstrCommRate(pQryOptionInstrCommRate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryExecOrder(CThostFtdcTraderApi * self , CThostFtdcQryExecOrderField * pQryExecOrder,int nRequestID) {
+int CThostFtdcTraderApiReqQryExecOrder(CThostFtdcTraderApi * self , CThostFtdcQryExecOrderField * pQryExecOrder,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryExecOrder(pQryExecOrder, nRequestID);
+    return instance->ReqQryExecOrder(pQryExecOrder, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryForQuote(CThostFtdcTraderApi * self , CThostFtdcQryForQuoteField * pQryForQuote,int nRequestID) {
+int CThostFtdcTraderApiReqQryForQuote(CThostFtdcTraderApi * self , CThostFtdcQryForQuoteField * pQryForQuote,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryForQuote(pQryForQuote, nRequestID);
+    return instance->ReqQryForQuote(pQryForQuote, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryQuote(CThostFtdcTraderApi * self , CThostFtdcQryQuoteField * pQryQuote,int nRequestID) {
+int CThostFtdcTraderApiReqQryQuote(CThostFtdcTraderApi * self , CThostFtdcQryQuoteField * pQryQuote,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryQuote(pQryQuote, nRequestID);
+    return instance->ReqQryQuote(pQryQuote, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryTransferSerial(CThostFtdcTraderApi * self , CThostFtdcQryTransferSerialField * pQryTransferSerial,int nRequestID) {
+int CThostFtdcTraderApiReqQryTransferSerial(CThostFtdcTraderApi * self , CThostFtdcQryTransferSerialField * pQryTransferSerial,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryTransferSerial(pQryTransferSerial, nRequestID);
+    return instance->ReqQryTransferSerial(pQryTransferSerial, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryAccountregister(CThostFtdcTraderApi * self , CThostFtdcQryAccountregisterField * pQryAccountregister,int nRequestID) {
+int CThostFtdcTraderApiReqQryAccountregister(CThostFtdcTraderApi * self , CThostFtdcQryAccountregisterField * pQryAccountregister,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryAccountregister(pQryAccountregister, nRequestID);
+    return instance->ReqQryAccountregister(pQryAccountregister, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryContractBank(CThostFtdcTraderApi * self , CThostFtdcQryContractBankField * pQryContractBank,int nRequestID) {
+int CThostFtdcTraderApiReqQryContractBank(CThostFtdcTraderApi * self , CThostFtdcQryContractBankField * pQryContractBank,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryContractBank(pQryContractBank, nRequestID);
+    return instance->ReqQryContractBank(pQryContractBank, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryParkedOrder(CThostFtdcTraderApi * self , CThostFtdcQryParkedOrderField * pQryParkedOrder,int nRequestID) {
+int CThostFtdcTraderApiReqQryParkedOrder(CThostFtdcTraderApi * self , CThostFtdcQryParkedOrderField * pQryParkedOrder,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryParkedOrder(pQryParkedOrder, nRequestID);
+    return instance->ReqQryParkedOrder(pQryParkedOrder, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryParkedOrderAction(CThostFtdcTraderApi * self , CThostFtdcQryParkedOrderActionField * pQryParkedOrderAction,int nRequestID) {
+int CThostFtdcTraderApiReqQryParkedOrderAction(CThostFtdcTraderApi * self , CThostFtdcQryParkedOrderActionField * pQryParkedOrderAction,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryParkedOrderAction(pQryParkedOrderAction, nRequestID);
+    return instance->ReqQryParkedOrderAction(pQryParkedOrderAction, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryTradingNotice(CThostFtdcTraderApi * self , CThostFtdcQryTradingNoticeField * pQryTradingNotice,int nRequestID) {
+int CThostFtdcTraderApiReqQryTradingNotice(CThostFtdcTraderApi * self , CThostFtdcQryTradingNoticeField * pQryTradingNotice,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryTradingNotice(pQryTradingNotice, nRequestID);
+    return instance->ReqQryTradingNotice(pQryTradingNotice, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryBrokerTradingParams(CThostFtdcTraderApi * self , CThostFtdcQryBrokerTradingParamsField * pQryBrokerTradingParams,int nRequestID) {
+int CThostFtdcTraderApiReqQryBrokerTradingParams(CThostFtdcTraderApi * self , CThostFtdcQryBrokerTradingParamsField * pQryBrokerTradingParams,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryBrokerTradingParams(pQryBrokerTradingParams, nRequestID);
+    return instance->ReqQryBrokerTradingParams(pQryBrokerTradingParams, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryBrokerTradingAlgos(CThostFtdcTraderApi * self , CThostFtdcQryBrokerTradingAlgosField * pQryBrokerTradingAlgos,int nRequestID) {
+int CThostFtdcTraderApiReqQryBrokerTradingAlgos(CThostFtdcTraderApi * self , CThostFtdcQryBrokerTradingAlgosField * pQryBrokerTradingAlgos,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryBrokerTradingAlgos(pQryBrokerTradingAlgos, nRequestID);
+    return instance->ReqQryBrokerTradingAlgos(pQryBrokerTradingAlgos, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQryInstrumentOrderCommRate(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentOrderCommRateField * pQryInstrumentOrderCommRate,int nRequestID) {
+int CThostFtdcTraderApiReqQryInstrumentOrderCommRate(CThostFtdcTraderApi * self , CThostFtdcQryInstrumentOrderCommRateField * pQryInstrumentOrderCommRate,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQryInstrumentOrderCommRate(pQryInstrumentOrderCommRate, nRequestID);
+    return instance->ReqQryInstrumentOrderCommRate(pQryInstrumentOrderCommRate, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqFromBankToFutureByFuture(CThostFtdcTraderApi * self , CThostFtdcReqTransferField * pReqTransfer,int nRequestID) {
+int CThostFtdcTraderApiReqFromBankToFutureByFuture(CThostFtdcTraderApi * self , CThostFtdcReqTransferField * pReqTransfer,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqFromBankToFutureByFuture(pReqTransfer, nRequestID);
+    return instance->ReqFromBankToFutureByFuture(pReqTransfer, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqFromFutureToBankByFuture(CThostFtdcTraderApi * self , CThostFtdcReqTransferField * pReqTransfer,int nRequestID) {
+int CThostFtdcTraderApiReqFromFutureToBankByFuture(CThostFtdcTraderApi * self , CThostFtdcReqTransferField * pReqTransfer,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqFromFutureToBankByFuture(pReqTransfer, nRequestID);
+    return instance->ReqFromFutureToBankByFuture(pReqTransfer, nRequestID);
 }
         
-extern "C" void CThostFtdcTraderApi_ReqQueryBankAccountMoneyByFuture(CThostFtdcTraderApi * self , CThostFtdcReqQueryAccountField * pReqQueryAccount,int nRequestID) {
+int CThostFtdcTraderApiReqQueryBankAccountMoneyByFuture(CThostFtdcTraderApi * self , CThostFtdcReqQueryAccountField * pReqQueryAccount,int nRequestID) {
     auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->ReqQueryBankAccountMoneyByFuture(pReqQueryAccount, nRequestID);
+    return instance->ReqQueryBankAccountMoneyByFuture(pReqQueryAccount, nRequestID);
 }
-        
-extern "C" void CThostFtdcTraderApi_CThostFtdcTraderApi(CThostFtdcTraderApi * self ) {
-    auto instance = static_cast<CThostFtdcTraderApi*>(self);
-    instance->CThostFtdcTraderApi();
-}
-        extern "C" void RustCtpMiniActionOnFrontDisconnected(void *rust_call_object int nReason)extern "C" void RustCtpMiniActionOnHeartBeatWarning(void *rust_call_object int nTimeLapse)extern "C" void RustCtpMiniActionOnRspAuthenticate(void *rust_call_object CThostFtdcRspAuthenticateField * pRspAuthenticateField,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspUserLogin(void *rust_call_object CThostFtdcRspUserLoginField * pRspUserLogin,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspUserLogout(void *rust_call_object CThostFtdcUserLogoutField * pUserLogout,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspUserPasswordUpdate(void *rust_call_object CThostFtdcUserPasswordUpdateField * pUserPasswordUpdate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspTradingAccountPasswordUpdate(void *rust_call_object CThostFtdcTradingAccountPasswordUpdateField * pTradingAccountPasswordUpdate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspOrderInsert(void *rust_call_object CThostFtdcInputOrderField * pInputOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspParkedOrderInsert(void *rust_call_object CThostFtdcParkedOrderField * pParkedOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspParkedOrderAction(void *rust_call_object CThostFtdcParkedOrderActionField * pParkedOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspOrderAction(void *rust_call_object CThostFtdcInputOrderActionField * pInputOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQueryMaxOrderVolume(void *rust_call_object CThostFtdcQueryMaxOrderVolumeField * pQueryMaxOrderVolume,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspSettlementInfoConfirm(void *rust_call_object CThostFtdcSettlementInfoConfirmField * pSettlementInfoConfirm,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspRemoveParkedOrder(void *rust_call_object CThostFtdcRemoveParkedOrderField * pRemoveParkedOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspRemoveParkedOrderAction(void *rust_call_object CThostFtdcRemoveParkedOrderActionField * pRemoveParkedOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspExecOrderInsert(void *rust_call_object CThostFtdcInputExecOrderField * pInputExecOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspExecOrderAction(void *rust_call_object CThostFtdcInputExecOrderActionField * pInputExecOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspForQuoteInsert(void *rust_call_object CThostFtdcInputForQuoteField * pInputForQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQuoteInsert(void *rust_call_object CThostFtdcInputQuoteField * pInputQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQuoteAction(void *rust_call_object CThostFtdcInputQuoteActionField * pInputQuoteAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspBatchOrderAction(void *rust_call_object CThostFtdcInputBatchOrderActionField * pInputBatchOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspOptionSelfCloseInsert(void *rust_call_object CThostFtdcInputOptionSelfCloseField * pInputOptionSelfClose,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspOptionSelfCloseAction(void *rust_call_object CThostFtdcInputOptionSelfCloseActionField * pInputOptionSelfCloseAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspTransFund(void *rust_call_object CThostFtdcTransFundField * pTransFund,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryOrder(void *rust_call_object CThostFtdcOrderField * pOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryTrade(void *rust_call_object CThostFtdcTradeField * pTrade,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInvestorPosition(void *rust_call_object CThostFtdcInvestorPositionField * pInvestorPosition,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryTradingAccount(void *rust_call_object CThostFtdcTradingAccountField * pTradingAccount,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInvestor(void *rust_call_object CThostFtdcInvestorField * pInvestor,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryTradingCode(void *rust_call_object CThostFtdcTradingCodeField * pTradingCode,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInstrumentMarginRate(void *rust_call_object CThostFtdcInstrumentMarginRateField * pInstrumentMarginRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInstrumentCommissionRate(void *rust_call_object CThostFtdcInstrumentCommissionRateField * pInstrumentCommissionRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryExchange(void *rust_call_object CThostFtdcExchangeField * pExchange,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryProduct(void *rust_call_object CThostFtdcProductField * pProduct,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInstrument(void *rust_call_object CThostFtdcInstrumentField * pInstrument,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryDepthMarketData(void *rust_call_object CThostFtdcDepthMarketDataField * pDepthMarketData,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQrySettlementInfo(void *rust_call_object CThostFtdcSettlementInfoField * pSettlementInfo,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInstrumentStatus(void *rust_call_object CThostFtdcInstrumentStatusField * pInstrumentStatus,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryTransferBank(void *rust_call_object CThostFtdcTransferBankField * pTransferBank,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInvestorPositionDetail(void *rust_call_object CThostFtdcInvestorPositionDetailField * pInvestorPositionDetail,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryNotice(void *rust_call_object CThostFtdcNoticeField * pNotice,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQrySettlementInfoConfirm(void *rust_call_object CThostFtdcSettlementInfoConfirmField * pSettlementInfoConfirm,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInvestorPositionCombineDetail(void *rust_call_object CThostFtdcInvestorPositionCombineDetailField * pInvestorPositionCombineDetail,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryCFMMCTradingAccountKey(void *rust_call_object CThostFtdcCFMMCTradingAccountKeyField * pCFMMCTradingAccountKey,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryEWarrantOffset(void *rust_call_object CThostFtdcEWarrantOffsetField * pEWarrantOffset,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInvestorProductGroupMargin(void *rust_call_object CThostFtdcInvestorProductGroupMarginField * pInvestorProductGroupMargin,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryExchangeMarginRate(void *rust_call_object CThostFtdcExchangeMarginRateField * pExchangeMarginRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryExchangeMarginRateAdjust(void *rust_call_object CThostFtdcExchangeMarginRateAdjustField * pExchangeMarginRateAdjust,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryExchangeRate(void *rust_call_object CThostFtdcExchangeRateField * pExchangeRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQrySecAgentACIDMap(void *rust_call_object CThostFtdcSecAgentACIDMapField * pSecAgentACIDMap,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryOptionInstrTradeCost(void *rust_call_object CThostFtdcOptionInstrTradeCostField * pOptionInstrTradeCost,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryOptionInstrCommRate(void *rust_call_object CThostFtdcOptionInstrCommRateField * pOptionInstrCommRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryExecOrder(void *rust_call_object CThostFtdcExecOrderField * pExecOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryForQuote(void *rust_call_object CThostFtdcForQuoteField * pForQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryQuote(void *rust_call_object CThostFtdcQuoteField * pQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryOptionSelfClose(void *rust_call_object CThostFtdcOptionSelfCloseField * pOptionSelfClose,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryTransferSerial(void *rust_call_object CThostFtdcTransferSerialField * pTransferSerial,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryAccountregister(void *rust_call_object CThostFtdcAccountregisterField * pAccountregister,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspError(void *rust_call_object CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRtnOrder(void *rust_call_object CThostFtdcOrderField * pOrder)extern "C" void RustCtpMiniActionOnRtnTrade(void *rust_call_object CThostFtdcTradeField * pTrade)extern "C" void RustCtpMiniActionOnErrRtnOrderInsert(void *rust_call_object CThostFtdcInputOrderField * pInputOrder,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnOrderAction(void *rust_call_object CThostFtdcOrderActionField * pOrderAction,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnRtnInstrumentStatus(void *rust_call_object CThostFtdcInstrumentStatusField * pInstrumentStatus)extern "C" void RustCtpMiniActionOnRtnTradingNotice(void *rust_call_object CThostFtdcTradingNoticeInfoField * pTradingNoticeInfo)extern "C" void RustCtpMiniActionOnRtnErrorConditionalOrder(void *rust_call_object CThostFtdcErrorConditionalOrderField * pErrorConditionalOrder)extern "C" void RustCtpMiniActionOnRtnExecOrder(void *rust_call_object CThostFtdcExecOrderField * pExecOrder)extern "C" void RustCtpMiniActionOnErrRtnExecOrderInsert(void *rust_call_object CThostFtdcInputExecOrderField * pInputExecOrder,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnExecOrderAction(void *rust_call_object CThostFtdcExecOrderActionField * pExecOrderAction,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnForQuoteInsert(void *rust_call_object CThostFtdcInputForQuoteField * pInputForQuote,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnRtnQuote(void *rust_call_object CThostFtdcQuoteField * pQuote)extern "C" void RustCtpMiniActionOnErrRtnQuoteInsert(void *rust_call_object CThostFtdcInputQuoteField * pInputQuote,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnQuoteAction(void *rust_call_object CThostFtdcQuoteActionField * pQuoteAction,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnRtnForQuoteRsp(void *rust_call_object CThostFtdcForQuoteRspField * pForQuoteRsp)extern "C" void RustCtpMiniActionOnErrRtnBatchOrderAction(void *rust_call_object CThostFtdcBatchOrderActionField * pBatchOrderAction,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnRtnOptionSelfClose(void *rust_call_object CThostFtdcOptionSelfCloseField * pOptionSelfClose)extern "C" void RustCtpMiniActionOnErrRtnOptionSelfCloseInsert(void *rust_call_object CThostFtdcInputOptionSelfCloseField * pInputOptionSelfClose,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnOptionSelfCloseAction(void *rust_call_object CThostFtdcOptionSelfCloseActionField * pOptionSelfCloseAction,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnRspQryContractBank(void *rust_call_object CThostFtdcContractBankField * pContractBank,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryParkedOrder(void *rust_call_object CThostFtdcParkedOrderField * pParkedOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryParkedOrderAction(void *rust_call_object CThostFtdcParkedOrderActionField * pParkedOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryTradingNotice(void *rust_call_object CThostFtdcTradingNoticeField * pTradingNotice,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryBrokerTradingParams(void *rust_call_object CThostFtdcBrokerTradingParamsField * pBrokerTradingParams,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryBrokerTradingAlgos(void *rust_call_object CThostFtdcBrokerTradingAlgosField * pBrokerTradingAlgos,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQryInstrumentOrderCommRate(void *rust_call_object CThostFtdcInstrumentOrderCommRateField * pInstrumentOrderCommRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRtnFromBankToFutureByBank(void *rust_call_object CThostFtdcRspTransferField * pRspTransfer)extern "C" void RustCtpMiniActionOnRtnFromFutureToBankByBank(void *rust_call_object CThostFtdcRspTransferField * pRspTransfer)extern "C" void RustCtpMiniActionOnRtnRepealFromBankToFutureByBank(void *rust_call_object CThostFtdcRspRepealField * pRspRepeal)extern "C" void RustCtpMiniActionOnRtnRepealFromFutureToBankByBank(void *rust_call_object CThostFtdcRspRepealField * pRspRepeal)extern "C" void RustCtpMiniActionOnRtnFromBankToFutureByFuture(void *rust_call_object CThostFtdcRspTransferField * pRspTransfer)extern "C" void RustCtpMiniActionOnRtnFromFutureToBankByFuture(void *rust_call_object CThostFtdcRspTransferField * pRspTransfer)extern "C" void RustCtpMiniActionOnRtnRepealFromBankToFutureByFutureManual(void *rust_call_object CThostFtdcRspRepealField * pRspRepeal)extern "C" void RustCtpMiniActionOnRtnRepealFromFutureToBankByFutureManual(void *rust_call_object CThostFtdcRspRepealField * pRspRepeal)extern "C" void RustCtpMiniActionOnRtnQueryBankBalanceByFuture(void *rust_call_object CThostFtdcNotifyQueryAccountField * pNotifyQueryAccount)extern "C" void RustCtpMiniActionOnErrRtnBankToFutureByFuture(void *rust_call_object CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnFutureToBankByFuture(void *rust_call_object CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnRepealBankToFutureByFutureManual(void *rust_call_object CThostFtdcReqRepealField * pReqRepeal,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnRepealFutureToBankByFutureManual(void *rust_call_object CThostFtdcReqRepealField * pReqRepeal,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnErrRtnQueryBankBalanceByFuture(void *rust_call_object CThostFtdcReqQueryAccountField * pReqQueryAccount,CThostFtdcRspInfoField * pRspInfo)extern "C" void RustCtpMiniActionOnRtnRepealFromBankToFutureByFuture(void *rust_call_object CThostFtdcRspRepealField * pRspRepeal)extern "C" void RustCtpMiniActionOnRtnRepealFromFutureToBankByFuture(void *rust_call_object CThostFtdcRspRepealField * pRspRepeal)extern "C" void RustCtpMiniActionOnRspFromBankToFutureByFuture(void *rust_call_object CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspFromFutureToBankByFuture(void *rust_call_object CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRspQueryBankAccountMoneyByFuture(void *rust_call_object CThostFtdcReqQueryAccountField * pReqQueryAccount,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast)extern "C" void RustCtpMiniActionOnRtnOpenAccountByBank(void *rust_call_object CThostFtdcOpenAccountField * pOpenAccount)extern "C" void RustCtpMiniActionOnRtnCancelAccountByBank(void *rust_call_object CThostFtdcCancelAccountField * pCancelAccount)extern "C" void RustCtpMiniActionOnRtnChangeAccountByBank(void *rust_call_object CThostFtdcChangeAccountField * pChangeAccount)
+        extern "C" void RustCtpMiniActionOnFrontDisconnected(void *rust_call_object , int nReason); 
+extern "C" void RustCtpMiniActionOnHeartBeatWarning(void *rust_call_object , int nTimeLapse); 
+extern "C" void RustCtpMiniActionOnRspAuthenticate(void *rust_call_object , CThostFtdcRspAuthenticateField * pRspAuthenticateField,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspUserLogin(void *rust_call_object , CThostFtdcRspUserLoginField * pRspUserLogin,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspUserLogout(void *rust_call_object , CThostFtdcUserLogoutField * pUserLogout,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspUserPasswordUpdate(void *rust_call_object , CThostFtdcUserPasswordUpdateField * pUserPasswordUpdate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspTradingAccountPasswordUpdate(void *rust_call_object , CThostFtdcTradingAccountPasswordUpdateField * pTradingAccountPasswordUpdate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspOrderInsert(void *rust_call_object , CThostFtdcInputOrderField * pInputOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspParkedOrderInsert(void *rust_call_object , CThostFtdcParkedOrderField * pParkedOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspParkedOrderAction(void *rust_call_object , CThostFtdcParkedOrderActionField * pParkedOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspOrderAction(void *rust_call_object , CThostFtdcInputOrderActionField * pInputOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQueryMaxOrderVolume(void *rust_call_object , CThostFtdcQueryMaxOrderVolumeField * pQueryMaxOrderVolume,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspSettlementInfoConfirm(void *rust_call_object , CThostFtdcSettlementInfoConfirmField * pSettlementInfoConfirm,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspRemoveParkedOrder(void *rust_call_object , CThostFtdcRemoveParkedOrderField * pRemoveParkedOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspRemoveParkedOrderAction(void *rust_call_object , CThostFtdcRemoveParkedOrderActionField * pRemoveParkedOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspExecOrderInsert(void *rust_call_object , CThostFtdcInputExecOrderField * pInputExecOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspExecOrderAction(void *rust_call_object , CThostFtdcInputExecOrderActionField * pInputExecOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspForQuoteInsert(void *rust_call_object , CThostFtdcInputForQuoteField * pInputForQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQuoteInsert(void *rust_call_object , CThostFtdcInputQuoteField * pInputQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQuoteAction(void *rust_call_object , CThostFtdcInputQuoteActionField * pInputQuoteAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspBatchOrderAction(void *rust_call_object , CThostFtdcInputBatchOrderActionField * pInputBatchOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspOptionSelfCloseInsert(void *rust_call_object , CThostFtdcInputOptionSelfCloseField * pInputOptionSelfClose,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspOptionSelfCloseAction(void *rust_call_object , CThostFtdcInputOptionSelfCloseActionField * pInputOptionSelfCloseAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspTransFund(void *rust_call_object , CThostFtdcTransFundField * pTransFund,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryOrder(void *rust_call_object , CThostFtdcOrderField * pOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryTrade(void *rust_call_object , CThostFtdcTradeField * pTrade,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInvestorPosition(void *rust_call_object , CThostFtdcInvestorPositionField * pInvestorPosition,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryTradingAccount(void *rust_call_object , CThostFtdcTradingAccountField * pTradingAccount,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInvestor(void *rust_call_object , CThostFtdcInvestorField * pInvestor,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryTradingCode(void *rust_call_object , CThostFtdcTradingCodeField * pTradingCode,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInstrumentMarginRate(void *rust_call_object , CThostFtdcInstrumentMarginRateField * pInstrumentMarginRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInstrumentCommissionRate(void *rust_call_object , CThostFtdcInstrumentCommissionRateField * pInstrumentCommissionRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryExchange(void *rust_call_object , CThostFtdcExchangeField * pExchange,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryProduct(void *rust_call_object , CThostFtdcProductField * pProduct,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInstrument(void *rust_call_object , CThostFtdcInstrumentField * pInstrument,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryDepthMarketData(void *rust_call_object , CThostFtdcDepthMarketDataField * pDepthMarketData,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQrySettlementInfo(void *rust_call_object , CThostFtdcSettlementInfoField * pSettlementInfo,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInstrumentStatus(void *rust_call_object , CThostFtdcInstrumentStatusField * pInstrumentStatus,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryTransferBank(void *rust_call_object , CThostFtdcTransferBankField * pTransferBank,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInvestorPositionDetail(void *rust_call_object , CThostFtdcInvestorPositionDetailField * pInvestorPositionDetail,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryNotice(void *rust_call_object , CThostFtdcNoticeField * pNotice,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQrySettlementInfoConfirm(void *rust_call_object , CThostFtdcSettlementInfoConfirmField * pSettlementInfoConfirm,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInvestorPositionCombineDetail(void *rust_call_object , CThostFtdcInvestorPositionCombineDetailField * pInvestorPositionCombineDetail,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryCFMMCTradingAccountKey(void *rust_call_object , CThostFtdcCFMMCTradingAccountKeyField * pCFMMCTradingAccountKey,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryEWarrantOffset(void *rust_call_object , CThostFtdcEWarrantOffsetField * pEWarrantOffset,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInvestorProductGroupMargin(void *rust_call_object , CThostFtdcInvestorProductGroupMarginField * pInvestorProductGroupMargin,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryExchangeMarginRate(void *rust_call_object , CThostFtdcExchangeMarginRateField * pExchangeMarginRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryExchangeMarginRateAdjust(void *rust_call_object , CThostFtdcExchangeMarginRateAdjustField * pExchangeMarginRateAdjust,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryExchangeRate(void *rust_call_object , CThostFtdcExchangeRateField * pExchangeRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQrySecAgentACIDMap(void *rust_call_object , CThostFtdcSecAgentACIDMapField * pSecAgentACIDMap,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryOptionInstrTradeCost(void *rust_call_object , CThostFtdcOptionInstrTradeCostField * pOptionInstrTradeCost,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryOptionInstrCommRate(void *rust_call_object , CThostFtdcOptionInstrCommRateField * pOptionInstrCommRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryExecOrder(void *rust_call_object , CThostFtdcExecOrderField * pExecOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryForQuote(void *rust_call_object , CThostFtdcForQuoteField * pForQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryQuote(void *rust_call_object , CThostFtdcQuoteField * pQuote,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryOptionSelfClose(void *rust_call_object , CThostFtdcOptionSelfCloseField * pOptionSelfClose,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryTransferSerial(void *rust_call_object , CThostFtdcTransferSerialField * pTransferSerial,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryAccountregister(void *rust_call_object , CThostFtdcAccountregisterField * pAccountregister,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspError(void *rust_call_object , CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRtnOrder(void *rust_call_object , CThostFtdcOrderField * pOrder); 
+extern "C" void RustCtpMiniActionOnRtnTrade(void *rust_call_object , CThostFtdcTradeField * pTrade); 
+extern "C" void RustCtpMiniActionOnErrRtnOrderInsert(void *rust_call_object , CThostFtdcInputOrderField * pInputOrder,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnOrderAction(void *rust_call_object , CThostFtdcOrderActionField * pOrderAction,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnRtnInstrumentStatus(void *rust_call_object , CThostFtdcInstrumentStatusField * pInstrumentStatus); 
+extern "C" void RustCtpMiniActionOnRtnTradingNotice(void *rust_call_object , CThostFtdcTradingNoticeInfoField * pTradingNoticeInfo); 
+extern "C" void RustCtpMiniActionOnRtnErrorConditionalOrder(void *rust_call_object , CThostFtdcErrorConditionalOrderField * pErrorConditionalOrder); 
+extern "C" void RustCtpMiniActionOnRtnExecOrder(void *rust_call_object , CThostFtdcExecOrderField * pExecOrder); 
+extern "C" void RustCtpMiniActionOnErrRtnExecOrderInsert(void *rust_call_object , CThostFtdcInputExecOrderField * pInputExecOrder,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnExecOrderAction(void *rust_call_object , CThostFtdcExecOrderActionField * pExecOrderAction,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnForQuoteInsert(void *rust_call_object , CThostFtdcInputForQuoteField * pInputForQuote,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnRtnQuote(void *rust_call_object , CThostFtdcQuoteField * pQuote); 
+extern "C" void RustCtpMiniActionOnErrRtnQuoteInsert(void *rust_call_object , CThostFtdcInputQuoteField * pInputQuote,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnQuoteAction(void *rust_call_object , CThostFtdcQuoteActionField * pQuoteAction,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnRtnForQuoteRsp(void *rust_call_object , CThostFtdcForQuoteRspField * pForQuoteRsp); 
+extern "C" void RustCtpMiniActionOnErrRtnBatchOrderAction(void *rust_call_object , CThostFtdcBatchOrderActionField * pBatchOrderAction,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnRtnOptionSelfClose(void *rust_call_object , CThostFtdcOptionSelfCloseField * pOptionSelfClose); 
+extern "C" void RustCtpMiniActionOnErrRtnOptionSelfCloseInsert(void *rust_call_object , CThostFtdcInputOptionSelfCloseField * pInputOptionSelfClose,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnOptionSelfCloseAction(void *rust_call_object , CThostFtdcOptionSelfCloseActionField * pOptionSelfCloseAction,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnRspQryContractBank(void *rust_call_object , CThostFtdcContractBankField * pContractBank,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryParkedOrder(void *rust_call_object , CThostFtdcParkedOrderField * pParkedOrder,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryParkedOrderAction(void *rust_call_object , CThostFtdcParkedOrderActionField * pParkedOrderAction,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryTradingNotice(void *rust_call_object , CThostFtdcTradingNoticeField * pTradingNotice,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryBrokerTradingParams(void *rust_call_object , CThostFtdcBrokerTradingParamsField * pBrokerTradingParams,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryBrokerTradingAlgos(void *rust_call_object , CThostFtdcBrokerTradingAlgosField * pBrokerTradingAlgos,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQryInstrumentOrderCommRate(void *rust_call_object , CThostFtdcInstrumentOrderCommRateField * pInstrumentOrderCommRate,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRtnFromBankToFutureByBank(void *rust_call_object , CThostFtdcRspTransferField * pRspTransfer); 
+extern "C" void RustCtpMiniActionOnRtnFromFutureToBankByBank(void *rust_call_object , CThostFtdcRspTransferField * pRspTransfer); 
+extern "C" void RustCtpMiniActionOnRtnRepealFromBankToFutureByBank(void *rust_call_object , CThostFtdcRspRepealField * pRspRepeal); 
+extern "C" void RustCtpMiniActionOnRtnRepealFromFutureToBankByBank(void *rust_call_object , CThostFtdcRspRepealField * pRspRepeal); 
+extern "C" void RustCtpMiniActionOnRtnFromBankToFutureByFuture(void *rust_call_object , CThostFtdcRspTransferField * pRspTransfer); 
+extern "C" void RustCtpMiniActionOnRtnFromFutureToBankByFuture(void *rust_call_object , CThostFtdcRspTransferField * pRspTransfer); 
+extern "C" void RustCtpMiniActionOnRtnRepealFromBankToFutureByFutureManual(void *rust_call_object , CThostFtdcRspRepealField * pRspRepeal); 
+extern "C" void RustCtpMiniActionOnRtnRepealFromFutureToBankByFutureManual(void *rust_call_object , CThostFtdcRspRepealField * pRspRepeal); 
+extern "C" void RustCtpMiniActionOnRtnQueryBankBalanceByFuture(void *rust_call_object , CThostFtdcNotifyQueryAccountField * pNotifyQueryAccount); 
+extern "C" void RustCtpMiniActionOnErrRtnBankToFutureByFuture(void *rust_call_object , CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnFutureToBankByFuture(void *rust_call_object , CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnRepealBankToFutureByFutureManual(void *rust_call_object , CThostFtdcReqRepealField * pReqRepeal,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnRepealFutureToBankByFutureManual(void *rust_call_object , CThostFtdcReqRepealField * pReqRepeal,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnErrRtnQueryBankBalanceByFuture(void *rust_call_object , CThostFtdcReqQueryAccountField * pReqQueryAccount,CThostFtdcRspInfoField * pRspInfo); 
+extern "C" void RustCtpMiniActionOnRtnRepealFromBankToFutureByFuture(void *rust_call_object , CThostFtdcRspRepealField * pRspRepeal); 
+extern "C" void RustCtpMiniActionOnRtnRepealFromFutureToBankByFuture(void *rust_call_object , CThostFtdcRspRepealField * pRspRepeal); 
+extern "C" void RustCtpMiniActionOnRspFromBankToFutureByFuture(void *rust_call_object , CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspFromFutureToBankByFuture(void *rust_call_object , CThostFtdcReqTransferField * pReqTransfer,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRspQueryBankAccountMoneyByFuture(void *rust_call_object , CThostFtdcReqQueryAccountField * pReqQueryAccount,CThostFtdcRspInfoField * pRspInfo,int nRequestID,bool bIsLast); 
+extern "C" void RustCtpMiniActionOnRtnOpenAccountByBank(void *rust_call_object , CThostFtdcOpenAccountField * pOpenAccount); 
+extern "C" void RustCtpMiniActionOnRtnCancelAccountByBank(void *rust_call_object , CThostFtdcCancelAccountField * pCancelAccount); 
+extern "C" void RustCtpMiniActionOnRtnChangeAccountByBank(void *rust_call_object , CThostFtdcChangeAccountField * pChangeAccount); 
+
 class CtpMiniTdSpi: CThostFtdcTraderSpi {
 public:
     void *rust_call_object;
@@ -840,4 +942,4 @@ public:
             
 protected:
     ~CtpMiniTdSpi(){}
-}
+};
