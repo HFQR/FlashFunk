@@ -647,8 +647,8 @@ impl Generator {
     }
 
     pub fn update_tick<F>(&mut self, tick: &TickData, f: F)
-    where
-        F: FnOnce(&mut Self, Bar),
+        where
+            F: FnOnce(&mut Self, Bar),
     {
         let time = tick.datetime;
         if self.last.is_none() {
@@ -762,6 +762,31 @@ impl Tick {
             bid_volume_3: row.get("bid_volume_3").unwrap(),
             bid_volume_4: row.get("bid_volume_4").unwrap(),
             bid_volume_5: row.get("bid_volume_5").unwrap(),
+        }
+    }
+}
+
+/// Contract Status Struct build
+/// code is the  contract name
+/// status got 1 and 0
+#[derive(Clone, Debug)]
+pub struct ContractStatus {
+    pub code: String,
+    pub status: i32,
+}
+
+/// Log Struct
+#[derive(Clone, Debug)]
+pub struct Log {
+    pub level: LogLevel,
+    pub msg: String,
+}
+
+impl Log {
+    pub fn new(level: LogLevel, msg: &str) -> Log {
+        Log {
+            level,
+            msg: String::from(msg), // todo!(fix the type may be a constant will be better?)
         }
     }
 }

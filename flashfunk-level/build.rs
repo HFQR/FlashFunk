@@ -57,14 +57,15 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
     );
     let mut v = vec![];
 
-    let destination = mkdir_path(sdk.clone().as_ref()).to_str().unwrap().to_string();
-
+    // let destination = mkdir_path(sdk.clone().as_ref()).to_str().unwrap().to_string();
+    let destination = env::var("OUT_DIR").unwrap();
     for entry in fs::read_dir(dll_dir.clone()).unwrap() {
         let file = entry.unwrap();
         let filepath = file.path();
         let filename = file.file_name().into_string().unwrap();
+        let fe = destination.clone() + &*format!("//{}", filename);
         println!("{} ----> {}", filepath.to_str().unwrap(), destination);
-        std::fs::copy(filepath, destination.clone()).expect(&*format!("Failed to copy Library File  to the Local Address {}", destination));
+        std::fs::copy(filepath,fe).expect(&*format!("Failed to copy Library File  to the Local Address {}", destination));
         println!("cargo:resource={}", destination);
         v.push(file_name(filename))
     }
@@ -107,14 +108,16 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
     );
     let mut v = vec![];
 
-    let destination = mkdir_path(sdk.clone().as_ref()).to_str().unwrap().to_string();
+    // let destination = mkdir_path(sdk.clone().as_ref()).to_str().unwrap().to_string();
+    let destination = env::var("OUT_DIR").unwrap();
 
     for entry in fs::read_dir(dll_dir.clone()).unwrap() {
         let file = entry.unwrap();
         let filepath = file.path();
         let filename = file.file_name().into_string().unwrap();
+        let fe = destination.clone() + &*format!("//{}", filename);
         println!("{} ----> {}", filepath.to_str().unwrap(), destination);
-        std::fs::copy(filepath, destination.clone()).expect(&*format!("Failed to copy Library File  to the Local Address {}", destination));
+        std::fs::copy(filepath, fe).expect(&*format!("Failed to copy Library File  to the Local Address {}", destination));
         println!("cargo:resource={}", destination);
         v.push(file_name(filename))
     }

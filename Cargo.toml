@@ -1,7 +1,8 @@
 [workspace]
 members = [
+    "./flashfunk-level",
     "./flashfunk-core",
-    "./flashfunk-level"
+
 ]
 
 

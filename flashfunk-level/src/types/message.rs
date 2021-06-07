@@ -1,7 +1,4 @@
-use crate::data_type::{
-    AccountData, CancelRequest, ContractData, ContractVec, ExtraOrder, ExtraTrade, OrderData,
-    OrderRequest, PositionData, QueryRequest, SubscribeRequest, TickData, TradeData,
-};
+use crate::data_type::{AccountData, CancelRequest, ContractData, ContractVec, ExtraOrder, ExtraTrade, OrderData, OrderRequest, PositionData, QueryRequest, SubscribeRequest, TickData, TradeData, ContractStatus, Log};
 
 pub enum MdApiMessage {
     TickData(&'static TickData),
@@ -29,6 +26,8 @@ pub enum TdApiMessage {
     ExtraOrder(ExtraOrder),
     ExtraTrade(ExtraTrade),
     ContractVec(ContractVec),
+    ContractStatus(ContractStatus),
+    Log(Log),
 }
 
 impl From<OrderData> for TdApiMessage {
@@ -78,6 +77,20 @@ impl From<ContractData> for TdApiMessage {
         Self::ContractData(data)
     }
 }
+
+// 合约状态的推送
+impl From<ContractStatus> for TdApiMessage {
+    fn from(data: (ContractStatus)) -> Self {
+        Self::ContractStatus(data)
+    }
+}
+
+impl From<Log> for TdApiMessage {
+    fn from(data: (Log)) -> Self {
+        Self::Log(data)
+    }
+}
+
 
 pub enum StrategyMessage {
     OrderRequest(OrderRequest),

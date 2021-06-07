@@ -7,8 +7,11 @@
     unused_imports
 )]
 
-pub(crate) mod func;
+// pub(crate) mod func;
 pub(crate) mod sys;
-
-pub mod md_api;
-pub mod td_api;
+// pub mod md_api;
+// pub mod td_api;
+mod CtpMd;
+mod CtpTd;
+mod mdapi;
+mod tdapi;

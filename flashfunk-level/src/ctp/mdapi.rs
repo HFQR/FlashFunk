@@ -14,8 +14,7 @@ use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 
 use crate::ctp::func::QuoteApi;
 use crate::ctp::sys::{
-    another_slice_to_string, check_slice_to_string, parse_datetime_from_str,
-    parse_datetime_from_str_with_mill, slice_to_string, CThostFtdcDepthMarketDataField,
+    check_slice_to_string, slice_to_string, CThostFtdcDepthMarketDataField,
     CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField, CThostFtdcMdApi,
     CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront,
     CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData,
@@ -24,6 +23,7 @@ use crate::ctp::sys::{
     CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi, QuoteSpi_Destructor,
     TThostFtdcErrorIDType, TThostFtdcRequestIDType, ToCSlice,
 };
+use crate::c_func::parse_datetime_from_str;
 use crate::data_type::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::interface::Interface;
 use crate::types::message::MdApiMessage;
@@ -32,6 +32,7 @@ use crate::util::channel::GroupSender;
 use crate::{get_interface_path, os_path};
 use std::fs::create_dir;
 use std::path::PathBuf;
+use crate::ctp::CtpMd::CtpMdCApi;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -63,10 +64,10 @@ pub struct CtpMdApi {
     password: CString,
     request_id: i32,
     pub flow_path_ptr: *const i8,
-    collector: DataCollector,
+    collector: Level,
 }
 
-struct DataCollector {
+struct Level {
     sender: GroupSender<MdApiMessage>,
     symbols: Vec<&'static str>,
     blocker: Option<MdApiBlocker>,
@@ -76,14 +77,15 @@ struct DataCollector {
 }
 
 /// 此处我们实现种种方法来构建ctp的登录流程
-impl QuoteApi for DataCollector {
+impl CtpMdCApi for Level {
     fn on_front_connected(&mut self) {
         // 当前置连上后 开始进行登录
+        println!("front connect");
         self.login();
     }
 
     fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
-        println!(">>> CtpMdApi front disconnected, please check your network");
+        println!(">>> CtpMdApi Front Disconnected, Please Check Your Network");
         self.blocker = Option::from(MdApiBlocker::new());
     }
 
@@ -119,7 +121,7 @@ impl QuoteApi for DataCollector {
             if let Some(i) = index {
                 let msg = {
                     let symbol = symbol.to_str().unwrap().to_owned();
-                    let (date, time) = parse_datetime_from_str_with_mill(
+                    let (date, time) = parse_datetime_from_str(
                         depth.ActionDay.as_ptr(),
                         depth.UpdateTime.as_ptr(),
                         depth.UpdateMillisec,
@@ -183,7 +185,7 @@ impl QuoteApi for DataCollector {
 unsafe impl Send for CtpMdApi {}
 
 /// Now we get a very useful spi, and we get use the most important things to let everything works well
-impl DataCollector {
+impl Level {
     /// 在构建API的时候把相关信息都传入进来 ， 包含登录信息以及订阅列表 和发送器和 行情指针
     /// 注意 MdApi只负责构建回调对象
     pub fn new(
@@ -193,7 +195,7 @@ impl DataCollector {
         market_pointer: *mut CThostFtdcMdApi,
     ) -> Self {
         let blocker = MdApiBlocker::new();
-        DataCollector {
+        Level {
             sender,
             symbols,
             blocker: Some(blocker),
@@ -208,12 +210,15 @@ impl DataCollector {
         self.register_spi();
 
         let addr = CString::new(self.login_form._md_address()).unwrap();
+        println!("{}", addr.to_string_lossy());
         self.register_fronted_address(addr);
 
         self.init();
 
+        println!("init");
+
         // 等待 login完成后才发送订阅
-        self.blocker.as_mut().unwrap().0.step2.block();
+        // self.blocker.as_mut().unwrap().0.step2.block();
 
         println!(">>> CtpMdApi init successful");
     }
@@ -222,7 +227,9 @@ impl DataCollector {
         self.request_id += 1;
         self.symbols.iter().for_each(|symbol| {
             let code = CString::new(*symbol).unwrap();
+            println!("subscribe {}", code.to_string_lossy());
             let mut c = code.into_raw();
+
             unsafe {
                 CThostFtdcMdApi_SubscribeMarketData(self.market_pointer, &mut c, self.request_id)
             };
@@ -306,15 +313,16 @@ impl Interface for CtpMdApi {
         }
         let p = CString::new(path).unwrap();
         let pwd = CString::new(pwd).unwrap();
+        println!(" new with {}", p.to_string_lossy());
         let flow_path_ptr = p.as_ptr();
-        let market_pointer = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
+        let market_pointer = unsafe { CThostFtdcMdApi_CreateFtdcMdApi(flow_path_ptr, true, true) };
         // 创建了行情对象
         CtpMdApi {
             user_id: p.clone(),
             flow_path_ptr,
             password: pwd,
             request_id: 0,
-            collector: DataCollector::new(req, symbols.clone(), sender, market_pointer),
+            collector: Level::new(req, symbols.clone(), sender, market_pointer),
         }
     }
 

@@ -27,9 +27,23 @@ pub trait Ac {
 
     fn on_l2_trade(&mut self, order: &TradeData, ctx: &mut Context) {}
 
-    fn local_symbols<'a>(&mut self) -> Vec<&'a str>;
+    /// 内置函数 不应该被重写
+    fn local_symbols<'a>(&mut self) -> Vec<&'a str> {
+        let mut strs: Vec<&'static str> = Vec::new();
+        self.codes()
+            .iter()
+            .for_each(|x| strs.push(Box::leak(x.clone().into_boxed_str())));
+        strs
+    }
 
-    fn name<'a>(&mut self) -> &'a str;
+    /// 内置函数 不应该被重写
+    fn name<'a>(&mut self) -> &'a str {
+        Box::leak(self.flash_name().clone().into_boxed_str())
+    }
+
+    fn codes(&mut self) -> Vec<String>;
+
+    fn flash_name(&mut self) -> String;
 }
 
 /// 用户登录接口,包含用户的

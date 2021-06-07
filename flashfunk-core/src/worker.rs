@@ -9,6 +9,8 @@ use flashfunk_level::types::message::{MdApiMessage, StrategyMessage, TdApiMessag
 use flashfunk_level::util::channel::{channel, GroupSender, Receiver, Sender};
 use std::ops::Deref;
 use std::time::Instant;
+use flashfunk_level::constant::LogLevel;
+use chrono::Local;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
@@ -139,6 +141,13 @@ impl StrategyWorker {
                                 contract.exchange.unwrap(),
                             );
                             self.st.on_contract(contract, &mut ctx);
+                        }
+                    }
+                    TdApiMessage::ContractStatus(ref data) => {}
+                    TdApiMessage::Log(ref data) => {
+                        println!("{:?}", data);
+                        if data.level.eq(&LogLevel::INFO) {
+                            println!("{} INFO ===> {}", Local::now().naive_local(), data.msg);
                         }
                     }
                 }

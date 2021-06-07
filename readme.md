@@ -1,28 +1,28 @@
-## FlashFunk 
+## FlashFunk
 
 > High Frequency Trading Framework
 
-
 ## Why choose `Rust`
 
-not reason 
+not reason
 
 ## Todo List
+
 - Test Coverage
 
 - Logger Need
 
--  fix waring and remove clippy error
+- fix waring and remove clippy error
 
 ### Install
- 
+
 See [Install](./install.md)
 
 ### 系统要求
 
-- linux 
+- linux
 
-- windows visual studio and llvm 
+- windows visual studio and llvm
 
 ### Easy Start
 
@@ -47,7 +47,7 @@ impl Ac for Strategy {
     }
 
     // 此处我们需要返还静态的引用 推荐使用此函数即可 
-    fn local_symbols<'a>(&mut self) -> Vec<&'a str> { 
+    fn local_symbols<'a>(&mut self) -> Vec<&'a str> {
         let mut strs: Vec<&'static str> = Vec::new();
         self.local_symbol.iter().for_each(|x| strs.push(Box::leak(x.clone().into_boxed_str())));
         strs

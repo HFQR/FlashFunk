@@ -29,6 +29,22 @@ bitflags! {
     }
 }
 
+
+bitflags! {
+    /// 日志信息等级
+    pub struct LogLevel: u8 {
+        /// 无
+        const ERROR =            0;
+        /// 平
+        const WARNING =           1;
+        /// 平今
+        const DEBUG =      2;
+        /// 平昨
+        const INFO =  3;
+    }
+}
+
+
 bitflags! {
     /// 状态
     pub struct Status: u8 {

@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 #![allow(clippy::mutex_atomic)]
 #![allow(clippy::type_complexity)]
 
@@ -19,6 +20,7 @@ pub mod prelude {
     pub use flashfunk_level::context::{Context, ContextTrait};
     pub use flashfunk_level::data_type::*;
     pub use flashfunk_level::interface::Ac;
+
 }
 
 // pub use util::mock::{MockMdApi, MockTdApi};
