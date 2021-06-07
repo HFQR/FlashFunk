@@ -12,17 +12,7 @@ use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 // use encoding::all::GB18030;
 // use encoding::{DecoderTrap, Encoding};
 
-use crate::ctp::func::QuoteApi;
-use crate::ctp::sys::{
-    check_slice_to_string, slice_to_string, CThostFtdcDepthMarketDataField,
-    CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField, CThostFtdcMdApi,
-    CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront,
-    CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData,
-    CThostFtdcMdSpi, CThostFtdcReqUserLoginField, CThostFtdcRspInfoField,
-    CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField, CThostFtdcTraderApi,
-    CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi, QuoteSpi_Destructor,
-    TThostFtdcErrorIDType, TThostFtdcRequestIDType, ToCSlice,
-};
+use crate::ctp::sys::*;
 use crate::c_func::parse_datetime_from_str;
 use crate::data_type::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::interface::Interface;
@@ -84,7 +74,7 @@ impl CtpMdCApi for Level {
         self.login();
     }
 
-    fn on_front_disconnected(&mut self, reason: DisconnectionReason) {
+    fn on_front_disconnected(&mut self, reason: i32) {
         println!(">>> CtpMdApi Front Disconnected, Please Check Your Network");
         self.blocker = Option::from(MdApiBlocker::new());
     }
@@ -229,21 +219,20 @@ impl Level {
             let code = CString::new(*symbol).unwrap();
             println!("subscribe {}", code.to_string_lossy());
             let mut c = code.into_raw();
-
             unsafe {
-                CThostFtdcMdApi_SubscribeMarketData(self.market_pointer, &mut c, self.request_id)
+                CThostFtdcMdApiSubscribeMarketData(self.market_pointer, &mut c, self.request_id)
             };
         });
     }
 
     /// 初始化调用
     pub fn init(&mut self) -> bool {
-        unsafe { CThostFtdcMdApi_Init(self.market_pointer) };
+        unsafe { CThostFtdcMdApiInit(self.market_pointer) };
         true
     }
     /// 获取交易日
     pub fn get_trading_day<'a>(&mut self) -> &'a str {
-        let trading_day_cstr = unsafe { CThostFtdcMdApi_GetTradingDay(self.market_pointer) };
+        let trading_day_cstr = unsafe { CThostFtdcMdApiGetTradingDay(self.market_pointer) };
         unsafe {
             CStr::from_ptr(trading_day_cstr as *const i8)
                 .to_str()
@@ -260,7 +249,7 @@ impl Level {
         let app_id = CString::new(login_form._app_id()).unwrap();
         let production_info = CString::new(login_form._production_info()).unwrap();
         unsafe {
-            CThostFtdcMdApi_ReqUserLogin(
+            CThostFtdcMdApiReqUserLogin(
                 self.market_pointer,
                 &mut CThostFtdcReqUserLoginField::default(),
                 self.request_id,
@@ -275,18 +264,18 @@ impl Level {
             register_addr.clone().into_string().unwrap()
         );
         let front_socket_address_ptr = register_addr.into_raw();
-        unsafe { CThostFtdcMdApi_RegisterFront(self.market_pointer, front_socket_address_ptr) };
+        unsafe { CThostFtdcMdApiRegisterFront(self.market_pointer, front_socket_address_ptr) };
     }
 
     /// 注册回调
     fn register_spi(&mut self) {
-        let trait_object_box: Box<Box<&mut dyn QuoteApi>> = Box::new(Box::new(self));
+        let trait_object_box: Box<Box<&mut dyn CtpMdCApi>> = Box::new(Box::new(self));
         let trait_object_pointer =
-            Box::into_raw(trait_object_box) as *mut Box<&mut dyn QuoteApi> as *mut c_void;
+            Box::into_raw(trait_object_box) as *mut Box<&mut dyn CtpMdCApi> as *mut c_void;
         // 把 rust对象 传给回调SPI
-        let quote_spi = unsafe { QuoteSpi::new(trait_object_pointer) };
+        let quote_spi = unsafe { CtpMdSpi::new(trait_object_pointer)  };
         let ptr = Box::into_raw(Box::new(quote_spi));
-        unsafe { CThostFtdcMdApi_RegisterSpi(self.market_pointer, ptr as *mut CThostFtdcMdSpi) };
+        unsafe { CThostFtdcMdApiRegisterSpi(self.market_pointer, ptr as *mut CThostFtdcMdSpi) };
     }
 
     fn release(&mut self) {

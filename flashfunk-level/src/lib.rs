@@ -31,9 +31,9 @@ mod ctp;
 mod ctpmini;
 
 #[cfg(feature = "ctp")]
-pub use ctp::md_api::CtpMdApi;
+pub use ctp::mdapi::CtpMdApi;
 #[cfg(feature = "ctp")]
-pub use ctp::td_api::CtpTdApi;
+pub use ctp::tdapi::CtpTdApi;
 use std::fs;
 
 pub mod types;

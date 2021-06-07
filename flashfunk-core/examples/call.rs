@@ -14,9 +14,8 @@ struct Strategy {
 
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
-        println!("dur: {}", tick.instant.elapsed().as_nanos());
+        println!("{} {}", tick.datetime, tick.last_price);
     }
-
     fn codes(&mut self) -> Vec<String> {
         self.local_symbol.iter().map(|x| x.clone()).collect()
     }
@@ -31,7 +30,7 @@ fn main() {
         .password("wi1015..")
         .broke_id("9999")
         .app_id("simnow_client_test")
-        .md_address("tcp://180.168.146.187:10212")
+        .md_address("tcp://180.166.37.142:43213")
         .td_address("tcp://180.168.146.187:10202")
         .auth_code("0000000000000000")
         .production_info("");

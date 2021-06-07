@@ -9,9 +9,9 @@ use encoding::{DecoderTrap, Encoding};
 use crate::{get_interface_path, os_path};
 use chrono::{NaiveDate, NaiveTime, Timelike};
 
-// #[cfg(not(target_os = "windows"))]
-// include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
-//
+#[cfg(not(target_os = "windows"))]
+include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
+
 #[cfg(target_os = "windows")]
 include!(concat!(
 env!("HOMEDRIVE"),

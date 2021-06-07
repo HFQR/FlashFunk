@@ -13,5 +13,5 @@ pub(crate) mod sys;
 // pub mod td_api;
 mod CtpMd;
 mod CtpTd;
-mod mdapi;
-mod tdapi;
+pub(crate) mod mdapi;
+pub(crate) mod tdapi;

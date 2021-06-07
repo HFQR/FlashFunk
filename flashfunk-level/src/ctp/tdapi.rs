@@ -1,3 +1,4 @@
+
 use core::ffi::c_void;
 use core::fmt;
 
@@ -11,22 +12,10 @@ use std::time::Instant;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 // use encoding::all::GB18030;
 // use encoding::{DecoderTrap, Encoding};
-
-use crate::ctp::func::QuoteApi;
-use crate::ctp::sys::{
-    check_slice_to_string, slice_to_string, CThostFtdcDepthMarketDataField,
-    CThostFtdcFensUserInfoField, CThostFtdcForQuoteRspField, CThostFtdcMdApi,
-    CThostFtdcMdApi_GetTradingDay, CThostFtdcMdApi_Init, CThostFtdcMdApi_RegisterFront,
-    CThostFtdcMdApi_RegisterSpi, CThostFtdcMdApi_ReqUserLogin, CThostFtdcMdApi_SubscribeMarketData,
-    CThostFtdcMdSpi, CThostFtdcReqUserLoginField, CThostFtdcRspInfoField,
-    CThostFtdcRspUserLoginField, CThostFtdcSpecificInstrumentField, CThostFtdcTraderApi,
-    CThostFtdcUserLogoutField, DisconnectionReason, QuoteSpi, QuoteSpi_Destructor,
-    TThostFtdcErrorIDType, TThostFtdcRequestIDType, ToCSlice,
-};
 use crate::c_func::parse_datetime_from_str;
 use crate::data_type::{CancelRequest, LoginForm, OrderRequest, TickData};
 use crate::interface::Interface;
-use crate::types::message::MdApiMessage;
+use crate::types::message::{MdApiMessage, TdApiMessage};
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use crate::{get_interface_path, os_path};
@@ -62,23 +51,11 @@ struct MdApiBlockerInner {
 
 pub struct CtpTdApi {}
 
-struct Level {
-    sender: GroupSender<MdApiMessage>,
-    symbols: Vec<&'static str>,
-    blocker: Option<MdApiBlocker>,
-    login_form: LoginForm,
-    market_pointer: *mut CThostFtdcMdApi,
-    request_id: i32,
-}
-
-/// 此处我们实现种种方法来构建ctp的登录流程
-impl CtpTdCApi for Level {}
-
 unsafe impl Send for CtpTdApi {}
 
 /// Now we get a very useful spi, and we get use the most important things to let everything works well
 impl Interface for CtpTdApi {
-    type Message = MdApiMessage;
+    type Message = TdApiMessage;
 
     fn new(
         id: impl Into<Vec<u8>>,
