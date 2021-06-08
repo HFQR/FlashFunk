@@ -92,6 +92,7 @@ pub struct OrderData {
     pub volume: f64,
     pub traded: f64,
     pub status: Status,
+    pub is_local: bool,
 }
 
 pub struct ExtraOrder {
@@ -205,6 +206,7 @@ pub struct TradeData {
     pub offset: Option<Offset>,
     pub price: f64,
     pub volume: i32,
+    pub is_local: bool,
 }
 
 impl Default for TradeData {
@@ -219,6 +221,7 @@ impl Default for TradeData {
             offset: None,
             price: 0.0,
             volume: 0,
+            is_local: false
         }
     }
 }

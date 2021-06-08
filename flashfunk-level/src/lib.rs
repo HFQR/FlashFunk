@@ -48,7 +48,7 @@ fn os_path(target: &str) -> PathBuf {
     ));
     let path = path.join(".HFQ");
     if !path.exists() {
-        fs::create_dir(path);
+        fs::create_dir(path.clone());
     }
     let p = path.join(target);
     if !p.exists() {

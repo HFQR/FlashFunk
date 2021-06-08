@@ -134,7 +134,10 @@ impl StrategyWorker {
                         ctx.update_position_by_pos(data);
                         self.st.on_position(data, &mut ctx);
                     }
-                    TdApiMessage::ContractData(ref data) => {}
+                    TdApiMessage::ContractData(ref data) => {
+                        ctx.1.insert_exchange(data.symbol.as_str(), data.exchange.unwrap());
+                        self.st.on_contract(&data, &mut ctx);
+                    }
                     TdApiMessage::ExtraOrder(ref data) => {
                         ctx.add_order(data.deref().clone());
                     }

@@ -344,9 +344,6 @@ impl CtpTdCApi for TraderLevel {
             self.sender
                 .try_send_to(ContractVec::from(con), 0)
                 .unwrap_or(());
-        }
-
-        if bIsLast {
             let log = Log::new(LogLevel::INFO, "Contract query finished");
             self.sender.send_to(log, 0);
             self.blocker.as_ref().unwrap().0.step4.unblock();
@@ -354,7 +351,7 @@ impl CtpTdCApi for TraderLevel {
     }
 
     fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
-        let (order, idx) = {
+        let (mut order, idx) = {
             let order = unsafe { *pOrder };
             let order_ref = slice_to_string(&order.OrderRef);
             let id = format!("{}_{}_{}", order.SessionID, order.FrontID, order_ref);
@@ -377,6 +374,7 @@ impl CtpTdCApi for TraderLevel {
                     volume: order.VolumeTotalOriginal as f64,
                     traded: order.VolumeTraded as f64,
                     status: Status::from(order.OrderStatus),
+                    is_local: false,
                 },
                 idx,
             )
@@ -384,18 +382,19 @@ impl CtpTdCApi for TraderLevel {
         // 这里控制接收order data的策略index
         match idx {
             10000000usize => {
-                let ex = ExtraOrder::from(order);
-                self.sender.try_send_to(ex, 0).unwrap_or(());
+                // let ex = ExtraOrder::from(order);
+                self.sender.try_send_to(order, 0).unwrap_or(());
             }
             _ => {
                 // todo: why order sender error
+                order.is_local = true;
                 self.sender.try_send_to(order, idx).unwrap_or(());
             }
         }
     }
 
     fn on_rtn_trade(&mut self, pTrade: *mut CThostFtdcTradeField) {
-        let (trade, idx) = {
+        let (mut trade, idx) = {
             let trade = unsafe { *pTrade };
             let (date, time) =
                 parse_datetime_from_str(trade.TradeDate.as_ptr(), trade.TradeTime.as_ptr(), 0);
@@ -412,6 +411,7 @@ impl CtpTdCApi for TraderLevel {
                     price: trade.Price,
                     volume: trade.Volume,
                     tradeid: Some(slice_to_string(&trade.TradeID)),
+                    is_local: false,
                 },
                 idx,
             )
@@ -419,10 +419,10 @@ impl CtpTdCApi for TraderLevel {
         // 这里控制接收order data的策略index
         match idx {
             10000000usize => {
-                let trade = ExtraTrade::from(trade);
                 self.sender.try_send_to(trade, 0).unwrap_or(());
             }
             _ => {
+                trade.is_local = true;
                 self.sender.try_send_to(trade, idx).unwrap_or(());
             }
         }
@@ -708,6 +708,13 @@ impl TraderLevel {
             OrderType::FAK => (THOST_FTDC_TC_IOC as i8, THOST_FTDC_VC_AV as i8),
             _ => (THOST_FTDC_TC_GFD as i8, THOST_FTDC_VC_AV as i8),
         };
+
+        let order_ref = if let Some(refs) = order.reference {
+            format!("{:0>12}", refs)
+        } else {
+            format!("{:0>9}{:0>3}", self.order_ref.load(Ordering::SeqCst), idx)
+        };
+
         let req = CThostFtdcInputOrderField {
             InstrumentID: order.symbol.as_str().to_c_slice(),
             LimitPrice: order.price,
@@ -720,8 +727,7 @@ impl TraderLevel {
             CombOffsetFlag: String::from_utf8(Vec::from([get_order_offset(order.offset)]))
                 .unwrap()
                 .to_c_slice(),
-            OrderRef: format!("{:0>9}{:0>3}", self.order_ref.load(Ordering::SeqCst), idx)
-                .to_c_slice(),
+            OrderRef: order_ref.to_c_slice(),
             CombHedgeFlag: String::from_utf8(Vec::from([THOST_FTDC_HF_Speculation]))
                 .unwrap()
                 .to_c_slice(),

@@ -148,6 +148,7 @@ impl MockTdApi {
             volume: order_req.volume,
             traded: 0.0,
             status: Status::NOTTRADED,
+            is_local: true
         }
     }
 
@@ -279,6 +280,7 @@ impl MockTdApi {
                 price: trade_price,
                 volume: trade_vol as i32,
                 tradeid: Some(self.trade_id.to_string()),
+                is_local: true
             };
             // 处理 order
             let mut order_data = self

@@ -2,7 +2,6 @@
 members = [
     "./flashfunk-level",
     "./flashfunk-core",
-
 ]
 
 

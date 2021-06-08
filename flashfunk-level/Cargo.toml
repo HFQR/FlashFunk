@@ -28,8 +28,6 @@ chrono-tz = { version = "0.5", features = ["serde"] }
 [features]
 default = ["ctp"]
 ctp = []
-ctpmini = []
-
 ctp_mini = []
 
 
