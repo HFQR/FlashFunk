@@ -99,11 +99,6 @@ impl<T> Drop for Inner<T> {
 ///
 /// Panics if the capacity is zero.
 ///
-/// # Examples
-///
-/// ```
-/// let (p, c) = crossbeam_spsc::new::<i32>(100);
-/// ```
 pub fn new<T>(cap: usize) -> (Producer<T>, Consumer<T>) {
     assert!(cap > 0, "capacity must be non-zero");
 
