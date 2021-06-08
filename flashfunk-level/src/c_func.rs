@@ -89,49 +89,6 @@ pub fn translate_zh_to_string(v: &[i8]) -> String {
     translate_zh(&*r).to_string()
 }
 
-pub trait ToCSlice<T> {
-    fn to_c_slice(&self) -> T;
-}
-
-macro_rules! impl_to_c_slice {
-    ($len: expr) => (
-        impl ToCSlice<[i8; $len]> for &str {
-            fn to_c_slice(&self) -> [i8; $len] {
-                let mut array = [0i8; $len];
-                let mut i = 0;
-                let size = array.len();
-                for x in self.chars() {
-                    if i >= size {
-                        break;
-                    }
-                    array[i] = x as i8;
-                    i += 1;
-                }
-                array
-            }
-        }
-        impl ToCSlice<[i8; $len]> for String {
-            fn to_c_slice(&self) -> [i8; $len] {
-                let mut array = [0i8; $len];
-                let mut i = 0;
-                let size = array.len();
-                for x in self.chars() {
-                    if i >= size {
-                        break;
-                    }
-                    array[i] = x as i8;
-                    i += 1;
-                }
-                array
-            }
-        }
-    );
-    ($len:expr, $($len2:expr),+) => (
-        impl_to_c_slice!($len);
-        impl_to_c_slice!($($len2),+);
-    )
-}
-
 
 const ORDER_ID_LENGTH: usize = 12usize;
 
@@ -145,32 +102,5 @@ pub fn split_into_vec(order_id: &str) -> (usize, i32) {
         )
     } else {
         (10000000 as usize, order_id.parse::<i32>().unwrap())
-    }
-}
-
-/// This module are used to test c_function
-#[cfg(test)]
-mod test {
-    use crate::c_func::{split_into_vec, ToCSlice};
-
-    #[test]
-    fn test_split_into_vec() {
-        let data = "000000000000";
-        assert_eq!(data.len(), 12usize);
-        let (index, id) = split_into_vec(data);
-        assert_eq!(index, 0usize);
-        assert_eq!(id, 0i32);
-
-        let data2 = "450201";
-        let (id, index) = split_into_vec(data2);
-        assert_eq!(id, 10000000usize);
-        assert_eq!(index, 450201i32);
-    }
-
-    #[test]
-    fn test_macro_use() {
-        let a = "hello";
-        let x: [i8; 5] = a.to_c_slice();
-        assert_eq!(x, [104, 101, 108, 108, 111]);
     }
 }
