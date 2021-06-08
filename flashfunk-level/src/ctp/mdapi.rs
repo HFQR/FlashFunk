@@ -6,15 +6,12 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_uchar};
 use std::process::id;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Instant, Duration};
 
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
-// use encoding::all::GB18030;
-// use encoding::{DecoderTrap, Encoding};
-
 use crate::ctp::sys::*;
 use crate::c_func::parse_datetime_from_str;
-use crate::data_type::{CancelRequest, LoginForm, OrderRequest, TickData};
+use crate::data_type::{CancelRequest, LoginForm, OrderRequest, TickData, Log};
 use crate::interface::Interface;
 use crate::types::message::MdApiMessage;
 use crate::util::blocker::Blocker;
@@ -23,6 +20,8 @@ use crate::{get_interface_path, os_path};
 use std::fs::create_dir;
 use std::path::PathBuf;
 use crate::ctp::CtpMd::CtpMdCApi;
+use std::thread::sleep;
+use crate::constant::LogLevel;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -54,7 +53,7 @@ pub struct CtpMdApi {
     password: CString,
     request_id: i32,
     pub flow_path_ptr: *const i8,
-    collector: Level,
+    level: Level,
 }
 
 struct Level {
@@ -70,12 +69,14 @@ struct Level {
 impl CtpMdCApi for Level {
     fn on_front_connected(&mut self) {
         // 当前置连上后 开始进行登录
-        println!("front connect");
+        let log = Log::new(LogLevel::INFO, "Md Front Connect");
+        self.sender.send_to(log, 0);
         self.login();
     }
 
     fn on_front_disconnected(&mut self, reason: i32) {
-        println!(">>> CtpMdApi Front Disconnected, Please Check Your Network");
+        let log = Log::new(LogLevel::ERROR, "CtpMdApi Front Disconnected, Please Check Your Network");
+        self.sender.send_to(log, 0);
         self.blocker = Option::from(MdApiBlocker::new());
     }
 
@@ -197,27 +198,31 @@ impl Level {
     // 底层发起主动连接逻辑
     pub fn connect(&mut self) {
         // 阻塞器交给data collector
-        self.register_spi();
-
+        let boxed: Box<Box<&mut dyn CtpMdCApi>> = Box::new(Box::new(self));
+        let pointer =
+            Box::into_raw(boxed) as *mut Box<&mut dyn CtpMdCApi> as *mut c_void;
+        // 把rust对象 传给回调SPI
+        let callback = unsafe { CtpMdSpi::new(pointer) };
+        let ptr = Box::into_raw(Box::new(callback));
+        unsafe { CThostFtdcMdApiRegisterSpi(self.market_pointer, ptr as *mut CThostFtdcMdSpi) };
         let addr = CString::new(self.login_form._md_address()).unwrap();
-        println!("{}", addr.to_string_lossy());
-        self.register_fronted_address(addr);
-
-        self.init();
-
-        println!("init");
-
+        let addr_i = addr.into_raw();
+        unsafe {
+            CThostFtdcMdApiRegisterFront(self.market_pointer, addr_i);
+        };
+        unsafe {
+            CThostFtdcMdApiInit(self.market_pointer);
+        };
         // 等待 login完成后才发送订阅
-        // self.blocker.as_mut().unwrap().0.step2.block();
-
-        println!(">>> CtpMdApi init successful");
+        self.blocker.as_mut().unwrap().0.step2.block();
+        let log = Log::new(LogLevel::INFO, "CtpMdApi init successful");
+        self.sender.send_to(log, 0);
     }
 
     pub fn subscribe(&mut self) {
         self.request_id += 1;
         self.symbols.iter().for_each(|symbol| {
             let code = CString::new(*symbol).unwrap();
-            println!("subscribe {}", code.to_string_lossy());
             let mut c = code.into_raw();
             unsafe {
                 CThostFtdcMdApiSubscribeMarketData(self.market_pointer, &mut c, self.request_id)
@@ -225,11 +230,6 @@ impl Level {
         });
     }
 
-    /// 初始化调用
-    pub fn init(&mut self) -> bool {
-        unsafe { CThostFtdcMdApiInit(self.market_pointer) };
-        true
-    }
     /// 获取交易日
     pub fn get_trading_day<'a>(&mut self) -> &'a str {
         let trading_day_cstr = unsafe { CThostFtdcMdApiGetTradingDay(self.market_pointer) };
@@ -256,32 +256,6 @@ impl Level {
             )
         };
     }
-
-    /// 注册前置地址
-    fn register_fronted_address(&mut self, register_addr: CString) {
-        println!(
-            ">>> MdAddress: {:?}",
-            register_addr.clone().into_string().unwrap()
-        );
-        let front_socket_address_ptr = register_addr.into_raw();
-        unsafe { CThostFtdcMdApiRegisterFront(self.market_pointer, front_socket_address_ptr) };
-    }
-
-    /// 注册回调
-    fn register_spi(&mut self) {
-        let trait_object_box: Box<Box<&mut dyn CtpMdCApi>> = Box::new(Box::new(self));
-        let trait_object_pointer =
-            Box::into_raw(trait_object_box) as *mut Box<&mut dyn CtpMdCApi> as *mut c_void;
-        // 把 rust对象 传给回调SPI
-        let quote_spi = unsafe { CtpMdSpi::new(trait_object_pointer)  };
-        let ptr = Box::into_raw(Box::new(quote_spi));
-        unsafe { CThostFtdcMdApiRegisterSpi(self.market_pointer, ptr as *mut CThostFtdcMdSpi) };
-    }
-
-    fn release(&mut self) {
-        println!("Release Quote Interface");
-        // unsafe { QuoteSpi_Destructor(self as QuoteSpi) };
-    }
 }
 
 impl Interface for CtpMdApi {
@@ -302,30 +276,24 @@ impl Interface for CtpMdApi {
         }
         let p = CString::new(path).unwrap();
         let pwd = CString::new(pwd).unwrap();
-        println!(" new with {}", p.to_string_lossy());
         let flow_path_ptr = p.as_ptr();
-        let market_pointer = unsafe { CThostFtdcMdApi_CreateFtdcMdApi(flow_path_ptr, true, true) };
+        let market_pointer = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
         // 创建了行情对象
         CtpMdApi {
             user_id: p.clone(),
             flow_path_ptr,
             password: pwd,
             request_id: 0,
-            collector: Level::new(req, symbols.clone(), sender, market_pointer),
+            level: Level::new(req, symbols.clone(), sender, market_pointer),
         }
     }
 
     fn connect(&mut self) {
-        self.collector.connect();
+        self.level.connect();
     }
 
     fn subscribe(&mut self) {
-        self.collector.subscribe();
+        self.level.subscribe();
     }
 }
 
-impl Drop for CtpMdApi {
-    fn drop(&mut self) {
-        self.collector.release();
-    }
-}

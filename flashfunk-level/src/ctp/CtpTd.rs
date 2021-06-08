@@ -504,10 +504,17 @@ pub(crate) trait CtpTdCApi {
         }
         
 }
+
            unsafe fn get_api<'a>(spi: *mut c_void) -> &'a mut dyn CtpTdCApi {
-            &mut **(spi as *mut *mut dyn CtpTdCApi)
+            **(spi as *mut *mut &mut dyn CtpTdCApi)
         }
         
+#[no_mangle]
+pub unsafe extern "C" fn RustCtpActionTdOnFrontConnected(this: *mut ::std::os::raw::c_void, ) {
+    let instance = get_api(this);
+    instance.on_front_connected();
+}       
+
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnFrontDisconnected(this: *mut ::std::os::raw::c_void, nReason: c_int ) {
     let instance = get_api(this);
@@ -523,421 +530,421 @@ pub unsafe extern "C" fn RustCtpActionTdOnHeartBeatWarning(this: *mut ::std::os:
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspAuthenticate(this: *mut ::std::os::raw::c_void, pRspAuthenticateField: *mut CThostFtdcRspAuthenticateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_authenticate(pRspAuthenticateField, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_authenticate(pRspAuthenticateField,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspUserLogin(this: *mut ::std::os::raw::c_void, pRspUserLogin: *mut CThostFtdcRspUserLoginField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_user_login(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_user_login(pRspUserLogin,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspUserLogout(this: *mut ::std::os::raw::c_void, pUserLogout: *mut CThostFtdcUserLogoutField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_user_logout(pUserLogout, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_user_logout(pUserLogout,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspUserPasswordUpdate(this: *mut ::std::os::raw::c_void, pUserPasswordUpdate: *mut CThostFtdcUserPasswordUpdateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_user_password_update(pUserPasswordUpdate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_user_password_update(pUserPasswordUpdate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspTradingAccountPasswordUpdate(this: *mut ::std::os::raw::c_void, pTradingAccountPasswordUpdate: *mut CThostFtdcTradingAccountPasswordUpdateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_trading_account_password_update(pTradingAccountPasswordUpdate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_trading_account_password_update(pTradingAccountPasswordUpdate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspUserAuthMethod(this: *mut ::std::os::raw::c_void, pRspUserAuthMethod: *mut CThostFtdcRspUserAuthMethodField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_user_auth_method(pRspUserAuthMethod, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_user_auth_method(pRspUserAuthMethod,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspGenUserCaptcha(this: *mut ::std::os::raw::c_void, pRspGenUserCaptcha: *mut CThostFtdcRspGenUserCaptchaField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_gen_user_captcha(pRspGenUserCaptcha, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_gen_user_captcha(pRspGenUserCaptcha,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspGenUserText(this: *mut ::std::os::raw::c_void, pRspGenUserText: *mut CThostFtdcRspGenUserTextField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_gen_user_text(pRspGenUserText, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_gen_user_text(pRspGenUserText,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspOrderInsert(this: *mut ::std::os::raw::c_void, pInputOrder: *mut CThostFtdcInputOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_order_insert(pInputOrder, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_order_insert(pInputOrder,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspParkedOrderInsert(this: *mut ::std::os::raw::c_void, pParkedOrder: *mut CThostFtdcParkedOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_parked_order_insert(pParkedOrder, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_parked_order_insert(pParkedOrder,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspParkedOrderAction(this: *mut ::std::os::raw::c_void, pParkedOrderAction: *mut CThostFtdcParkedOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_parked_order_action(pParkedOrderAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_parked_order_action(pParkedOrderAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspOrderAction(this: *mut ::std::os::raw::c_void, pInputOrderAction: *mut CThostFtdcInputOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_order_action(pInputOrderAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_order_action(pInputOrderAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQueryMaxOrderVolume(this: *mut ::std::os::raw::c_void, pQueryMaxOrderVolume: *mut CThostFtdcQueryMaxOrderVolumeField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_query_max_order_volume(pQueryMaxOrderVolume, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_query_max_order_volume(pQueryMaxOrderVolume,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspSettlementInfoConfirm(this: *mut ::std::os::raw::c_void, pSettlementInfoConfirm: *mut CThostFtdcSettlementInfoConfirmField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_settlement_info_confirm(pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_settlement_info_confirm(pSettlementInfoConfirm,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspRemoveParkedOrder(this: *mut ::std::os::raw::c_void, pRemoveParkedOrder: *mut CThostFtdcRemoveParkedOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_remove_parked_order(pRemoveParkedOrder, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_remove_parked_order(pRemoveParkedOrder,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspRemoveParkedOrderAction(this: *mut ::std::os::raw::c_void, pRemoveParkedOrderAction: *mut CThostFtdcRemoveParkedOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_remove_parked_order_action(pRemoveParkedOrderAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_remove_parked_order_action(pRemoveParkedOrderAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspExecOrderInsert(this: *mut ::std::os::raw::c_void, pInputExecOrder: *mut CThostFtdcInputExecOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_exec_order_insert(pInputExecOrder, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_exec_order_insert(pInputExecOrder,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspExecOrderAction(this: *mut ::std::os::raw::c_void, pInputExecOrderAction: *mut CThostFtdcInputExecOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_exec_order_action(pInputExecOrderAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_exec_order_action(pInputExecOrderAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspForQuoteInsert(this: *mut ::std::os::raw::c_void, pInputForQuote: *mut CThostFtdcInputForQuoteField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_for_quote_insert(pInputForQuote, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_for_quote_insert(pInputForQuote,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQuoteInsert(this: *mut ::std::os::raw::c_void, pInputQuote: *mut CThostFtdcInputQuoteField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_quote_insert(pInputQuote, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_quote_insert(pInputQuote,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQuoteAction(this: *mut ::std::os::raw::c_void, pInputQuoteAction: *mut CThostFtdcInputQuoteActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_quote_action(pInputQuoteAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_quote_action(pInputQuoteAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspBatchOrderAction(this: *mut ::std::os::raw::c_void, pInputBatchOrderAction: *mut CThostFtdcInputBatchOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_batch_order_action(pInputBatchOrderAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_batch_order_action(pInputBatchOrderAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspOptionSelfCloseInsert(this: *mut ::std::os::raw::c_void, pInputOptionSelfClose: *mut CThostFtdcInputOptionSelfCloseField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_option_self_close_insert(pInputOptionSelfClose, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_option_self_close_insert(pInputOptionSelfClose,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspOptionSelfCloseAction(this: *mut ::std::os::raw::c_void, pInputOptionSelfCloseAction: *mut CThostFtdcInputOptionSelfCloseActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_option_self_close_action(pInputOptionSelfCloseAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_option_self_close_action(pInputOptionSelfCloseAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspCombActionInsert(this: *mut ::std::os::raw::c_void, pInputCombAction: *mut CThostFtdcInputCombActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_comb_action_insert(pInputCombAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_comb_action_insert(pInputCombAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryOrder(this: *mut ::std::os::raw::c_void, pOrder: *mut CThostFtdcOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_order(pOrder, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_order(pOrder,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryTrade(this: *mut ::std::os::raw::c_void, pTrade: *mut CThostFtdcTradeField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_trade(pTrade, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_trade(pTrade,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInvestorPosition(this: *mut ::std::os::raw::c_void, pInvestorPosition: *mut CThostFtdcInvestorPositionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_investor_position(pInvestorPosition, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_investor_position(pInvestorPosition,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryTradingAccount(this: *mut ::std::os::raw::c_void, pTradingAccount: *mut CThostFtdcTradingAccountField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_trading_account(pTradingAccount, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_trading_account(pTradingAccount,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInvestor(this: *mut ::std::os::raw::c_void, pInvestor: *mut CThostFtdcInvestorField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_investor(pInvestor, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_investor(pInvestor,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryTradingCode(this: *mut ::std::os::raw::c_void, pTradingCode: *mut CThostFtdcTradingCodeField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_trading_code(pTradingCode, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_trading_code(pTradingCode,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInstrumentMarginRate(this: *mut ::std::os::raw::c_void, pInstrumentMarginRate: *mut CThostFtdcInstrumentMarginRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_instrument_margin_rate(pInstrumentMarginRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_instrument_margin_rate(pInstrumentMarginRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInstrumentCommissionRate(this: *mut ::std::os::raw::c_void, pInstrumentCommissionRate: *mut CThostFtdcInstrumentCommissionRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_instrument_commission_rate(pInstrumentCommissionRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_instrument_commission_rate(pInstrumentCommissionRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryExchange(this: *mut ::std::os::raw::c_void, pExchange: *mut CThostFtdcExchangeField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_exchange(pExchange, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_exchange(pExchange,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryProduct(this: *mut ::std::os::raw::c_void, pProduct: *mut CThostFtdcProductField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_product(pProduct, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_product(pProduct,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInstrument(this: *mut ::std::os::raw::c_void, pInstrument: *mut CThostFtdcInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_instrument(pInstrument, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_instrument(pInstrument,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryDepthMarketData(this: *mut ::std::os::raw::c_void, pDepthMarketData: *mut CThostFtdcDepthMarketDataField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_depth_market_data(pDepthMarketData, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_depth_market_data(pDepthMarketData,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQrySettlementInfo(this: *mut ::std::os::raw::c_void, pSettlementInfo: *mut CThostFtdcSettlementInfoField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_settlement_info(pSettlementInfo, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_settlement_info(pSettlementInfo,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryTransferBank(this: *mut ::std::os::raw::c_void, pTransferBank: *mut CThostFtdcTransferBankField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_transfer_bank(pTransferBank, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_transfer_bank(pTransferBank,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInvestorPositionDetail(this: *mut ::std::os::raw::c_void, pInvestorPositionDetail: *mut CThostFtdcInvestorPositionDetailField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_investor_position_detail(pInvestorPositionDetail, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_investor_position_detail(pInvestorPositionDetail,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryNotice(this: *mut ::std::os::raw::c_void, pNotice: *mut CThostFtdcNoticeField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_notice(pNotice, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_notice(pNotice,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQrySettlementInfoConfirm(this: *mut ::std::os::raw::c_void, pSettlementInfoConfirm: *mut CThostFtdcSettlementInfoConfirmField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_settlement_info_confirm(pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_settlement_info_confirm(pSettlementInfoConfirm,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInvestorPositionCombineDetail(this: *mut ::std::os::raw::c_void, pInvestorPositionCombineDetail: *mut CThostFtdcInvestorPositionCombineDetailField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_investor_position_combine_detail(pInvestorPositionCombineDetail, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_investor_position_combine_detail(pInvestorPositionCombineDetail,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryCFMMCTradingAccountKey(this: *mut ::std::os::raw::c_void, pCFMMCTradingAccountKey: *mut CThostFtdcCFMMCTradingAccountKeyField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_c_f_m_m_c_trading_account_key(pCFMMCTradingAccountKey, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_c_f_m_m_c_trading_account_key(pCFMMCTradingAccountKey,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryEWarrantOffset(this: *mut ::std::os::raw::c_void, pEWarrantOffset: *mut CThostFtdcEWarrantOffsetField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_e_warrant_offset(pEWarrantOffset, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_e_warrant_offset(pEWarrantOffset,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInvestorProductGroupMargin(this: *mut ::std::os::raw::c_void, pInvestorProductGroupMargin: *mut CThostFtdcInvestorProductGroupMarginField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_investor_product_group_margin(pInvestorProductGroupMargin, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_investor_product_group_margin(pInvestorProductGroupMargin,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryExchangeMarginRate(this: *mut ::std::os::raw::c_void, pExchangeMarginRate: *mut CThostFtdcExchangeMarginRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_exchange_margin_rate(pExchangeMarginRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_exchange_margin_rate(pExchangeMarginRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryExchangeMarginRateAdjust(this: *mut ::std::os::raw::c_void, pExchangeMarginRateAdjust: *mut CThostFtdcExchangeMarginRateAdjustField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_exchange_margin_rate_adjust(pExchangeMarginRateAdjust, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_exchange_margin_rate_adjust(pExchangeMarginRateAdjust,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryExchangeRate(this: *mut ::std::os::raw::c_void, pExchangeRate: *mut CThostFtdcExchangeRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_exchange_rate(pExchangeRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_exchange_rate(pExchangeRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQrySecAgentACIDMap(this: *mut ::std::os::raw::c_void, pSecAgentACIDMap: *mut CThostFtdcSecAgentACIDMapField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_sec_agent_a_c_i_d_map(pSecAgentACIDMap, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_sec_agent_a_c_i_d_map(pSecAgentACIDMap,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryProductExchRate(this: *mut ::std::os::raw::c_void, pProductExchRate: *mut CThostFtdcProductExchRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_product_exch_rate(pProductExchRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_product_exch_rate(pProductExchRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryProductGroup(this: *mut ::std::os::raw::c_void, pProductGroup: *mut CThostFtdcProductGroupField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_product_group(pProductGroup, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_product_group(pProductGroup,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryMMInstrumentCommissionRate(this: *mut ::std::os::raw::c_void, pMMInstrumentCommissionRate: *mut CThostFtdcMMInstrumentCommissionRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_m_m_instrument_commission_rate(pMMInstrumentCommissionRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_m_m_instrument_commission_rate(pMMInstrumentCommissionRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryMMOptionInstrCommRate(this: *mut ::std::os::raw::c_void, pMMOptionInstrCommRate: *mut CThostFtdcMMOptionInstrCommRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_m_m_option_instr_comm_rate(pMMOptionInstrCommRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_m_m_option_instr_comm_rate(pMMOptionInstrCommRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInstrumentOrderCommRate(this: *mut ::std::os::raw::c_void, pInstrumentOrderCommRate: *mut CThostFtdcInstrumentOrderCommRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_instrument_order_comm_rate(pInstrumentOrderCommRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_instrument_order_comm_rate(pInstrumentOrderCommRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQrySecAgentTradingAccount(this: *mut ::std::os::raw::c_void, pTradingAccount: *mut CThostFtdcTradingAccountField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_sec_agent_trading_account(pTradingAccount, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_sec_agent_trading_account(pTradingAccount,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQrySecAgentCheckMode(this: *mut ::std::os::raw::c_void, pSecAgentCheckMode: *mut CThostFtdcSecAgentCheckModeField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_sec_agent_check_mode(pSecAgentCheckMode, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_sec_agent_check_mode(pSecAgentCheckMode,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQrySecAgentTradeInfo(this: *mut ::std::os::raw::c_void, pSecAgentTradeInfo: *mut CThostFtdcSecAgentTradeInfoField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_sec_agent_trade_info(pSecAgentTradeInfo, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_sec_agent_trade_info(pSecAgentTradeInfo,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryOptionInstrTradeCost(this: *mut ::std::os::raw::c_void, pOptionInstrTradeCost: *mut CThostFtdcOptionInstrTradeCostField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_option_instr_trade_cost(pOptionInstrTradeCost, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_option_instr_trade_cost(pOptionInstrTradeCost,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryOptionInstrCommRate(this: *mut ::std::os::raw::c_void, pOptionInstrCommRate: *mut CThostFtdcOptionInstrCommRateField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_option_instr_comm_rate(pOptionInstrCommRate, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_option_instr_comm_rate(pOptionInstrCommRate,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryExecOrder(this: *mut ::std::os::raw::c_void, pExecOrder: *mut CThostFtdcExecOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_exec_order(pExecOrder, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_exec_order(pExecOrder,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryForQuote(this: *mut ::std::os::raw::c_void, pForQuote: *mut CThostFtdcForQuoteField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_for_quote(pForQuote, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_for_quote(pForQuote,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryQuote(this: *mut ::std::os::raw::c_void, pQuote: *mut CThostFtdcQuoteField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_quote(pQuote, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_quote(pQuote,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryOptionSelfClose(this: *mut ::std::os::raw::c_void, pOptionSelfClose: *mut CThostFtdcOptionSelfCloseField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_option_self_close(pOptionSelfClose, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_option_self_close(pOptionSelfClose,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryInvestUnit(this: *mut ::std::os::raw::c_void, pInvestUnit: *mut CThostFtdcInvestUnitField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_invest_unit(pInvestUnit, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_invest_unit(pInvestUnit,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryCombInstrumentGuard(this: *mut ::std::os::raw::c_void, pCombInstrumentGuard: *mut CThostFtdcCombInstrumentGuardField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_comb_instrument_guard(pCombInstrumentGuard, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_comb_instrument_guard(pCombInstrumentGuard,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryCombAction(this: *mut ::std::os::raw::c_void, pCombAction: *mut CThostFtdcCombActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_comb_action(pCombAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_comb_action(pCombAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryTransferSerial(this: *mut ::std::os::raw::c_void, pTransferSerial: *mut CThostFtdcTransferSerialField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_transfer_serial(pTransferSerial, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_transfer_serial(pTransferSerial,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryAccountregister(this: *mut ::std::os::raw::c_void, pAccountregister: *mut CThostFtdcAccountregisterField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_accountregister(pAccountregister, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_accountregister(pAccountregister,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspError(this: *mut ::std::os::raw::c_void, pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_error(pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_error(pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
@@ -955,13 +962,13 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnTrade(this: *mut ::std::os::raw::c_
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnOrderInsert(this: *mut ::std::os::raw::c_void, pInputOrder: *mut CThostFtdcInputOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_order_insert(pInputOrder, pRspInfo);
+    instance.on_err_rtn_order_insert(pInputOrder,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnOrderAction(this: *mut ::std::os::raw::c_void, pOrderAction: *mut CThostFtdcOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_order_action(pOrderAction, pRspInfo);
+    instance.on_err_rtn_order_action(pOrderAction,pRspInfo);
 }       
 
 #[no_mangle]
@@ -997,19 +1004,19 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnExecOrder(this: *mut ::std::os::raw
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnExecOrderInsert(this: *mut ::std::os::raw::c_void, pInputExecOrder: *mut CThostFtdcInputExecOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_exec_order_insert(pInputExecOrder, pRspInfo);
+    instance.on_err_rtn_exec_order_insert(pInputExecOrder,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnExecOrderAction(this: *mut ::std::os::raw::c_void, pExecOrderAction: *mut CThostFtdcExecOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_exec_order_action(pExecOrderAction, pRspInfo);
+    instance.on_err_rtn_exec_order_action(pExecOrderAction,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnForQuoteInsert(this: *mut ::std::os::raw::c_void, pInputForQuote: *mut CThostFtdcInputForQuoteField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_for_quote_insert(pInputForQuote, pRspInfo);
+    instance.on_err_rtn_for_quote_insert(pInputForQuote,pRspInfo);
 }       
 
 #[no_mangle]
@@ -1021,13 +1028,13 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnQuote(this: *mut ::std::os::raw::c_
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnQuoteInsert(this: *mut ::std::os::raw::c_void, pInputQuote: *mut CThostFtdcInputQuoteField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_quote_insert(pInputQuote, pRspInfo);
+    instance.on_err_rtn_quote_insert(pInputQuote,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnQuoteAction(this: *mut ::std::os::raw::c_void, pQuoteAction: *mut CThostFtdcQuoteActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_quote_action(pQuoteAction, pRspInfo);
+    instance.on_err_rtn_quote_action(pQuoteAction,pRspInfo);
 }       
 
 #[no_mangle]
@@ -1045,7 +1052,7 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnCFMMCTradingAccountToken(this: *mut
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnBatchOrderAction(this: *mut ::std::os::raw::c_void, pBatchOrderAction: *mut CThostFtdcBatchOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_batch_order_action(pBatchOrderAction, pRspInfo);
+    instance.on_err_rtn_batch_order_action(pBatchOrderAction,pRspInfo);
 }       
 
 #[no_mangle]
@@ -1057,13 +1064,13 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnOptionSelfClose(this: *mut ::std::o
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnOptionSelfCloseInsert(this: *mut ::std::os::raw::c_void, pInputOptionSelfClose: *mut CThostFtdcInputOptionSelfCloseField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_option_self_close_insert(pInputOptionSelfClose, pRspInfo);
+    instance.on_err_rtn_option_self_close_insert(pInputOptionSelfClose,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnOptionSelfCloseAction(this: *mut ::std::os::raw::c_void, pOptionSelfCloseAction: *mut CThostFtdcOptionSelfCloseActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_option_self_close_action(pOptionSelfCloseAction, pRspInfo);
+    instance.on_err_rtn_option_self_close_action(pOptionSelfCloseAction,pRspInfo);
 }       
 
 #[no_mangle]
@@ -1075,49 +1082,49 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnCombAction(this: *mut ::std::os::ra
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnCombActionInsert(this: *mut ::std::os::raw::c_void, pInputCombAction: *mut CThostFtdcInputCombActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_comb_action_insert(pInputCombAction, pRspInfo);
+    instance.on_err_rtn_comb_action_insert(pInputCombAction,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryContractBank(this: *mut ::std::os::raw::c_void, pContractBank: *mut CThostFtdcContractBankField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_contract_bank(pContractBank, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_contract_bank(pContractBank,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryParkedOrder(this: *mut ::std::os::raw::c_void, pParkedOrder: *mut CThostFtdcParkedOrderField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_parked_order(pParkedOrder, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_parked_order(pParkedOrder,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryParkedOrderAction(this: *mut ::std::os::raw::c_void, pParkedOrderAction: *mut CThostFtdcParkedOrderActionField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_parked_order_action(pParkedOrderAction, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_parked_order_action(pParkedOrderAction,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryTradingNotice(this: *mut ::std::os::raw::c_void, pTradingNotice: *mut CThostFtdcTradingNoticeField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_trading_notice(pTradingNotice, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_trading_notice(pTradingNotice,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryBrokerTradingParams(this: *mut ::std::os::raw::c_void, pBrokerTradingParams: *mut CThostFtdcBrokerTradingParamsField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_broker_trading_params(pBrokerTradingParams, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_broker_trading_params(pBrokerTradingParams,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQryBrokerTradingAlgos(this: *mut ::std::os::raw::c_void, pBrokerTradingAlgos: *mut CThostFtdcBrokerTradingAlgosField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_qry_broker_trading_algos(pBrokerTradingAlgos, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_qry_broker_trading_algos(pBrokerTradingAlgos,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQueryCFMMCTradingAccountToken(this: *mut ::std::os::raw::c_void, pQueryCFMMCTradingAccountToken: *mut CThostFtdcQueryCFMMCTradingAccountTokenField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_query_c_f_m_m_c_trading_account_token(pQueryCFMMCTradingAccountToken, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_query_c_f_m_m_c_trading_account_token(pQueryCFMMCTradingAccountToken,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
@@ -1177,31 +1184,31 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnQueryBankBalanceByFuture(this: *mut
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnBankToFutureByFuture(this: *mut ::std::os::raw::c_void, pReqTransfer: *mut CThostFtdcReqTransferField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_bank_to_future_by_future(pReqTransfer, pRspInfo);
+    instance.on_err_rtn_bank_to_future_by_future(pReqTransfer,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnFutureToBankByFuture(this: *mut ::std::os::raw::c_void, pReqTransfer: *mut CThostFtdcReqTransferField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_future_to_bank_by_future(pReqTransfer, pRspInfo);
+    instance.on_err_rtn_future_to_bank_by_future(pReqTransfer,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnRepealBankToFutureByFutureManual(this: *mut ::std::os::raw::c_void, pReqRepeal: *mut CThostFtdcReqRepealField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_repeal_bank_to_future_by_future_manual(pReqRepeal, pRspInfo);
+    instance.on_err_rtn_repeal_bank_to_future_by_future_manual(pReqRepeal,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnRepealFutureToBankByFutureManual(this: *mut ::std::os::raw::c_void, pReqRepeal: *mut CThostFtdcReqRepealField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_repeal_future_to_bank_by_future_manual(pReqRepeal, pRspInfo);
+    instance.on_err_rtn_repeal_future_to_bank_by_future_manual(pReqRepeal,pRspInfo);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnErrRtnQueryBankBalanceByFuture(this: *mut ::std::os::raw::c_void, pReqQueryAccount: *mut CThostFtdcReqQueryAccountField  ,pRspInfo: *mut CThostFtdcRspInfoField  ) {
     let instance = get_api(this);
-    instance.on_err_rtn_query_bank_balance_by_future(pReqQueryAccount, pRspInfo);
+    instance.on_err_rtn_query_bank_balance_by_future(pReqQueryAccount,pRspInfo);
 }       
 
 #[no_mangle]
@@ -1219,19 +1226,19 @@ pub unsafe extern "C" fn RustCtpActionTdOnRtnRepealFromFutureToBankByFuture(this
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspFromBankToFutureByFuture(this: *mut ::std::os::raw::c_void, pReqTransfer: *mut CThostFtdcReqTransferField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_from_bank_to_future_by_future(pReqTransfer, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_from_bank_to_future_by_future(pReqTransfer,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspFromFutureToBankByFuture(this: *mut ::std::os::raw::c_void, pReqTransfer: *mut CThostFtdcReqTransferField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_from_future_to_bank_by_future(pReqTransfer, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_from_future_to_bank_by_future(pReqTransfer,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionTdOnRspQueryBankAccountMoneyByFuture(this: *mut ::std::os::raw::c_void, pReqQueryAccount: *mut CThostFtdcReqQueryAccountField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_query_bank_account_money_by_future(pReqQueryAccount, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_query_bank_account_money_by_future(pReqQueryAccount,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]

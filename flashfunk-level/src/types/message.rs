@@ -3,6 +3,7 @@ use crate::data_type::{AccountData, CancelRequest, ContractData, ContractVec, Ex
 pub enum MdApiMessage {
     TickData(&'static TickData),
     SubscribeRequest(SubscribeRequest),
+    Log(Log),
 }
 
 impl From<SubscribeRequest> for MdApiMessage {
@@ -14,6 +15,12 @@ impl From<SubscribeRequest> for MdApiMessage {
 impl From<&'static TickData> for MdApiMessage {
     fn from(data: &'static TickData) -> Self {
         Self::TickData(data)
+    }
+}
+
+impl From<Log> for MdApiMessage {
+    fn from(data: Log) -> Self {
+        Self::Log(data)
     }
 }
 

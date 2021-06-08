@@ -23,16 +23,12 @@ pub(crate) trait CtpMdCApi {
             println!("on_rsp_user_logout callback");
         }
         
-        fn on_rsp_qry_multicast_instrument(&mut self, pMulticastInstrument: *mut CThostFtdcMulticastInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
-            println!("on_rsp_qry_multicast_instrument callback");
-        }
-        
         fn on_rsp_error(&mut self, pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
             println!("on_rsp_error callback");
         }
         
         fn on_rsp_sub_market_data(&mut self, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
-            println!("on_rsp_sub_market_data callback");
+            // println!("on_rsp_sub_market_data callback");
         }
         
         fn on_rsp_un_sub_market_data(&mut self, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
@@ -58,9 +54,15 @@ pub(crate) trait CtpMdCApi {
 }
 
            unsafe fn get_api<'a>(spi: *mut c_void) -> &'a mut dyn CtpMdCApi {
-            &mut **(spi as *mut *mut dyn CtpMdCApi)
+            **(spi as *mut *mut &mut dyn CtpMdCApi)
         }
         
+#[no_mangle]
+pub unsafe extern "C" fn RustCtpActionMdOnFrontConnected(this: *mut ::std::os::raw::c_void, ) {
+    let instance = get_api(this);
+    instance.on_front_connected();
+}       
+
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnFrontDisconnected(this: *mut ::std::os::raw::c_void, nReason: c_int ) {
     let instance = get_api(this);
@@ -76,49 +78,43 @@ pub unsafe extern "C" fn RustCtpActionMdOnHeartBeatWarning(this: *mut ::std::os:
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnRspUserLogin(this: *mut ::std::os::raw::c_void, pRspUserLogin: *mut CThostFtdcRspUserLoginField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_user_login(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_user_login(pRspUserLogin,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnRspUserLogout(this: *mut ::std::os::raw::c_void, pUserLogout: *mut CThostFtdcUserLogoutField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_user_logout(pUserLogout, pRspInfo, nRequestID, bIsLast);
-}       
-
-#[no_mangle]
-pub unsafe extern "C" fn RustCtpActionMdOnRspQryMulticastInstrument(this: *mut ::std::os::raw::c_void, pMulticastInstrument: *mut CThostFtdcMulticastInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
-    let instance = get_api(this);
-    instance.on_rsp_qry_multicast_instrument(pMulticastInstrument, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_user_logout(pUserLogout,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnRspError(this: *mut ::std::os::raw::c_void, pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_error(pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_error(pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnRspSubMarketData(this: *mut ::std::os::raw::c_void, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_sub_market_data(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_sub_market_data(pSpecificInstrument,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnRspUnSubMarketData(this: *mut ::std::os::raw::c_void, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_un_sub_market_data(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_un_sub_market_data(pSpecificInstrument,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnRspSubForQuoteRsp(this: *mut ::std::os::raw::c_void, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_sub_for_quote_rsp(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_sub_for_quote_rsp(pSpecificInstrument,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
 pub unsafe extern "C" fn RustCtpActionMdOnRspUnSubForQuoteRsp(this: *mut ::std::os::raw::c_void, pSpecificInstrument: *mut CThostFtdcSpecificInstrumentField  ,pRspInfo: *mut CThostFtdcRspInfoField  ,nRequestID: c_int ,bIsLast: bool ) {
     let instance = get_api(this);
-    instance.on_rsp_un_sub_for_quote_rsp(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
+    instance.on_rsp_un_sub_for_quote_rsp(pSpecificInstrument,pRspInfo,nRequestID,bIsLast);
 }       
 
 #[no_mangle]
