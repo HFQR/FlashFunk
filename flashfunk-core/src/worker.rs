@@ -107,6 +107,11 @@ impl StrategyWorker {
                 match msg {
                     MdApiMessage::TickData(ref data) => self.st.on_tick(data, &mut ctx),
                     MdApiMessage::SubscribeRequest(_req) => unimplemented!(),
+                    MdApiMessage::Log(ref data) => {
+                        if data.level.eq(&LogLevel::INFO) {
+                            println!("{} INFO ===> {}", Local::now().naive_local(), data.msg);
+                        }
+                    }
                 }
             }
 
@@ -145,7 +150,6 @@ impl StrategyWorker {
                     }
                     TdApiMessage::ContractStatus(ref data) => {}
                     TdApiMessage::Log(ref data) => {
-                        println!("{:?}", data);
                         if data.level.eq(&LogLevel::INFO) {
                             println!("{} INFO ===> {}", Local::now().naive_local(), data.msg);
                         }
