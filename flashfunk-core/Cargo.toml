@@ -15,7 +15,7 @@ async-trait = ""
 chrono-tz = { version = "0.5", features = ["serde"] }
 clickhouse-rs = { git = "https://github.com/suharev7/clickhouse-rs/", branch = "async-await" }
 futures = "0.3.8"
-tokio = { version = "1.5"}
+tokio = { version = "1.5" }
 once_cell = ""
 
 [profile.release]
@@ -25,8 +25,3 @@ codegen-units = 1
 debug-assertions = false
 overflow-checks = false
 panic = "abort"
-
-
-[[example]]
-name = "backtest"
-path = "../examples/backtest_demo.rs"
