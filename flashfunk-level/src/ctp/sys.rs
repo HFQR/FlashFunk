@@ -14,15 +14,10 @@ include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
 
 #[cfg(target_os = "windows")]
 include!(concat!(
-env!("HOMEDRIVE"),
-env!("HOMEPATH"),
-"/.HFQ/ctp/bindings.rs"
+    env!("HOMEDRIVE"),
+    env!("HOMEPATH"),
+    "/.HFQ/ctp/bindings.rs"
 ));
-pub fn to_c_ptr(string: String) -> *const i8 {
-    CString::new(string).unwrap().as_ptr()
-}
-// static path: String = os_path("ctp").to_string_lossy().to_string() + "bindings.rs";
-// include!(path);
 
 pub fn to_c_string(string: String) -> CString {
     CString::new(string).unwrap()

@@ -10,10 +10,14 @@ use std::sync::Arc;
 
 use chrono::{Date, NaiveDateTime, Timelike, Utc};
 
-use crate::constant::{Direction, Exchange, Offset, OrderType, Status, LogLevel};
 use crate::c_func::parse_datetime_from_str;
+use crate::constant::{Direction, Exchange, LogLevel, Offset, OrderType, Status};
 use crate::ctp::sys::*;
-use crate::data_type::{AccountData, CancelRequest, ContractData, ContractVec, ExtraOrder, ExtraTrade, LoginForm, OrderData, OrderRequest, PositionData, TradeData, ContractStatus, Log};
+use crate::ctp::CtpTd::CtpTdCApi;
+use crate::data_type::{
+    AccountData, CancelRequest, ContractData, ContractStatus, ContractVec, ExtraOrder, ExtraTrade,
+    Log, LoginForm, OrderData, OrderRequest, PositionData, TradeData,
+};
 use crate::interface::Interface;
 use crate::types::message::TdApiMessage;
 use crate::util::blocker::Blocker;
@@ -24,7 +28,6 @@ use bitflags::_core::ops::Deref;
 use std::fs::create_dir;
 use std::path::PathBuf;
 use std::process::id;
-use crate::ctp::CtpTd::CtpTdCApi;
 
 const POS_LONG: u8 = THOST_FTDC_PD_Long as u8;
 const POS_SHORT: u8 = THOST_FTDC_PD_Short as u8;
@@ -99,7 +102,7 @@ pub struct TraderLevel {
 
 impl CtpTdCApi for TraderLevel {
     fn on_front_connected(&mut self) {
-        let log = Log::new(LogLevel::INFO, "Front Connected");
+        let log = Log::new(LogLevel::INFO, "Td Front Connected");
         self.sender.send_to(log, 0);
         self.blocker.as_ref().unwrap().0.step1.unblock();
     }
@@ -126,7 +129,6 @@ impl CtpTdCApi for TraderLevel {
         }
     }
 
-
     fn on_rsp_authenticate(
         &mut self,
         pRspAuthenticateField: *mut CThostFtdcRspAuthenticateField,
@@ -141,7 +143,10 @@ impl CtpTdCApi for TraderLevel {
                 self.blocker.as_ref().unwrap().0.step2.unblock();
             }
             Err(e) => {
-                let log = Log::new(LogLevel::ERROR, &*format!("Td Auth Failed, id: {} msg: {}", e.id, e.msg));
+                let log = Log::new(
+                    LogLevel::ERROR,
+                    &*format!("Td Auth Failed, id: {} msg: {}", e.id, e.msg),
+                );
                 self.sender.send_to(log, 0);
             }
         }
@@ -168,9 +173,12 @@ impl CtpTdCApi for TraderLevel {
                     .store(login.SessionID, Ordering::SeqCst);
 
                 blocker.0.step3.unblock();
-            }
+            },
             Err(e) => {
-                let log = Log::new(LogLevel::ERROR, &*format!("Td Login Failed, id: {} msg: {}", e.id, e.msg));
+                let log = Log::new(
+                    LogLevel::ERROR,
+                    &*format!("Td Login Failed, id: {} msg: {}", e.id, e.msg),
+                );
                 self.sender.send_to(log, 0);
             }
         }
@@ -182,7 +190,8 @@ impl CtpTdCApi for TraderLevel {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {}
+    ) {
+    }
 
     fn on_rsp_order_action(
         &mut self,
@@ -194,7 +203,10 @@ impl CtpTdCApi for TraderLevel {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
-                let log = Log::new(LogLevel::ERROR, &*format!("Order Action Error, id: {} msg: {}", e.id, e.msg));
+                let log = Log::new(
+                    LogLevel::ERROR,
+                    &*format!("Order Action Error, id: {} msg: {}", e.id, e.msg),
+                );
                 self.sender.send_to(log, 0);
             }
         }
@@ -213,7 +225,10 @@ impl CtpTdCApi for TraderLevel {
                 self.sender.send_to(log, 0);
             }
             Err(e) => {
-                let log = Log::new(LogLevel::ERROR, &*format!("Td Confirmed failed, id: {} msg: {}", e.id, e.msg));
+                let log = Log::new(
+                    LogLevel::ERROR,
+                    &*format!("Td Confirmed failed, id: {} msg: {}", e.id, e.msg),
+                );
                 self.sender.send_to(log, 0);
                 // println!(">>> Td Confirmed failed, id: {} msg: {}", e.id, e.msg);
             }
@@ -227,7 +242,8 @@ impl CtpTdCApi for TraderLevel {
         nRequestID: c_int,
         bIsLast: bool,
     ) {
-        if pInvestorPosition.is_null() {} else {
+        if pInvestorPosition.is_null() {
+        } else {
             unsafe {
                 let position = *pInvestorPosition;
                 let symbol = slice_to_string(&position.InstrumentID);
@@ -296,7 +312,8 @@ impl CtpTdCApi for TraderLevel {
 
                 self.sender.send_all(account_data);
             }
-        } else {}
+        } else {
+        }
 
         if let Some(block) = self.blocker.take() {
             block.0.step5.unblock();
@@ -344,7 +361,7 @@ impl CtpTdCApi for TraderLevel {
             self.sender
                 .try_send_to(ContractVec::from(con), 0)
                 .unwrap_or(());
-            let log = Log::new(LogLevel::INFO, "Contract query finished");
+            let log = Log::new(LogLevel::INFO, "Contract Query Finished");
             self.sender.send_to(log, 0);
             self.blocker.as_ref().unwrap().0.step4.unblock();
         }
@@ -379,7 +396,6 @@ impl CtpTdCApi for TraderLevel {
                 idx,
             )
         };
-        // 这里控制接收order data的策略index
         match idx {
             10000000usize => {
                 // let ex = ExtraOrder::from(order);
@@ -388,7 +404,7 @@ impl CtpTdCApi for TraderLevel {
             _ => {
                 // todo: why order sender error
                 order.is_local = true;
-                self.sender.try_send_to(order, idx).unwrap_or(());
+                self.sender.try_send_to(order, 0).unwrap_or(());
             }
         }
     }
@@ -423,7 +439,7 @@ impl CtpTdCApi for TraderLevel {
             }
             _ => {
                 trade.is_local = true;
-                self.sender.try_send_to(trade, idx).unwrap_or(());
+                self.sender.try_send_to(trade, 0).unwrap_or(());
             }
         }
     }
@@ -439,12 +455,17 @@ impl CtpTdCApi for TraderLevel {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
-                let log = Log::new(LogLevel::ERROR, &*format!("Order Insert Failed, id: {} msg: {} OrderID:{}", e.id, e.msg, order_id));
+                let log = Log::new(
+                    LogLevel::ERROR,
+                    &*format!(
+                        "Order Insert Failed, id: {} msg: {} OrderID:{}",
+                        e.id, e.msg, order_id
+                    ),
+                );
                 self.sender.send_to(log, 0);
             }
         }
     }
-
 
     fn on_err_rtn_order_action(
         &mut self,
@@ -454,13 +475,15 @@ impl CtpTdCApi for TraderLevel {
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
             Err(e) => {
-                let log = Log::new(LogLevel::ERROR, &*format!("Order Cancel Err, id: {} msg: {}", e.id, e.msg));
+                let log = Log::new(
+                    LogLevel::ERROR,
+                    &*format!("Order Cancel Err, id: {} msg: {}", e.id, e.msg),
+                );
                 self.sender.send_to(log, 0);
             }
         };
     }
 }
-
 
 fn get_order_type(order: OrderType) -> c_char {
     match order {
@@ -641,7 +664,7 @@ impl TraderLevel {
     }
 
     fn register_spi(&mut self) {
-        let trait_object_box: Box<Box<&mut CtpTdCApi>> = Box::new(Box::new(self));
+        let trait_object_box: Box<Box<&mut dyn CtpTdCApi>> = Box::new(Box::new(self));
         let trait_object_pointer =
             Box::into_raw(trait_object_box) as *mut Box<&mut dyn CtpTdCApi> as *mut c_void;
         // 把 rust对象 传给回调SPI

@@ -29,7 +29,6 @@ bitflags! {
     }
 }
 
-
 bitflags! {
     /// 日志信息等级
     pub struct LogLevel: u8 {
@@ -43,7 +42,6 @@ bitflags! {
         const INFO =  3;
     }
 }
-
 
 bitflags! {
     /// 状态

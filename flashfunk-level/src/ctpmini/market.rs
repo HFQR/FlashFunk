@@ -1,8 +1,8 @@
 use crate::ctpmini::sys;
-use std::ffi::CString;
 use crate::data_type::LoginForm;
-use crate::util::channel::GroupSender;
 use crate::types::message::MdApiMessage;
+use crate::util::channel::GroupSender;
+use std::ffi::CString;
 
 /// Mini 核心API
 struct MiniMdApi {
@@ -22,4 +22,3 @@ struct LevelControl {
     market_pointer: *mut CThostFtdcMdApi,
     request_id: i32,
 }
-

@@ -27,7 +27,10 @@ pub fn to_c_str<'a>(string: String) -> &'a CStr {
 
 /// 将u8字节流转换为中文字符串Cow
 pub fn translate_zh(v: &[u8]) -> Cow<str> {
-    let slice = v.split(|&c| c == 0u8).next().expect(format!("unicode 切换失败 无法转换中文").as_str());
+    let slice = v
+        .split(|&c| c == 0u8)
+        .next()
+        .expect(format!("unicode 切换失败 无法转换中文").as_str());
     if slice.is_ascii() {
         unsafe {
             return Cow::Borrowed::<str>(std::str::from_utf8_unchecked(slice));
@@ -45,7 +48,9 @@ pub fn bytes_to_string(v: &[i8]) -> String {
         .split(|x| *x == 0i8)
         .next()
         .unwrap()
-        .iter().map(|x| *x as u8).collect::<Vec<u8>>();
+        .iter()
+        .map(|x| *x as u8)
+        .collect::<Vec<u8>>();
     unsafe { String::from_utf8_unchecked(r) }
 }
 
@@ -76,19 +81,17 @@ pub fn parse_datetime_from_str(
             u[3..5].parse().unwrap(),
             u[6..].parse().unwrap(),
         )
-            .with_nanosecond(sub_t)
-            .unwrap();
+        .with_nanosecond(sub_t)
+        .unwrap();
 
         (date, time)
     }
 }
 
-
 pub fn translate_zh_to_string(v: &[i8]) -> String {
     let r = v.iter().map(|x| *x as u8).collect::<Vec<u8>>();
     translate_zh(&*r).to_string()
 }
-
 
 const ORDER_ID_LENGTH: usize = 12usize;
 

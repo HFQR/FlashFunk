@@ -2,15 +2,15 @@ use core::marker::PhantomData;
 use core::time::Duration;
 
 use crate::builder::Builder;
+use chrono::Local;
 use core_affinity::CoreId;
+use flashfunk_level::constant::LogLevel;
 use flashfunk_level::context::{new_context, ContextTrait};
 use flashfunk_level::interface::{Ac, Interface};
 use flashfunk_level::types::message::{MdApiMessage, StrategyMessage, TdApiMessage};
 use flashfunk_level::util::channel::{channel, GroupSender, Receiver, Sender};
 use std::ops::Deref;
 use std::time::Instant;
-use flashfunk_level::constant::LogLevel;
-use chrono::Local;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
@@ -23,8 +23,8 @@ struct MainWorker<Interface> {
 }
 
 impl<I, M> MainWorker<I>
-    where
-        I: Interface<Message=M>,
+where
+    I: Interface<Message = M>,
 {
     fn new(receiver: Vec<Receiver<StrategyMessage>>) -> Self {
         Self {
@@ -34,7 +34,7 @@ impl<I, M> MainWorker<I>
     }
 
     fn block_handle(&self, mut interface: I) {
-        const INTERVAL: Duration = Duration::from_secs(1);
+        const INTERVAL: Duration = Duration::from_secs(2);
 
         let mut r = true;
         let mut now = Instant::now();
@@ -135,7 +135,8 @@ impl StrategyWorker {
                         self.st.on_position(data, &mut ctx);
                     }
                     TdApiMessage::ContractData(ref data) => {
-                        ctx.1.insert_exchange(data.symbol.as_str(), data.exchange.unwrap());
+                        ctx.1
+                            .insert_exchange(data.symbol.as_str(), data.exchange.unwrap());
                         self.st.on_contract(&data, &mut ctx);
                     }
                     TdApiMessage::ExtraOrder(ref data) => {
@@ -174,9 +175,9 @@ impl Drop for StrategyWorker {
 
 // 为builder建立工人并启动
 pub(crate) fn start_workers<I, I2>(mut builder: Builder<'_, I, I2>)
-    where
-        I: Interface<Message=MdApiMessage>,
-        I2: Interface<Message=TdApiMessage>,
+where
+    I: Interface<Message = MdApiMessage>,
+    I2: Interface<Message = TdApiMessage>,
 {
     // 准备所有策略工人，并返回对应的通道制造（消费）端 和订阅symbols集合
     // * 策略已被此函数消费无法再次调用。
@@ -228,9 +229,9 @@ fn prepare_worker_channel<I, I2>(
     GroupSender<TdApiMessage>,
     MainWorker<I2>,
 )
-    where
-        I: Interface<Message=MdApiMessage>,
-        I2: Interface<Message=TdApiMessage>,
+where
+    I: Interface<Message = MdApiMessage>,
+    I2: Interface<Message = TdApiMessage>,
 {
     let sts = std::mem::take(&mut builder.strategy);
 

@@ -6,22 +6,22 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_uchar};
 use std::process::id;
 use std::sync::Arc;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
-use crate::ctp::sys::*;
 use crate::c_func::parse_datetime_from_str;
-use crate::data_type::{CancelRequest, LoginForm, OrderRequest, TickData, Log};
+use crate::constant::LogLevel;
+use crate::ctp::sys::*;
+use crate::ctp::CtpMd::CtpMdCApi;
+use crate::data_type::{CancelRequest, Log, LoginForm, OrderRequest, TickData};
 use crate::interface::Interface;
 use crate::types::message::MdApiMessage;
 use crate::util::blocker::Blocker;
 use crate::util::channel::GroupSender;
 use crate::{get_interface_path, os_path};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use std::fs::create_dir;
 use std::path::PathBuf;
-use crate::ctp::CtpMd::CtpMdCApi;
 use std::thread::sleep;
-use crate::constant::LogLevel;
 
 #[allow(non_camel_case_types)]
 type c_bool = std::os::raw::c_uchar;
@@ -75,7 +75,10 @@ impl CtpMdCApi for Level {
     }
 
     fn on_front_disconnected(&mut self, reason: i32) {
-        let log = Log::new(LogLevel::ERROR, "CtpMdApi Front Disconnected, Please Check Your Network");
+        let log = Log::new(
+            LogLevel::ERROR,
+            "CtpMdApi Front Disconnected, Please Check Your Network",
+        );
         self.sender.send_to(log, 0);
         self.blocker = Option::from(MdApiBlocker::new());
     }
@@ -199,8 +202,7 @@ impl Level {
     pub fn connect(&mut self) {
         // 阻塞器交给data collector
         let boxed: Box<Box<&mut dyn CtpMdCApi>> = Box::new(Box::new(self));
-        let pointer =
-            Box::into_raw(boxed) as *mut Box<&mut dyn CtpMdCApi> as *mut c_void;
+        let pointer = Box::into_raw(boxed) as *mut Box<&mut dyn CtpMdCApi> as *mut c_void;
         // 把rust对象 传给回调SPI
         let callback = unsafe { CtpMdSpi::new(pointer) };
         let ptr = Box::into_raw(Box::new(callback));
@@ -215,7 +217,7 @@ impl Level {
         };
         // 等待 login完成后才发送订阅
         self.blocker.as_mut().unwrap().0.step2.block();
-        let log = Log::new(LogLevel::INFO, "CtpMdApi init successful");
+        let log = Log::new(LogLevel::INFO, "Md Api Init Successful");
         self.sender.send_to(log, 0);
     }
 
@@ -296,4 +298,3 @@ impl Interface for CtpMdApi {
         self.level.subscribe();
     }
 }
-

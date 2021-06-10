@@ -221,7 +221,7 @@ impl Default for TradeData {
             offset: None,
             price: 0.0,
             volume: 0,
-            is_local: false
+            is_local: false,
         }
     }
 }
@@ -570,6 +570,20 @@ impl LoginForm {
         self.production_info = value.into();
         self
     }
+    pub fn simow(mut self) -> Self {
+        self.broke_id("9999")
+            .app_id("simnow_client_test")
+            .md_address("tcp://180.168.146.187:10212")
+            .td_address("tcp://180.168.146.187:10202")
+            .auth_code("0000000000000000")
+    }
+    pub fn simnow_h(mut self) -> Self {
+        self.broke_id("9999")
+            .app_id("simnow_client_test")
+            .md_address("tcp://180.168.146.187:10131")
+            .td_address("tcp://180.168.146.187:10130")
+            .auth_code("0000000000000000")
+    }
 
     pub(super) fn _user_id(&self) -> &str {
         &self.user_id
@@ -650,8 +664,8 @@ impl Generator {
     }
 
     pub fn update_tick<F>(&mut self, tick: &TickData, f: F)
-        where
-            F: FnOnce(&mut Self, Bar),
+    where
+        F: FnOnce(&mut Self, Bar),
     {
         let time = tick.datetime;
         if self.last.is_none() {

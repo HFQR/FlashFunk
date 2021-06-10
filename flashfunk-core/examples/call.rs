@@ -14,7 +14,10 @@ struct Strategy {
 
 impl Ac for Strategy {
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
-        println!("{} {} -> {:?}", tick.datetime, tick.last_price, tick.exchange);
+        println!(
+            "{} {} -> {:?}",
+            tick.datetime, tick.last_price, tick.exchange
+        );
     }
     fn codes(&mut self) -> Vec<String> {
         self.local_symbol.iter().map(|x| x.clone()).collect()

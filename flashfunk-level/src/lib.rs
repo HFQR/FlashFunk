@@ -1,12 +1,12 @@
 #![allow(clippy::mutex_atomic)]
 #![allow(clippy::type_complexity)]
 #![allow(
-dead_code,
-unused_variables,
-non_camel_case_types,
-non_snake_case,
-non_upper_case_globals,
-unused_imports
+    dead_code,
+    unused_variables,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    unused_imports
 )]
 
 /// In this crate, it provides the data_type and constants.
@@ -26,7 +26,6 @@ pub mod interface;
 #[cfg(feature = "ctp")]
 mod ctp;
 
-
 #[cfg(feature = "ctpmini")]
 mod ctpmini;
 
@@ -36,16 +35,13 @@ pub use ctp::mdapi::CtpMdApi;
 pub use ctp::tdapi::CtpTdApi;
 use std::fs;
 
+mod c_func;
 pub mod types;
 pub mod util;
-mod c_func;
 
 #[cfg(not(target_os = "windows"))]
 fn os_path(target: &str) -> PathBuf {
-    let path = PathBuf::from(format!(
-        "{}",
-        var("HOME").unwrap()
-    ));
+    let path = PathBuf::from(format!("{}", var("HOME").unwrap()));
     let path = path.join(".HFQ");
     if !path.exists() {
         fs::create_dir(path.clone());
@@ -66,11 +62,11 @@ fn os_path(target: &str) -> PathBuf {
     ));
     let path = path.join(".HFQ");
     if !path.exists() {
-        fs::create_dir(path.clone());
+        fs::create_dir(path.clone()).expect("文件夹创建失败");
     }
     let p = path.join(target);
     if !p.exists() {
-        fs::create_dir(p.clone());
+        fs::create_dir(p.clone()).expect("文件夹创建失败");
     }
     p
 }
