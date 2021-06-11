@@ -42,18 +42,16 @@ struct Strategy {
 }
 
 impl Ac for Strategy {
-    fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) {
+    // tick 信息回报 
+    fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) { 
         println!("dur: {}", tick.instant.elapsed().as_nanos());
     }
-
-    // 此处我们需要返还静态的引用 推荐使用此函数即可 
-    fn local_symbols<'a>(&mut self) -> Vec<&'a str> {
-        let mut strs: Vec<&'static str> = Vec::new();
-        self.local_symbol.iter().for_each(|x| strs.push(Box::leak(x.clone().into_boxed_str())));
-        strs
+    fn codes(&mut self) -> Vec<String> { // 订阅的代码 
+        self.local_symbol.iter().clone()
     }
-
-    fn name<'a>(&mut self) -> &'a str { "oi" }
+    fn flash_name(&mut self) -> String {  // 名称
+        "flashfunk".to_string()
+    }
 }
 
 fn main() {
