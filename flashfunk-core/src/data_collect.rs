@@ -4,9 +4,8 @@ use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 
 use async_trait::async_trait;
 use clickhouse_rs::Pool;
-use futures::channel::mpsc::{unbounded, UnboundedSender};
-use futures::StreamExt;
 use once_cell::sync::Lazy;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 
 use flashfunk_level::data_type::Tick;
 
@@ -127,7 +126,7 @@ static HANDLE: Lazy<UnboundedSender<SqlQueryMessage>> = Lazy::new(|| {
         std::env::var("CLICK_HOUSE_URI").unwrap_or("tcp://127.0.0.1:9001/tick".parse().unwrap());
     let pool = Pool::new(url);
 
-    let (tx, mut rx) = unbounded::<SqlQueryMessage>();
+    let (tx, mut rx) = unbounded_channel::<SqlQueryMessage>();
 
     std::thread::spawn(move || {
         tokio::runtime::Builder::new_current_thread()
@@ -135,7 +134,7 @@ static HANDLE: Lazy<UnboundedSender<SqlQueryMessage>> = Lazy::new(|| {
             .build()
             .unwrap()
             .block_on(async move {
-                while let Some(msg) = rx.next().await {
+                while let Some(msg) = rx.recv().await {
                     let mut handle = msg.query;
                     let sender = msg.tx;
                     handle.handle(&pool, sender).await;
@@ -162,8 +161,8 @@ pub fn get_ticks(
     // 打包消息
     let (msg, rx) = SqlQueryMessage::new_with_recv(query);
 
-    // 发送消息， 这里应该处理错误
-    HANDLE.unbounded_send(msg)?;
+    // TODO: 发送消息， 这里应该处理错误
+    let _ = HANDLE.send(msg);
 
     // downcast类型是运行时错误，用<TickQuery as SqlQuery>::SqlResult的关联类型确保一致性
     rx.recv()?

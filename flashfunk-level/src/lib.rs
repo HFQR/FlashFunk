@@ -44,11 +44,11 @@ fn os_path(target: &str) -> PathBuf {
     let path = PathBuf::from(format!("{}", var("HOME").unwrap()));
     let path = path.join(".HFQ");
     if !path.exists() {
-        fs::create_dir(path.clone());
+        fs::create_dir(path.clone()).unwrap();
     }
     let p = path.join(target);
     if !p.exists() {
-        fs::create_dir(p.clone());
+        fs::create_dir(p.clone()).unwrap();
     }
     p
 }
