@@ -101,20 +101,13 @@ impl CtpMdCApi for Level {
 
             let v = depth.InstrumentID.as_ptr();
 
-            let symbol = CStr::from_ptr(v);
+            let symbol = CStr::from_ptr(v).to_str().unwrap();
 
-            let index = self.symbols.iter().enumerate().find_map(|(i, s)| {
-                let r = CString::new(s.clone()).unwrap();
-                if symbol == CStr::from_ptr(r.as_ptr()) {
-                    Some(i)
-                } else {
-                    None
-                }
-            });
+            let index = self.symbols.iter().enumerate().find(|(i, s)| **s == symbol);
 
-            if let Some(i) = index {
+            if let Some((i, _)) = index {
                 let msg = {
-                    let symbol = symbol.to_str().unwrap().to_owned();
+                    let symbol = symbol.to_owned();
                     let (date, time) = parse_datetime_from_str(
                         depth.ActionDay.as_ptr(),
                         depth.UpdateTime.as_ptr(),
