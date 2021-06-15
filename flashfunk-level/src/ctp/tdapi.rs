@@ -88,9 +88,9 @@ pub struct TraderLevel {
     connect_status: bool,
     sender: GroupSender<TdApiMessage>,
     blocker: Option<TdApiBlocker>,
-    pos: HashMap<Cow<'static, str>, PositionData>,
-    size_map: HashMap<Cow<'static, str>, f64>,
-    exchange_map: HashMap<Cow<'static, str>, Exchange>,
+    pos: HashMap<String, PositionData>,
+    size_map: HashMap<String, f64>,
+    exchange_map: HashMap<String, Exchange>,
     order_ref: Arc<AtomicI32>,
     trade_pointer: *mut CThostFtdcTraderApi,
     login_form: LoginForm,
@@ -259,7 +259,7 @@ impl CtpTdCApi for TraderLevel {
 
                 let pos = self
                     .pos
-                    .entry(Cow::from(key))
+                    .entry(key)
                     .or_insert_with(|| match direction {
                         Direction::SHORT => PositionData::new_with_short(&symbol),
                         Direction::LONG => PositionData::new_with_long(&symbol),
@@ -283,10 +283,9 @@ impl CtpTdCApi for TraderLevel {
                 pos.pnl += profit;
                 // if is the last data that been pushed,  take them and sent it the core
                 if bIsLast {
-                    self.pos
-                        .iter()
-                        .for_each(|(k, v)| self.sender.send_all(v.to_owned()));
-                    self.pos.clear();
+                    for (_, v) in self.pos.drain() {
+                        self.sender.send_all(v);
+                    }
                 }
             }
         }
@@ -349,13 +348,10 @@ impl CtpTdCApi for TraderLevel {
             option_index: None,
         };
 
-        self.size_map
-            .insert(Cow::Owned(contract.symbol.clone()), contract.size);
-        self.exchange_map.insert(
-            Cow::Owned(contract.symbol.clone()),
-            contract.exchange.unwrap(),
-        );
+        self.size_map.insert(contract.symbol.clone(), contract.size);
+        self.exchange_map.insert(contract.symbol.clone(), contract.exchange.unwrap());
         self.contracts.push(contract);
+
         if bIsLast {
             let con = std::mem::take(&mut self.contracts);
             self.sender
@@ -383,7 +379,7 @@ impl CtpTdCApi for TraderLevel {
                     symbol: slice_to_string(&order.InstrumentID),
                     exchange,
                     datetime: NaiveDateTime::new(date, time),
-                    orderid: Option::from(id),
+                    orderid: id,
                     order_type: OrderType::from(order.OrderPriceType),
                     direction: Some(Direction::from(order.Direction)),
                     offset: Offset::from(order.CombOffsetFlag),

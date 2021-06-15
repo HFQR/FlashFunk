@@ -140,7 +140,7 @@ impl MockTdApi {
             symbol: order_req.symbol.clone(),
             exchange: order_req.exchange,
             datetime: self.current_tick.datetime,
-            orderid: Some(format!("{}_{}", idx, req_id)),
+            orderid: format!("{}_{}", idx, req_id),
             order_type: order_req.order_type,
             direction: Some(order_req.direction),
             offset: order_req.offset,
@@ -358,9 +358,9 @@ impl Interface for MockTdApi {
             // 冻结账户保证金
             self.acc.update_order(order_data.clone());
             self.active_order_map
-                .insert(order_data.orderid.clone().unwrap(), order_data.clone());
+                .insert(order_data.orderid.clone(), order_data.clone());
             self.queue_num_map
-                .insert(order_data.orderid.clone().unwrap(), QUEUE_INIT);
+                .insert(order_data.orderid.clone(), QUEUE_INIT);
             self.sender.try_send_to(order_data, idx).unwrap_or(());
         } else {
             // 拒单

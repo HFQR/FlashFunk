@@ -28,7 +28,7 @@ pub struct ContextInner {
 
 impl ContextInner {
     pub fn add_order(&mut self, order: OrderData) {
-        self.order_map.insert(order.orderid.clone().unwrap(), order);
+        self.order_map.insert(order.orderid.clone(), order);
     }
 
     pub fn get_active_orders(&self) -> impl Iterator<Item = &OrderData> {

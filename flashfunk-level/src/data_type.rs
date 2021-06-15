@@ -82,7 +82,7 @@ pub struct OrderData {
     pub symbol: String,
     pub exchange: Exchange,
     pub datetime: NaiveDateTime,
-    pub orderid: Option<String>,
+    pub orderid: String,
     pub order_type: OrderType,
     pub direction: Option<Direction>,
     pub offset: Offset,
