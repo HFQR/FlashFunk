@@ -200,7 +200,7 @@ impl Account {
             Status::CANCELLED => {
                 // Remove Margin frozen
                 self.margin_frozen_container
-                    .remove(&data.orderid.clone().unwrap());
+                    .remove(&data.orderid.clone());
             }
             _ => {}
         }
@@ -210,7 +210,7 @@ impl Account {
                 // Add Margin frozen
                 let ratio = self.get_margin_ratio(&symbol);
                 self.margin_frozen_container
-                    .insert(data.orderid.unwrap(), data.volume * data.price * ratio);
+                    .insert(data.orderid, data.volume * data.price * ratio);
             }
             _ => {}
         }
