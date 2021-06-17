@@ -142,7 +142,7 @@ impl MockTdApi {
             datetime: self.current_tick.datetime,
             orderid: format!("{}_{}", idx, req_id),
             order_type: order_req.order_type,
-            direction: Some(order_req.direction),
+            direction: order_req.direction,
             offset: order_req.offset,
             price: order_req.price,
             volume: order_req.volume,
@@ -174,7 +174,7 @@ impl MockTdApi {
 
     // 获取订单价格对应的订单簿挂单量
     fn get_vol_form_orderbook(&self, order: &OrderData, tick: &TickData) -> i32 {
-        if order.direction.unwrap() == Direction::LONG {
+        if order.direction == Direction::LONG {
             if order.price == tick.bid_price(0) {
                 return tick.bid_volume(0) as i32;
             } else if order.price == tick.bid_price(1) {
@@ -208,14 +208,14 @@ impl MockTdApi {
     // 撮合逻辑（一档排在前面的都不撤单）：
     fn match_order(&mut self) {
         for (id, order) in self.active_order_map.clone() {
-            let order_price: f64 = order.price;
-            let order_dir: Direction = order.direction.unwrap();
+            let order_price = order.price;
+            let order_dir = order.direction;
             let order_vol: i32 = order.volume as i32;
-            let mut trade_price: f64 = 0.0;
-            let mut trade_vol: i32 = 0;
+            let mut trade_price = 0.0;
+            let mut trade_vol = 0;
 
-            let queue_num: i32 = self.queue_num_map.get(&id).unwrap().clone();
-            let mut new_queue_num_head: i32 = 0;
+            let queue_num = self.queue_num_map.get(&id).unwrap().clone();
+            let mut new_queue_num_head = 0;
 
             let current_tick: &TickData = &self.current_tick;
             let old_tick: &TickData = &self.old_tick;
@@ -271,15 +271,15 @@ impl MockTdApi {
             }
             self.trade_id += 1;
             let trade_data = TradeData {
-                symbol: Cow::from(order.symbol),
-                exchange: Some(order.exchange),
+                symbol: order.symbol,
+                exchange: order.exchange,
                 datetime: current_tick.datetime,
-                orderid: Option::from(id.clone()),
+                orderid: id.clone(),
                 direction: order.direction,
-                offset: Some(order.offset),
+                offset: order.offset,
                 price: trade_price,
                 volume: trade_vol as i32,
-                tradeid: Some(self.trade_id.to_string()),
+                tradeid: self.trade_id.to_string(),
                 is_local: true,
             };
             // 处理 order
