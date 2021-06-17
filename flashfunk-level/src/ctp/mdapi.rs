@@ -159,7 +159,7 @@ impl CtpMdCApi for Level {
                     }
                 };
 
-                let msg: &'static TickData = Box::leak(Box::new(msg));
+                let msg = Arc::new(msg);
 
                 // 如果需要错误处理请在这里取回消息
 

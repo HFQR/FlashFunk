@@ -35,7 +35,7 @@ pub struct TickData {
 impl Default for TickData {
     fn default() -> TickData {
         TickData {
-            symbol: String::from(""),
+            symbol: String::new(),
             exchange: Exchange::INIT,
             datetime: chrono::Utc::now().naive_utc(),
             volume: 0,
