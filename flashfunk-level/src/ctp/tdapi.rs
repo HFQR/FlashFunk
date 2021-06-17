@@ -257,14 +257,13 @@ impl CtpTdCApi for TraderLevel {
                 let frozen = position.ShortFrozen + position.LongFrozen;
                 let key = format!("{}_{}", symbol, position.PosiDirection);
 
-                let pos = self
-                    .pos
-                    .entry(key)
-                    .or_insert_with(|| match direction {
-                        Direction::SHORT => PositionData::new_with_short(&symbol),
-                        Direction::LONG => PositionData::new_with_long(&symbol),
-                        _ => panic!("bad direction"),
-                    });
+                let size = *self.size_map.get(symbol.as_str()).unwrap();
+
+                let pos = self.pos.entry(key).or_insert_with(|| match direction {
+                    Direction::SHORT => PositionData::new_with_short(symbol),
+                    Direction::LONG => PositionData::new_with_long(symbol),
+                    _ => panic!("bad direction"),
+                });
                 // according to the exchange  to setup the yd position
                 match exchange {
                     Exchange::SHFE => {
@@ -276,7 +275,7 @@ impl CtpTdCApi for TraderLevel {
                         pos.yd_volume = volume - td_pos;
                     }
                 }
-                let size = self.size_map.get(symbol.as_str()).unwrap();
+
                 // pos.exchange = Some(*exchange);
                 pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
                 pos.volume += volume;
@@ -349,7 +348,8 @@ impl CtpTdCApi for TraderLevel {
         };
 
         self.size_map.insert(contract.symbol.clone(), contract.size);
-        self.exchange_map.insert(contract.symbol.clone(), contract.exchange.unwrap());
+        self.exchange_map
+            .insert(contract.symbol.clone(), contract.exchange.unwrap());
         self.contracts.push(contract);
 
         if bIsLast {

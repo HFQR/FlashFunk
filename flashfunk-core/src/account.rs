@@ -199,8 +199,7 @@ impl Account {
         match data.status {
             Status::CANCELLED => {
                 // Remove Margin frozen
-                self.margin_frozen_container
-                    .remove(&data.orderid.clone());
+                self.margin_frozen_container.remove(&data.orderid.clone());
             }
             _ => {}
         }
