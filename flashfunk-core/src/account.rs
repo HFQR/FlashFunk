@@ -128,38 +128,33 @@ impl Account {
     /// 3.remove frozen if exist
     /// 4. add close_profit
     pub fn update_trade(&mut self, data: TradeData) {
-        let symbol = data.symbol.as_ref();
+        let symbol = data.symbol.as_str();
         let volume = data.volume as f64;
         // calculate fee for trade_data
         let commision = volume * data.price * self.get_commission_ratio(symbol);
 
         // Check the orderid if has been frozen
-        if let Some(order_id) = &data.orderid {
-            // remove会先查找再删除
-            self.frozen_fee.remove(order_id);
-            // if self.frozen_fee.contains_key(order_id) {
-            //     self.frozen_fee.remove(order_id);
-            // }
-        }
+        self.frozen_fee.remove(&data.orderid);
+
         // insert fee to fact
         match self.fee.get_mut(symbol) {
             Some(t) => *t += commision,
             None => {
-                let _ = self.fee.insert(data.symbol.clone(), commision);
+                let _ = self
+                    .fee
+                    .insert(Cow::Owned(data.symbol.to_owned()), commision);
             }
         }
 
         // update margin_frozen if open else add close_profit for close action
-        match data.offset.unwrap() {
+        match data.offset {
             Offset::OPEN => {
                 self.count += 1.0;
-                if let Some(order_id) = &data.orderid {
-                    self.margin_frozen_container.remove(order_id);
-                }
+                self.margin_frozen_container.remove(&data.orderid);
             }
             _ => {
                 // todo : let pos =
-                let close_profit = match data.direction.unwrap() {
+                let close_profit = match data.direction {
                     Direction::LONG => {
                         //  replace 0.0 with  position avg price
                         (0.0 - data.price) * volume * self.get_size_map(symbol)
@@ -171,7 +166,9 @@ impl Account {
                 match self.close_profit.get_mut(symbol) {
                     Some(t) => *t += close_profit,
                     None => {
-                        let _ = self.close_profit.insert(data.symbol.clone(), close_profit);
+                        let _ = self
+                            .close_profit
+                            .insert(Cow::Owned(data.symbol), close_profit);
                     }
                 }
             }
@@ -199,8 +196,7 @@ impl Account {
         match data.status {
             Status::CANCELLED => {
                 // Remove Margin frozen
-                self.margin_frozen_container
-                    .remove(&data.orderid.clone());
+                self.margin_frozen_container.remove(&data.orderid.clone());
             }
             _ => {}
         }

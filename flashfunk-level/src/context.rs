@@ -64,7 +64,7 @@ impl ContextInner {
     pub fn get_position(&mut self, symbol: &String) -> &Position {
         self.position_map
             .entry(symbol.to_owned())
-            .or_insert_with(|| Position::new_with_symbol(symbol))
+            .or_insert_with(|| Position::new_with_symbol())
     }
 
     pub fn get_account(&self) -> &AccountData {
@@ -79,7 +79,7 @@ impl ContextInner {
         match position_data.direction.unwrap() {
             Direction::LONG => {
                 self.position_map
-                    .get_mut(position_data.symbol.as_ref())
+                    .get_mut(position_data.symbol.as_str())
                     .map(|p| {
                         p.long_volume = position_data.volume;
                         p.long_price = position_data.price;
@@ -90,9 +90,8 @@ impl ContextInner {
                     })
                     .unwrap_or_else(|| {
                         self.position_map.insert(
-                            position_data.symbol.to_string(),
+                            position_data.symbol.to_owned(),
                             Position::new_with_long(
-                                position_data.symbol.as_ref(),
                                 position_data.volume,
                                 position_data.price,
                                 position_data.available,
@@ -105,7 +104,7 @@ impl ContextInner {
             }
             Direction::SHORT => {
                 self.position_map
-                    .get_mut(position_data.symbol.as_ref())
+                    .get_mut(position_data.symbol.as_str())
                     .map(|p| {
                         p.short_volume = position_data.volume;
                         p.short_price = position_data.price;
@@ -116,9 +115,8 @@ impl ContextInner {
                     })
                     .unwrap_or_else(|| {
                         self.position_map.insert(
-                            position_data.symbol.to_string(),
+                            position_data.symbol.to_owned(),
                             Position::new_with_short(
-                                position_data.symbol.as_ref(),
                                 position_data.volume,
                                 position_data.price,
                                 position_data.available,
@@ -155,8 +153,8 @@ impl ContextInner {
         let mut pos = self
             .position_map
             .entry(order.symbol.to_owned())
-            .or_insert_with(|| Position::new_with_symbol(&order.symbol));
-        match order.direction.unwrap() {
+            .or_insert_with(|| Position::new_with_symbol());
+        match order.direction {
             Direction::LONG => {
                 match order.offset {
                     Offset::OPEN => {

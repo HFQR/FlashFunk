@@ -35,7 +35,7 @@ pub struct TickData {
 impl Default for TickData {
     fn default() -> TickData {
         TickData {
-            symbol: String::from(""),
+            symbol: String::new(),
             exchange: Exchange::INIT,
             datetime: chrono::Utc::now().naive_utc(),
             volume: 0,
@@ -84,7 +84,7 @@ pub struct OrderData {
     pub datetime: NaiveDateTime,
     pub orderid: String,
     pub order_type: OrderType,
-    pub direction: Option<Direction>,
+    pub direction: Direction,
     pub offset: Offset,
     pub price: f64,
     pub volume: f64,
@@ -194,39 +194,22 @@ impl From<&Tick> for TickData {
 /// Trade Data
 #[derive(Clone, Debug)]
 pub struct TradeData {
-    pub symbol: Cow<'static, str>,
-    pub exchange: Option<Exchange>,
+    pub symbol: String,
+    pub exchange: Exchange,
     pub datetime: NaiveDateTime,
-    pub orderid: Option<String>,
-    pub tradeid: Option<String>,
-    pub direction: Option<Direction>,
-    pub offset: Option<Offset>,
+    pub orderid: String,
+    pub tradeid: String,
+    pub direction: Direction,
+    pub offset: Offset,
     pub price: f64,
     pub volume: i32,
     pub is_local: bool,
 }
 
-impl Default for TradeData {
-    fn default() -> TradeData {
-        TradeData {
-            symbol: Cow::Borrowed(""),
-            exchange: None,
-            datetime: chrono::Utc::now().naive_utc(),
-            orderid: None,
-            tradeid: None,
-            direction: None,
-            offset: None,
-            price: 0.0,
-            volume: 0,
-            is_local: false,
-        }
-    }
-}
-
 /// Position Data
 #[derive(Clone, Debug)]
 pub struct PositionData {
-    pub symbol: Cow<'static, str>,
+    pub symbol: String,
     pub exchange: Option<Exchange>,
     pub direction: Option<Direction>,
     pub volume: f64,
@@ -238,9 +221,9 @@ pub struct PositionData {
 }
 
 impl PositionData {
-    pub fn new_with_long(symbol: &str) -> Self {
+    pub fn new_with_long(symbol: String) -> Self {
         PositionData {
-            symbol: Cow::Owned(symbol.to_owned()),
+            symbol,
             exchange: None,
             direction: Option::from(Direction::LONG),
             volume: 0.0,
@@ -251,9 +234,9 @@ impl PositionData {
             available: 0.0,
         }
     }
-    pub fn new_with_short(symbol: &str) -> Self {
+    pub fn new_with_short(symbol: String) -> Self {
         PositionData {
-            symbol: Cow::Owned(symbol.to_owned()),
+            symbol,
             exchange: None,
             direction: Option::from(Direction::SHORT),
             volume: 0.0,
@@ -269,7 +252,7 @@ impl PositionData {
 impl Default for PositionData {
     fn default() -> PositionData {
         PositionData {
-            symbol: Cow::Borrowed(""),
+            symbol: String::new(),
             exchange: None,
             direction: None,
             volume: 0.0,
@@ -286,7 +269,6 @@ impl Default for PositionData {
 /// fixme 針對於與這種數據做數組優化
 #[derive(Clone, Debug, Default)]
 pub struct Position {
-    pub symbol: Cow<'static, str>,
     pub exchange: Option<Exchange>,
     pub long_volume: f64,
     pub short_volume: f64,
@@ -303,9 +285,8 @@ pub struct Position {
 }
 
 impl Position {
-    pub(crate) fn new_with_symbol(symbol: &str) -> Self {
+    pub(crate) fn new_with_symbol() -> Self {
         Self {
-            symbol: Cow::Owned(symbol.to_owned()),
             exchange: None,
             long_volume: 0.0,
             short_volume: 0.0,
@@ -323,7 +304,6 @@ impl Position {
     }
 
     pub(crate) fn new_with_long(
-        symbol: &str,
         long_volume: f64,
         long_price: f64,
         long_available: f64,
@@ -332,7 +312,6 @@ impl Position {
         long_pnl: f64,
     ) -> Self {
         Self {
-            symbol: Cow::Owned(symbol.to_owned()),
             exchange: None,
             long_volume,
             short_volume: 0.0,
@@ -350,7 +329,6 @@ impl Position {
     }
 
     pub(crate) fn new_with_short(
-        symbol: &str,
         short_volume: f64,
         short_price: f64,
         short_available: f64,
@@ -359,7 +337,6 @@ impl Position {
         short_pnl: f64,
     ) -> Self {
         Self {
-            symbol: Cow::Owned(symbol.to_owned()),
             exchange: None,
             long_volume: 0.0,
             short_volume,

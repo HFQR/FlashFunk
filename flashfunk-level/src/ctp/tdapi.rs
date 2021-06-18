@@ -255,14 +255,13 @@ impl CtpTdCApi for TraderLevel {
                 let frozen = position.ShortFrozen + position.LongFrozen;
                 let key = format!("{}_{}", symbol, position.PosiDirection);
 
-                let pos = self
-                    .pos
-                    .entry(key)
-                    .or_insert_with(|| match direction {
-                        Direction::SHORT => PositionData::new_with_short(&symbol),
-                        Direction::LONG => PositionData::new_with_long(&symbol),
-                        _ => panic!("bad direction"),
-                    });
+                let size = self.size_map.get(symbol.as_str()).unwrap_or(&0.0);
+
+                let pos = self.pos.entry(key).or_insert_with(|| match direction {
+                    Direction::SHORT => PositionData::new_with_short(symbol),
+                    Direction::LONG => PositionData::new_with_long(symbol),
+                    _ => panic!("bad direction"),
+                });
                 // according to the exchange  to setup the yd position
                 match exchange {
                     Exchange::SHFE => {
@@ -274,7 +273,6 @@ impl CtpTdCApi for TraderLevel {
                         pos.yd_volume = volume - td_pos;
                     }
                 }
-                let size = self.size_map.get(symbol.as_str()).unwrap_or(&0.0);
                 // pos.exchange = Some(*exchange);
                 pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
                 pos.volume += volume;
@@ -346,7 +344,8 @@ impl CtpTdCApi for TraderLevel {
         };
 
         self.size_map.insert(contract.symbol.clone(), contract.size);
-        self.exchange_map.insert(contract.symbol.clone(), contract.exchange.unwrap());
+        self.exchange_map
+            .insert(contract.symbol.clone(), contract.exchange.unwrap());
         self.contracts.push(contract);
 
         if bIsLast {
@@ -378,7 +377,7 @@ impl CtpTdCApi for TraderLevel {
                     datetime: NaiveDateTime::new(date, time),
                     orderid: id,
                     order_type: OrderType::from(order.OrderPriceType),
-                    direction: Some(Direction::from(order.Direction)),
+                    direction: Direction::from(order.Direction),
                     offset: Offset::from(order.CombOffsetFlag),
                     price: order.LimitPrice as f64,
                     volume: order.VolumeTotalOriginal as f64,
@@ -411,15 +410,15 @@ impl CtpTdCApi for TraderLevel {
             let (idx, refs) = split_into_vec(order_ref.as_str());
             (
                 TradeData {
-                    symbol: Cow::from(slice_to_string(&trade.InstrumentID)),
-                    exchange: Some(Exchange::from(trade.ExchangeID)),
+                    symbol: slice_to_string(&trade.InstrumentID),
+                    exchange: Exchange::from(trade.ExchangeID),
                     datetime: NaiveDateTime::new(date, time),
-                    orderid: Option::from(order_ref),
-                    direction: Some(Direction::from(trade.Direction)),
-                    offset: Some(Offset::from(trade.OffsetFlag)),
+                    orderid: order_ref,
+                    direction: Direction::from(trade.Direction),
+                    offset: Offset::from(trade.OffsetFlag),
                     price: trade.Price,
                     volume: trade.Volume,
-                    tradeid: Some(slice_to_string(&trade.TradeID)),
+                    tradeid: slice_to_string(&trade.TradeID),
                     is_local: false,
                 },
                 idx,
