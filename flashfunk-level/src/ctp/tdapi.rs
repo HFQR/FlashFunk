@@ -190,8 +190,7 @@ impl CtpTdCApi for TraderLevel {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {
-    }
+    ) {}
 
     fn on_rsp_order_action(
         &mut self,
@@ -242,14 +241,13 @@ impl CtpTdCApi for TraderLevel {
         nRequestID: c_int,
         bIsLast: bool,
     ) {
-        if pInvestorPosition.is_null() {
-        } else {
+        if pInvestorPosition.is_null() {} else {
             unsafe {
                 let position = *pInvestorPosition;
                 let symbol = slice_to_string(&position.InstrumentID);
                 let open_cost = position.OpenCost;
                 let direction = Direction::from(position.PosiDirection);
-                let exchange = *self.exchange_map.get(symbol.as_str()).unwrap();
+                let exchange = *self.exchange_map.get(symbol.as_str()).unwrap_or(&Exchange::INIT);
                 let td_pos = position.TodayPosition as f64;
                 let volume = position.Position as f64;
                 let yd_pos = position.YdPosition as f64;
@@ -276,7 +274,7 @@ impl CtpTdCApi for TraderLevel {
                         pos.yd_volume = volume - td_pos;
                     }
                 }
-                let size = self.size_map.get(symbol.as_str()).unwrap();
+                let size = self.size_map.get(symbol.as_str()).unwrap_or(&0.0);
                 // pos.exchange = Some(*exchange);
                 pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
                 pos.volume += volume;
@@ -311,8 +309,7 @@ impl CtpTdCApi for TraderLevel {
 
                 self.sender.send_all(account_data);
             }
-        } else {
-        }
+        } else {}
 
         if let Some(block) = self.blocker.take() {
             block.0.step5.unblock();
