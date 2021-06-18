@@ -84,7 +84,7 @@ pub struct OrderData {
     pub datetime: NaiveDateTime,
     pub orderid: String,
     pub order_type: OrderType,
-    pub direction: Option<Direction>,
+    pub direction: Direction,
     pub offset: Offset,
     pub price: f64,
     pub volume: f64,
@@ -194,33 +194,16 @@ impl From<&Tick> for TickData {
 /// Trade Data
 #[derive(Clone, Debug)]
 pub struct TradeData {
-    pub symbol: Cow<'static, str>,
-    pub exchange: Option<Exchange>,
+    pub symbol: String,
+    pub exchange: Exchange,
     pub datetime: NaiveDateTime,
-    pub orderid: Option<String>,
-    pub tradeid: Option<String>,
-    pub direction: Option<Direction>,
-    pub offset: Option<Offset>,
+    pub orderid: String,
+    pub tradeid: String,
+    pub direction: Direction,
+    pub offset: Offset,
     pub price: f64,
     pub volume: i32,
     pub is_local: bool,
-}
-
-impl Default for TradeData {
-    fn default() -> TradeData {
-        TradeData {
-            symbol: Cow::Borrowed(""),
-            exchange: None,
-            datetime: chrono::Utc::now().naive_utc(),
-            orderid: None,
-            tradeid: None,
-            direction: None,
-            offset: None,
-            price: 0.0,
-            volume: 0,
-            is_local: false,
-        }
-    }
 }
 
 /// Position Data

@@ -154,7 +154,7 @@ impl ContextInner {
             .position_map
             .entry(order.symbol.to_owned())
             .or_insert_with(|| Position::new_with_symbol());
-        match order.direction.unwrap() {
+        match order.direction {
             Direction::LONG => {
                 match order.offset {
                     Offset::OPEN => {
