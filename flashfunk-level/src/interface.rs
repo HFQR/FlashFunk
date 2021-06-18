@@ -27,6 +27,7 @@ pub trait Ac {
 
     fn on_l2_trade(&mut self, order: &TradeData, ctx: &mut Context) {}
 
+    #[doc(hidden)]
     /// 内置函数 不应该被重写
     fn local_symbols<'a>(&mut self) -> Vec<&'a str> {
         let mut strs: Vec<&'static str> = Vec::new();
@@ -36,6 +37,7 @@ pub trait Ac {
         strs
     }
 
+    #[doc(hidden)]
     /// 内置函数 不应该被重写
     fn name<'a>(&mut self) -> &'a str {
         Box::leak(self.flash_name().clone().into_boxed_str())
