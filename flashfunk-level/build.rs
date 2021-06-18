@@ -1,11 +1,11 @@
 #![allow(
-dead_code,
-unused_must_use,
-unused_variables,
-non_camel_case_types,
-non_snake_case,
-non_upper_case_globals,
-unused_imports
+    dead_code,
+    unused_must_use,
+    unused_variables,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    unused_imports
 )]
 
 use std::env::var;
@@ -143,7 +143,7 @@ fn build(target: &str) {
     let c = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
 
     #[cfg(target_os = "windows")]
-        cc::Build::new()
+    cc::Build::new()
         .file(format!("src/{}/src/{}.cpp", target, target))
         .cpp(true)
         .warnings(false)
@@ -153,7 +153,7 @@ fn build(target: &str) {
         .compile(format!("{}", target).as_str());
 
     #[cfg(not(target_os = "windows"))]
-        cc::Build::new()
+    cc::Build::new()
         .file(format!("src/{}/src/{}.cpp", target, target))
         .cpp(true)
         .warnings(false)
@@ -193,14 +193,14 @@ fn build(target: &str) {
 
 fn main() {
     #[cfg(feature = "ctp")]
-        build("ctp");
+    build("ctp");
 
     #[cfg(feature = "ctp_mini")]
-        build("ctpmini");
+    build("ctpmini");
 
     #[cfg(feature = "ess")]
-        build("ess");
+    build("ess");
 
     #[cfg(feature = "rohon")]
-        build("rohon");
+    build("rohon");
 }

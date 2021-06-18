@@ -1,29 +1,29 @@
 #![allow(
-dead_code,
-unused_variables,
-non_camel_case_types,
-non_snake_case,
-non_upper_case_globals,
-unused_imports
+    dead_code,
+    unused_variables,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    unused_imports
 )]
 
-pub(crate) mod sys;
 mod CtpMd;
 mod CtpTd;
 pub(crate) mod mdapi;
+pub(crate) mod sys;
 pub(crate) mod tdapi;
 
 #[cfg(test)]
 mod test_ctp {
-    use criterion::{black_box, criterion_group, criterion_main, Criterion};
+    use crate::c_func::parse_datetime_from_str;
+    use crate::ctp::sys::ToCSlice;
+    use crate::data_type::TickData;
+    use chrono::NaiveDateTime;
     use core::fmt;
+    use criterion::{black_box, criterion_group, criterion_main, Criterion};
     use std::borrow::Cow;
     use std::ffi::{CStr, CString};
     use std::os::raw::{c_char, c_int, c_uchar, c_void};
-    use chrono::NaiveDateTime;
-    use crate::data_type::TickData;
-    use crate::c_func::parse_datetime_from_str;
-    use crate::ctp::sys::ToCSlice;
     use std::time::Instant;
 
     pub type TThostFtdcDateType = [c_char; 9usize];
@@ -37,7 +37,6 @@ mod test_ctp {
     pub type TThostFtdcVolumeType = ::std::os::raw::c_int;
     pub type TThostFtdcRatioType = f64;
     pub type TThostFtdcTimeType = [::std::os::raw::c_char; 9usize];
-
 
     #[derive(Debug, Default, Copy, Clone)]
     pub struct CThostFtdcDepthMarketDataField {
@@ -86,7 +85,6 @@ mod test_ctp {
         pub AveragePrice: TThostFtdcPriceType,
         pub ActionDay: TThostFtdcDateType,
     }
-
 
     fn generate_volume() -> c_int {
         300 as c_int
@@ -143,7 +141,6 @@ mod test_ctp {
             }
         }
     }
-
 
     fn criterion_benchmark(c: &mut Criterion) {
         let x = CThostFtdcDepthMarketDataField::new();

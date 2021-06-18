@@ -190,7 +190,8 @@ impl CtpTdCApi for TraderLevel {
         pRspInfo: *mut CThostFtdcRspInfoField,
         nRequestID: c_int,
         bIsLast: bool,
-    ) {}
+    ) {
+    }
 
     fn on_rsp_order_action(
         &mut self,
@@ -241,13 +242,17 @@ impl CtpTdCApi for TraderLevel {
         nRequestID: c_int,
         bIsLast: bool,
     ) {
-        if pInvestorPosition.is_null() {} else {
+        if pInvestorPosition.is_null() {
+        } else {
             unsafe {
                 let position = *pInvestorPosition;
                 let symbol = slice_to_string(&position.InstrumentID);
                 let open_cost = position.OpenCost;
                 let direction = Direction::from(position.PosiDirection);
-                let exchange = *self.exchange_map.get(symbol.as_str()).unwrap_or(&Exchange::INIT);
+                let exchange = *self
+                    .exchange_map
+                    .get(symbol.as_str())
+                    .unwrap_or(&Exchange::INIT);
                 let td_pos = position.TodayPosition as f64;
                 let volume = position.Position as f64;
                 let yd_pos = position.YdPosition as f64;
@@ -255,14 +260,11 @@ impl CtpTdCApi for TraderLevel {
                 let frozen = position.ShortFrozen + position.LongFrozen;
                 let key = format!("{}_{}", symbol, position.PosiDirection);
 
-                let pos = self
-                    .pos
-                    .entry(key)
-                    .or_insert_with(|| match direction {
-                        Direction::SHORT => PositionData::new_with_short(&symbol),
-                        Direction::LONG => PositionData::new_with_long(&symbol),
-                        _ => panic!("bad direction"),
-                    });
+                let pos = self.pos.entry(key).or_insert_with(|| match direction {
+                    Direction::SHORT => PositionData::new_with_short(&symbol),
+                    Direction::LONG => PositionData::new_with_long(&symbol),
+                    _ => panic!("bad direction"),
+                });
                 // according to the exchange  to setup the yd position
                 match exchange {
                     Exchange::SHFE => {
@@ -309,7 +311,8 @@ impl CtpTdCApi for TraderLevel {
 
                 self.sender.send_all(account_data);
             }
-        } else {}
+        } else {
+        }
 
         if let Some(block) = self.blocker.take() {
             block.0.step5.unblock();
@@ -346,7 +349,8 @@ impl CtpTdCApi for TraderLevel {
         };
 
         self.size_map.insert(contract.symbol.clone(), contract.size);
-        self.exchange_map.insert(contract.symbol.clone(), contract.exchange.unwrap());
+        self.exchange_map
+            .insert(contract.symbol.clone(), contract.exchange.unwrap());
         self.contracts.push(contract);
 
         if bIsLast {

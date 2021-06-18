@@ -81,8 +81,8 @@ pub fn parse_datetime_from_str(
             u[3..5].parse().unwrap(),
             u[6..].parse().unwrap(),
         )
-            .with_nanosecond(sub_t)
-            .unwrap();
+        .with_nanosecond(sub_t)
+        .unwrap();
 
         (date, time)
     }
