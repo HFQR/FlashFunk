@@ -1,6 +1,8 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 
+use std::borrow::Cow;
+use std::io::prelude::*;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -16,8 +18,6 @@ use flashfunk_level::interface::Interface;
 use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
 use flashfunk_level::util::channel::GroupSender;
 use flashfunk_level::util::hash::HashMap;
-use std::borrow::Cow;
-use std::io::prelude::*;
 
 const QUEUE_INIT: i32 = 888_888;
 
@@ -106,7 +106,7 @@ impl Interface for MockMdApi {
 
                             // 在这里修改tick data数据;
                             let tick = TickData::from(&ticks.remove(0));
-                            let msg: &'static TickData = Box::leak(Box::new(tick));
+                            let msg = Arc::new(tick);
                             //let msg: &'static TickData = Box::leak(Box::new(TickData::default()));
 
                             sender.send_all(msg);

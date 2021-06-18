@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::data_type::{
     AccountData, CancelRequest, ContractData, ContractStatus, ContractVec, ExtraOrder, ExtraTrade,
     Log, OrderData, OrderRequest, PositionData, QueryRequest, SubscribeRequest, TickData,
@@ -5,7 +7,7 @@ use crate::data_type::{
 };
 
 pub enum MdApiMessage {
-    TickData(&'static TickData),
+    TickData(Arc<TickData>),
     SubscribeRequest(SubscribeRequest),
     Log(Log),
 }
@@ -16,8 +18,8 @@ impl From<SubscribeRequest> for MdApiMessage {
     }
 }
 
-impl From<&'static TickData> for MdApiMessage {
-    fn from(data: &'static TickData) -> Self {
+impl From<Arc<TickData>> for MdApiMessage {
+    fn from(data: Arc<TickData>) -> Self {
         Self::TickData(data)
     }
 }
