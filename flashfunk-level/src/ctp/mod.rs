@@ -7,11 +7,9 @@
     unused_imports
 )]
 
-// pub(crate) mod func;
-pub(crate) mod sys;
-// pub mod md_api;
-// pub mod td_api;
 mod CtpMd;
 mod CtpTd;
 pub(crate) mod mdapi;
+// fixme: 暂时开放用以快速生成tickdata
+pub mod sys;
 pub(crate) mod tdapi;

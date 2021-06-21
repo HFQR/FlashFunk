@@ -544,7 +544,7 @@ impl LoginForm {
         self.production_info = value.into();
         self
     }
-    pub fn simow(self) -> Self {
+    pub fn simnow(self) -> Self {
         self.broke_id("9999")
             .app_id("simnow_client_test")
             .md_address("tcp://180.168.146.187:10212")

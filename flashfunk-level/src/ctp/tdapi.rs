@@ -249,16 +249,17 @@ impl CtpTdCApi for TraderLevel {
                 let symbol = slice_to_string(&position.InstrumentID);
                 let open_cost = position.OpenCost;
                 let direction = Direction::from(position.PosiDirection);
-                let exchange = *self.exchange_map.get(symbol.as_str()).unwrap();
+                let exchange = *self
+                    .exchange_map
+                    .get(symbol.as_str())
+                    .unwrap_or(&Exchange::INIT);
                 let td_pos = position.TodayPosition as f64;
                 let volume = position.Position as f64;
                 let yd_pos = position.YdPosition as f64;
                 let profit = position.PositionProfit;
                 let frozen = position.ShortFrozen + position.LongFrozen;
                 let key = format!("{}_{}", symbol, position.PosiDirection);
-
-                let size = *self.size_map.get(symbol.as_str()).unwrap();
-
+                let size = self.size_map.get(symbol.as_str()).unwrap_or(&0.0);
                 let pos = self.pos.entry(key).or_insert_with(|| match direction {
                     Direction::SHORT => PositionData::new_with_short(symbol),
                     Direction::LONG => PositionData::new_with_long(symbol),
@@ -275,7 +276,6 @@ impl CtpTdCApi for TraderLevel {
                         pos.yd_volume = volume - td_pos;
                     }
                 }
-
                 // pos.exchange = Some(*exchange);
                 pos.price = (pos.price * pos.volume + open_cost / size) / (pos.volume + volume);
                 pos.volume += volume;

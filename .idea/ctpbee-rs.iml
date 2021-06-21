@@ -12,6 +12,7 @@
       <sourceFolder url="file://$MODULE_DIR$/flashfunk-fetcher/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/flashfunk-interface/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/flashfunk-level/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/flashfunk-level/benches" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/flashfunk-core/examples/call/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

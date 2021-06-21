@@ -13,7 +13,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-// ?��??  Rust ->  C -> C++
+//  Rust ->  C -> C++
 
 #[cfg(not(target_os = "windows"))]
 fn os_path() -> String {
@@ -136,7 +136,6 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
     )
 }
 
-/// ????????
 fn build(target: &str) {
     let path = mkdir_path(target);
     let file_path = path.join("bindings.rs");
