@@ -95,7 +95,6 @@ impl CtpMdCApi for Level {
     }
 
     fn on_rtn_depth_market_data(&mut self, pDepthMarketData: *mut CThostFtdcDepthMarketDataField) {
-        let instant = Instant::now();
         unsafe {
             let depth = *pDepthMarketData;
 
@@ -154,7 +153,6 @@ impl CtpMdCApi for Level {
                             depth.AskVolume4,
                             depth.AskVolume5,
                         ],
-                        instant,
                         ..TickData::default()
                     }
                 };
