@@ -11,7 +11,7 @@ use std::time::Instant;
 /// Tick Data
 #[derive(Clone)]
 pub struct TickData {
-    pub symbol: String,
+    pub symbol: Cow<'static, str>,
     pub exchange: Exchange,
     pub datetime: NaiveDateTime,
     pub volume: i32,
@@ -34,7 +34,7 @@ pub struct TickData {
 impl Default for TickData {
     fn default() -> TickData {
         TickData {
-            symbol: String::new(),
+            symbol: Cow::Owned(String::new()),
             exchange: Exchange::INIT,
             datetime: chrono::Utc::now().naive_utc(),
             volume: 0,
@@ -142,7 +142,7 @@ impl DerefMut for ExtraTrade {
 impl From<&Tick> for TickData {
     fn from(tick: &Tick) -> Self {
         TickData {
-            symbol: tick.local_symbol.clone(),
+            symbol: Cow::Owned(tick.local_symbol.clone()),
             exchange: Exchange::INIT,
             datetime: tick.datetime,
             volume: tick.volume,

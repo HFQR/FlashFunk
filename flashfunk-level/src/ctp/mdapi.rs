@@ -100,13 +100,12 @@ impl CtpMdCApi for Level {
 
             let v = depth.InstrumentID.as_ptr();
 
-            let symbol = CStr::from_ptr(v).to_str().unwrap();
+            let symbol = std::str::from_utf8_unchecked(CStr::from_ptr(v).to_bytes());
 
             let index = self.symbols.iter().enumerate().find(|(i, s)| **s == symbol);
 
-            if let Some((i, _)) = index {
+            if let Some((i, symbol)) = index {
                 let msg = {
-                    let symbol = symbol.to_owned();
                     let (date, time) = parse_datetime_from_str(
                         depth.ActionDay.as_ptr(),
                         depth.UpdateTime.as_ptr(),
@@ -114,7 +113,7 @@ impl CtpMdCApi for Level {
                     );
 
                     TickData {
-                        symbol,
+                        symbol: Cow::Borrowed(*symbol),
                         datetime: NaiveDateTime::new(date, time),
                         volume: depth.Volume,
                         open_interest: depth.OpenInterest,
