@@ -138,7 +138,7 @@ fn convert_to(field: *mut CThostFtdcDepthMarketDataField, symbol: &'static str) 
     unsafe {
         let depth = *field;
         let v = depth.InstrumentID.as_ptr();
-        let symbol = std::str::from_utf8_unchecked(CStr::from_ptr(v).to_bytes());
+        let _s = std::str::from_utf8_unchecked(CStr::from_ptr(v).to_bytes());
         let (date, time) = parse_datetime_from_str(
             depth.ActionDay.as_ptr(),
             depth.UpdateTime.as_ptr(),
