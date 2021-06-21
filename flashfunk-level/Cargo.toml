@@ -41,3 +41,8 @@ criterion = "0.3"
 name = "tick_generation"
 path = "./benchmark/tick_generation.rs"
 harness = false
+
+[[bench]]
+name = "search_compare"
+path = "./benchmark/search_compare.rs"
+harness = false
