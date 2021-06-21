@@ -105,7 +105,7 @@ impl StrategyWorker {
             // 接收md_api的消息并处理。
             if let Ok(msg) = self.c_md.recv() {
                 match msg {
-                    MdApiMessage::TickData(ref data) => self.st.on_tick(data, &mut ctx),
+                    MdApiMessage::TickData(data) => self.st.on_tick(&*data, &mut ctx),
                     MdApiMessage::SubscribeRequest(_req) => unimplemented!(),
                     MdApiMessage::Log(ref data) => {
                         if data.level.eq(&LogLevel::INFO) {
