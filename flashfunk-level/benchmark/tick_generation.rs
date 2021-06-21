@@ -128,17 +128,17 @@ impl CThostFtdcDepthMarketDataField {
 fn criterion_benchmark(c: &mut Criterion) {
     let x = CThostFtdcDepthMarketDataField::new();
     let v = Box::into_raw(Box::new(x)) as *mut CThostFtdcDepthMarketDataField;
-    c.bench_function("c tick data", |b| b.iter(|| convert_to(v.clone())));
+    let symbol: &'static str = Box::leak(String::from("rb2021").into_boxed_str());
+    c.bench_function("c tick data", |b| b.iter(|| convert_to(v.clone(), symbol)));
 }
 
 #[doc(hidden)]
 // 主要耗费延时函数 CThostFtdcDepthMarketDataField
-fn convert_to(field: *mut CThostFtdcDepthMarketDataField) -> TickData {
+fn convert_to(field: *mut CThostFtdcDepthMarketDataField, symbol: &'static str) -> TickData {
     unsafe {
         let depth = *field;
         let v = depth.InstrumentID.as_ptr();
-        let symbol = CStr::from_ptr(v).to_str().unwrap();
-        let symbol = symbol.to_owned();
+        let _s = std::str::from_utf8_unchecked(CStr::from_ptr(v).to_bytes());
         let (date, time) = parse_datetime_from_str(
             depth.ActionDay.as_ptr(),
             depth.UpdateTime.as_ptr(),
@@ -146,7 +146,7 @@ fn convert_to(field: *mut CThostFtdcDepthMarketDataField) -> TickData {
         );
 
         TickData {
-            symbol,
+            symbol: Cow::Borrowed(symbol),
             datetime: NaiveDateTime::new(date, time),
             volume: depth.Volume,
             open_interest: depth.OpenInterest,
