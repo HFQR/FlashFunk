@@ -1,9 +1,9 @@
-use flashfunk_level::c_func::parse_datetime_from_str;
-use flashfunk_level::ctp::sys::ToCSlice;
-use flashfunk_level::data_type::TickData;
 use chrono::NaiveDateTime;
 use core::fmt;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use flashfunk_level::c_func::parse_datetime_from_str;
+use flashfunk_level::ctp::sys::ToCSlice;
+use flashfunk_level::data_type::TickData;
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_uchar, c_void};
@@ -135,7 +135,6 @@ fn criterion_benchmark(c: &mut Criterion) {
 // 主要耗费延时函数 CThostFtdcDepthMarketDataField
 fn convert_to(field: *mut CThostFtdcDepthMarketDataField) -> TickData {
     unsafe {
-        let instant = Instant::now();
         let depth = *field;
         let v = depth.InstrumentID.as_ptr();
         let symbol = CStr::from_ptr(v).to_str().unwrap();
@@ -186,7 +185,6 @@ fn convert_to(field: *mut CThostFtdcDepthMarketDataField) -> TickData {
                 depth.AskVolume4,
                 depth.AskVolume5,
             ],
-            instant,
             ..TickData::default()
         }
     }

@@ -29,7 +29,6 @@ pub struct TickData {
     pub ask_price: [f64; 5],
     pub bid_volume: [i32; 5],
     pub ask_volume: [i32; 5],
-    pub instant: Instant,
 }
 
 impl Default for TickData {
@@ -53,7 +52,6 @@ impl Default for TickData {
             ask_price: [0.0; 5],
             bid_volume: [0; 5],
             ask_volume: [0; 5],
-            instant: Instant::now(),
         }
     }
 }
@@ -186,7 +184,6 @@ impl From<&Tick> for TickData {
                 tick.ask_volume_4,
                 tick.ask_volume_5,
             ],
-            instant: Instant::now(),
         }
     }
 }

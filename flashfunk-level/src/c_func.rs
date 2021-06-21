@@ -66,26 +66,39 @@ pub fn parse_datetime_from_str(
     time: *const i8,
     mill: c_int,
 ) -> (NaiveDate, NaiveTime) {
+    // SAFETY:
+    //
+    // Input pointer must be valid utf8 bytes. With example format like:
+    // "20210325" (4 chars for year, 2 for month and 2 for day) for date
+    // and "15:00:00"(hour:minute:second) for time.
     unsafe {
-        let a = CStr::from_ptr(date).to_str().unwrap();
-        let u = CStr::from_ptr(time).to_str().unwrap();
+        let a = CStr::from_ptr(date).to_bytes();
+        let u = CStr::from_ptr(time).to_bytes();
         let sub_t = mill as u32 * 1_000_000;
-        let date = NaiveDate::from_ymd(
-            a[0..4].parse().unwrap(),
-            a[4..6].parse().unwrap(),
-            a[6..].parse().unwrap(),
-        );
 
-        let time = NaiveTime::from_hms(
-            u[0..2].parse().unwrap(),
-            u[3..5].parse().unwrap(),
-            u[6..].parse().unwrap(),
-        )
-        .with_nanosecond(sub_t)
-        .unwrap();
+        let y = parse_c_str(&a[0..4]) as i32;
+        let m = parse_c_str(&a[4..6]);
+        let d = parse_c_str(&a[6..]);
+
+        let h = parse_c_str(&u[0..2]);
+        let m = parse_c_str(&u[3..5]);
+        let s = parse_c_str(&u[6..]);
+
+        let date = NaiveDate::from_ymd(y, m, d);
+
+        let time = NaiveTime::from_hms(h, m, s).with_nanosecond(sub_t).unwrap();
 
         (date, time)
     }
+}
+
+fn parse_c_str(slice: &[u8]) -> u32 {
+    let mut res = 0;
+    slice.iter().for_each(|n| {
+        let digit = (*n as char as u32).wrapping_sub('0' as u32);
+        res = res * 10 + digit;
+    });
+    res
 }
 
 pub fn translate_zh_to_string(v: &[i8]) -> String {
