@@ -1,12 +1,12 @@
 #![allow(clippy::mutex_atomic)]
 #![allow(clippy::type_complexity)]
 #![allow(
-    dead_code,
-    unused_variables,
-    non_camel_case_types,
-    non_snake_case,
-    non_upper_case_globals,
-    unused_imports
+dead_code,
+unused_variables,
+non_camel_case_types,
+non_snake_case,
+non_upper_case_globals,
+unused_imports
 )]
 
 /// In this crate, it provides the data_type and constants.
@@ -24,10 +24,10 @@ pub mod data_type;
 pub mod interface;
 
 #[cfg(feature = "ctp")]
-mod ctp;
+pub mod ctp;
 
 #[cfg(feature = "ctpmini")]
-mod ctpmini;
+pub mod ctpmini;
 
 #[cfg(feature = "ctp")]
 pub use ctp::mdapi::CtpMdApi;
@@ -35,9 +35,10 @@ pub use ctp::mdapi::CtpMdApi;
 pub use ctp::tdapi::CtpTdApi;
 use std::fs;
 
-mod c_func;
+pub mod c_func;
 pub mod types;
 pub mod util;
+
 
 #[cfg(not(target_os = "windows"))]
 fn os_path(target: &str) -> PathBuf {
