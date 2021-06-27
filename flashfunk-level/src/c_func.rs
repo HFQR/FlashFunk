@@ -10,22 +10,22 @@ use encoding::{DecoderTrap, Encoding};
 use crate::get_interface_path;
 use chrono::{NaiveDate, NaiveTime, Timelike};
 
-/// 将字符串转换为CString
-pub fn to_c_string(string: String) -> CString {
+/// change the string to CString and will be panic at a bad string
+pub fn to_c_string(string: &str) -> CString {
     CString::new(string).expect(format!("转换CString失败").as_str())
 }
 
-/// 将字符串转换为i8字节流
-pub fn to_i8_array(string: String) -> Vec<i8> {
-    string.into_bytes().iter().map(|x| *x as i8).collect()
+/// make the string
+pub fn to_i8_array(string: &str) -> Vec<i8> {
+    string.as_bytes().iter().map(|x| *x as i8).collect()
 }
 
-/// 将string转换为Cstr
-pub fn to_c_str<'a>(string: String) -> &'a CStr {
+/// make the string to CStr
+pub fn to_c_str<'a>(string: &str) -> &'a CStr {
     unsafe { CStr::from_ptr(to_c_string(string).as_ptr()) }
 }
 
-/// 将u8字节流转换为中文字符串Cow
+/// covert the u8 array to Cow
 pub fn translate_zh(v: &[u8]) -> Cow<str> {
     let slice = v
         .split(|&c| c == 0u8)
@@ -42,7 +42,7 @@ pub fn translate_zh(v: &[u8]) -> Cow<str> {
     }
 }
 
-/// i8字节流转换String
+/// covert i8 array to string
 pub fn bytes_to_string(v: &[i8]) -> String {
     let r = v
         .split(|x| *x == 0i8)
