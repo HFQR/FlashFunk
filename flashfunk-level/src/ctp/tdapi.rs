@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use chrono::{Date, NaiveDateTime, Timelike, Utc};
 
-use crate::c_func::parse_datetime_from_str;
+use crate::c_func::{parse_datetime_from_str, translate_zh_to_string};
 use crate::constant::{Direction, Exchange, LogLevel, Offset, OrderType, Status};
 use crate::ctp::sys::*;
 use crate::ctp::CtpTd::CtpTdCApi;
@@ -246,7 +246,7 @@ impl CtpTdCApi for TraderLevel {
         } else {
             unsafe {
                 let position = *pInvestorPosition;
-                let symbol = slice_to_string(&position.InstrumentID);
+                let symbol = translate_zh_to_string(&position.InstrumentID);
                 let open_cost = position.OpenCost;
                 let direction = Direction::from(position.PosiDirection);
                 let exchange = *self
@@ -302,7 +302,7 @@ impl CtpTdCApi for TraderLevel {
                 let acc = *pTradingAccount;
 
                 let account_data = AccountData {
-                    accountid: slice_to_string(&acc.AccountID),
+                    accountid: translate_zh_to_string(&acc.AccountID),
                     balance: acc.Balance,
                     frozen: acc.FrozenMargin + acc.FrozenCash + acc.FrozenCommission,
                     date: Utc::today(),
@@ -329,7 +329,7 @@ impl CtpTdCApi for TraderLevel {
         let instrument = unsafe { *pInstrument };
 
         let contract = ContractData {
-            symbol: slice_to_string(&instrument.InstrumentID),
+            symbol: translate_zh_to_string(&instrument.InstrumentID),
             exchange: Some(Exchange::from(instrument.ExchangeID)),
             name: None,
             product: None,
@@ -366,7 +366,7 @@ impl CtpTdCApi for TraderLevel {
     fn on_rtn_order(&mut self, pOrder: *mut CThostFtdcOrderField) {
         let (mut order, idx) = {
             let order = unsafe { *pOrder };
-            let order_ref = slice_to_string(&order.OrderRef);
+            let order_ref = translate_zh_to_string(&order.OrderRef);
             let id = format!("{}_{}_{}", order.SessionID, order.FrontID, order_ref);
             let (idx, refs) = split_into_vec(order_ref.as_str());
 
@@ -376,7 +376,7 @@ impl CtpTdCApi for TraderLevel {
             let exchange = Exchange::from(order.ExchangeID);
             (
                 OrderData {
-                    symbol: slice_to_string(&order.InstrumentID),
+                    symbol: translate_zh_to_string(&order.InstrumentID),
                     exchange,
                     datetime: NaiveDateTime::new(date, time),
                     orderid: id,
@@ -410,11 +410,11 @@ impl CtpTdCApi for TraderLevel {
             let trade = unsafe { *pTrade };
             let (date, time) =
                 parse_datetime_from_str(trade.TradeDate.as_ptr(), trade.TradeTime.as_ptr(), 0);
-            let order_ref = slice_to_string(&trade.OrderRef);
+            let order_ref = translate_zh_to_string(&trade.OrderRef);
             let (idx, refs) = split_into_vec(order_ref.as_str());
             (
                 TradeData {
-                    symbol: slice_to_string(&trade.InstrumentID),
+                    symbol: translate_zh_to_string(&trade.InstrumentID),
                     exchange: Exchange::from(trade.ExchangeID),
                     datetime: NaiveDateTime::new(date, time),
                     orderid: order_ref,
@@ -422,7 +422,7 @@ impl CtpTdCApi for TraderLevel {
                     offset: Offset::from(trade.OffsetFlag),
                     price: trade.Price,
                     volume: trade.Volume,
-                    tradeid: slice_to_string(&trade.TradeID),
+                    tradeid: translate_zh_to_string(&trade.TradeID),
                     is_local: false,
                 },
                 idx,
@@ -446,7 +446,7 @@ impl CtpTdCApi for TraderLevel {
         pRspInfo: *mut CThostFtdcRspInfoField,
     ) {
         let order = unsafe { *pInputOrder };
-        let order_id = slice_to_string(&order.OrderRef);
+        let order_id = translate_zh_to_string(&order.OrderRef);
         let (idx, refs) = split_into_vec(order_id.as_str());
         match get_rsp_info(pRspInfo) {
             Ok(t) => {}
@@ -522,7 +522,7 @@ fn get_direction(direction: Direction) -> c_char {
 
 impl From<[i8; 9]> for Exchange {
     fn from(i: [i8; 9]) -> Self {
-        let exchange = slice_to_string(&i);
+        let exchange = translate_zh_to_string(&i);
         match exchange.as_ref() {
             "SHFE" => Self::SHFE,
             "INE" => Self::INE,

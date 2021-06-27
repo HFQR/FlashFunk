@@ -8,33 +8,17 @@ use encoding::{DecoderTrap, Encoding};
 
 use crate::{get_interface_path, os_path};
 use chrono::{NaiveDate, NaiveTime, Timelike};
+use crate::c_func::translate_zh_to_string;
 
 #[cfg(not(target_os = "windows"))]
 include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
 
 #[cfg(target_os = "windows")]
 include!(concat!(
-    env!("HOMEDRIVE"),
-    env!("HOMEPATH"),
-    "/.HFQ/ctp/bindings.rs"
+env!("HOMEDRIVE"),
+env!("HOMEPATH"),
+"/.HFQ/ctp/bindings.rs"
 ));
-
-pub fn to_c_string(string: String) -> CString {
-    CString::new(string).unwrap()
-}
-
-pub fn to_i8_arrary(string: String) -> Vec<i8> {
-    CString::new(string)
-        .unwrap()
-        .as_bytes()
-        .iter()
-        .map(|x| *x as i8)
-        .collect()
-}
-
-pub fn to_c_str<'a>(string: String) -> &'a CStr {
-    unsafe { CStr::from_ptr(to_c_string(string).as_ptr()) }
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DisconnectionReason {
@@ -93,41 +77,13 @@ pub fn get_rsp_info(rsp_info: *const CThostFtdcRspInfoField) -> RspResult {
                 ErrorMsg: msg,
             } => Err(RspError {
                 id: *id,
-                msg: slice_to_string(msg),
+                msg: translate_zh_to_string(msg),
             }),
         },
         None => Ok(()),
     }
 }
 
-pub fn zh_cstr_to_str(v: &[u8]) -> Cow<str> {
-    let slice = v.split(|&c| c == 0u8).next().unwrap();
-    if slice.is_ascii() {
-        unsafe {
-            return Cow::Borrowed::<str>(std::str::from_utf8_unchecked(slice));
-        }
-    }
-    match GB18030.decode(slice, DecoderTrap::Replace) {
-        Ok(s) => Cow::Owned(s),
-        Err(e) => e,
-    }
-}
-
-pub fn check_slice_to_string(v: &[i8]) -> String {
-    let r = v
-        .split(|x| *x == 0i8)
-        .next()
-        .unwrap()
-        .iter()
-        .map(|x| *x as u8)
-        .collect::<Vec<u8>>();
-    unsafe { String::from_utf8_unchecked(r) }
-}
-
-pub fn slice_to_string(v: &[i8]) -> String {
-    let r = v.iter().map(|x| *x as u8).collect::<Vec<u8>>();
-    zh_cstr_to_str(&*r).to_string()
-}
 
 pub trait ToCSlice<T> {
     fn to_c_slice(&self) -> T;
