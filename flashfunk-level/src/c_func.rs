@@ -11,7 +11,7 @@ use crate::get_interface_path;
 use chrono::{NaiveDate, NaiveTime, Timelike};
 
 /// change the string to CString and will be panic at a bad string
-pub fn to_c_string(string: String) -> CString {
+pub fn to_c_string(string: &str) -> CString {
     CString::new(string).expect(format!("转换CString失败").as_str())
 }
 
@@ -21,7 +21,7 @@ pub fn to_i8_array(string: &str) -> Vec<i8> {
 }
 
 /// make the string to CStr
-pub fn to_c_str<'a>(string: String) -> &'a CStr {
+pub fn to_c_str<'a>(string: &str) -> &'a CStr {
     unsafe { CStr::from_ptr(to_c_string(string).as_ptr()) }
 }
 
