@@ -7,7 +7,8 @@ use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 use chrono_tz::Tz;
 use clickhouse_rs::types::{Block, Complex, Row};
 use std::time::Instant;
-
+use std::{fs, env};
+use serde_json::Value;
 /// Tick Data
 #[derive(Clone)]
 pub struct TickData {
@@ -554,6 +555,23 @@ impl LoginForm {
             .md_address("tcp://180.168.146.187:10131")
             .td_address("tcp://180.168.146.187:10130")
             .auth_code("0000000000000000")
+    }
+    
+    pub fn from_json() -> Self {
+        let _args: Vec<String> = env::args().collect();
+        let data = fs::read_to_string(&_args[1]).expect("Unable to read file");
+        let res: Value = serde_json::from_str(&data).expect("Unable to parse JSON file");
+        let parse = |key| {
+            res[key].as_str().unwrap().to_owned()
+        };
+        Self::default().user_id(parse("user_id"))
+                        .password(parse("password"))
+                        .broke_id(parse("broke_id"))
+                        .app_id(parse("app_id"))
+                        .md_address(parse("md_address"))
+                        .td_address(parse("td_address"))
+                        .auth_code(parse("auth_code"))
+                        .production_info(parse("production_info"))
     }
 
     pub(super) fn _user_id(&self) -> &str {
