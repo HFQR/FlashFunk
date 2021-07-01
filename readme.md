@@ -56,8 +56,8 @@ impl Ac for Strategy {
 
 fn main() {
     let login_form = LoginForm::new()
-        .user_id("170874")
-        .password("wi1015..")
+        .user_id("089131")
+        .password("350888")
         .broke_id("9999")
         .app_id("simnow_client_test")
         .md_address("tcp://218.202.237.33:10213")
