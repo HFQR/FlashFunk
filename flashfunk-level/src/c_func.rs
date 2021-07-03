@@ -77,14 +77,14 @@ pub fn parse_datetime_from_str(
         let sub_t = mill as u32 * 1_000_000;
 
         let y = parse_c_str(&a[0..4]) as i32;
-        let m = parse_c_str(&a[4..6]);
+        let mo = parse_c_str(&a[4..6]);
         let d = parse_c_str(&a[6..]);
 
         let h = parse_c_str(&u[0..2]);
         let m = parse_c_str(&u[3..5]);
         let s = parse_c_str(&u[6..]);
 
-        let date = NaiveDate::from_ymd(y, m, d);
+        let date = NaiveDate::from_ymd(y, mo, d);
 
         let time = NaiveTime::from_hms(h, m, s).with_nanosecond(sub_t).unwrap();
 
