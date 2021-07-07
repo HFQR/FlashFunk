@@ -7,7 +7,7 @@ use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 use chrono_tz::Tz;
 use clickhouse_rs::types::{Block, Complex, Row};
 use std::time::Instant;
-
+use std::fmt::{Display,Formatter, Result};
 /// Tick Data
 #[derive(Clone)]
 pub struct TickData {
@@ -588,6 +588,17 @@ impl LoginForm {
         &self.production_info
     }
 }
+
+impl Display for LoginForm {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(
+            f,
+            "Login Account: {}",
+            self.user_id
+        )
+    }
+}
+
 
 pub struct QueryRequest {}
 
