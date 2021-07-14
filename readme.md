@@ -4,7 +4,11 @@
 
 ## Why choose `Rust`
 
-not reason
+fast and safe 
+
+## Support API 
+- [x] ctp 上期所标准API  
+- [x] REM 盛立纯socket对接 -> 未开源  
 
 ## Todo List
 
@@ -44,7 +48,7 @@ struct Strategy {
 impl Ac for Strategy {
     // tick 信息回报 
     fn on_tick(&mut self, tick: &TickData, ctx: &mut Context) { 
-        println!("dur: {}", tick.instant.elapsed().as_nanos());
+        println!("price: {}", tick.last_price);
     }
     fn codes(&mut self) -> Vec<String> { // 订阅的代码 
         self.local_symbol.iter().clone()
