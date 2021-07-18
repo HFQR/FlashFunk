@@ -5,14 +5,5 @@ authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-ahash = "0.4.5"
-chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
+cache-padded = "1.1.1"
 core_affinity = "0.5.10"
-encoding = "0.2.33"
-libc = "0.2.0"
-flashfunk-level = { path = "../flashfunk-level"}
-async-trait = "0.1.50"
-chrono-tz = { version = "0.5", features = ["serde"] }
-clickhouse-rs = { git = "https://github.com/suharev7/clickhouse-rs/", branch = "async-await" }
-tokio = { version = "1.5", features = ["sync"] }
-once_cell = "1.8.0"

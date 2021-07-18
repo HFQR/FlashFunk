@@ -1,2 +1,0 @@
-symbol,start(YYYY-MM-DD HH:MM:SS),end,size(f64),margin_ratio(f64),commission_ratio(f64)
-ni2012.SHFE,2020-11-04 09:00:00,2020-11-04 10:00:00,1.0,0.08,0.00015

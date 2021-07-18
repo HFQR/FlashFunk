@@ -1,58 +1,76 @@
-use core::marker::PhantomData;
+use super::api::API;
+use super::strategy::Strategy;
+use super::util::channel::{channel, GroupSender};
+use super::worker::Worker;
 
-use crate::worker::start_workers;
-use flashfunk_level::data_type::LoginForm;
-use flashfunk_level::interface::{Ac, Interface};
-use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
-use std::borrow::Cow;
+// 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
+// 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
+const MESSAGE_LIMIT: usize = 3024usize;
 
-pub struct Builder<'a, MdApi, TdApi> {
-    pub(crate) name: Cow<'a, str>,
-    pub(crate) id: Cow<'a, str>,
-    pub(crate) pwd: Cow<'a, str>,
-    pub(crate) path: Cow<'a, str>,
-    pub(crate) strategy: Vec<Box<dyn Ac + Send>>,
-    pub(crate) login_form: LoginForm,
-    pub(crate) _md: PhantomData<MdApi>,
-    pub(crate) _td: PhantomData<TdApi>,
+pub struct APIBuilder<A: API> {
+    pub(crate) api: A,
+    pub(crate) strategies: Vec<Box<dyn Strategy<A>>>,
 }
 
-impl<'a, I, I2> Builder<'a, I, I2>
+impl<A> APIBuilder<A>
 where
-    I: Interface<Message = MdApiMessage>,
-    I2: Interface<Message = TdApiMessage>,
+    A: API + 'static,
 {
-    pub fn id(mut self, id: impl Into<Cow<'a, str>>) -> Self {
-        self.id = id.into();
-        self
-    }
+    pub fn build(self) {
+        let Self { api, strategies } = self;
 
-    pub fn pwd(mut self, pwd: impl Into<Cow<'a, str>>) -> Self {
-        self.pwd = pwd.into();
-        self
-    }
+        // 收集核心cid
+        let mut cores = core_affinity::get_core_ids().unwrap();
 
-    pub fn path(mut self, path: impl Into<Cow<'a, str>>) -> Self {
-        self.path = path.into();
-        self
-    }
+        // symbols为订阅symbol &str的非重复vec集合
+        let mut symbols = Vec::new();
 
-    pub fn strategy(mut self, strategy: Box<dyn Ac + Send>) -> Self {
-        self.strategy.push(strategy);
-        self
-    }
+        // groups为与symbols相对应(vec index)的策略们的发送端vec.
+        let mut group = Vec::<Vec<usize>>::new();
 
-    pub fn strategies(mut self, strategy: Vec<Box<dyn Ac + Send>>) -> Self {
-        self.strategy = strategy;
-        self
-    }
+        // 单向spsc:
+        // API -> Strategies.
+        let mut senders = Vec::new();
+        // Strategies -> API.
+        let mut receivers = Vec::new();
 
-    pub fn login_form(mut self, login_form: LoginForm) -> Self {
-        self.login_form = login_form;
-        self
-    }
+        strategies
+            .into_iter()
+            .enumerate()
+            .for_each(|(st_index, st)| {
+                st.symbol().iter().for_each(|symbol| {
+                    symbols
+                        .iter()
+                        .enumerate()
+                        .find_map(|(index, s)| if s == symbol { Some(index) } else { None })
+                        .map(|index| {
+                            group.get_mut(index).unwrap().push(st_index);
+                        })
+                        .unwrap_or_else(|| {
+                            group.push(vec![st_index]);
+                            symbols.push(*symbol);
+                        });
+                });
 
-    pub fn start(self) {
-        start_workers(self);
+                // API -> Strategies
+                let (s1, r1) = channel(MESSAGE_LIMIT);
+
+                // Strategies -> API.
+                let (s2, r2) = channel(MESSAGE_LIMIT);
+
+                senders.push(s1);
+                receivers.push(r2);
+
+                let core = cores.pop().unwrap();
+                Worker::new(st, s2, r1).run_in_core(core);
+            });
+
+        let group_senders = GroupSender::new(senders, group);
+
+        // 分配最后一个核心给主线程
+        let core = cores.pop().unwrap();
+        core_affinity::set_for_current(core);
+
+        api.run(symbols, group_senders, receivers);
     }
 }
