@@ -15,7 +15,7 @@ pub trait API: Sized {
     /// e.g: reference &mut context and &mut strategy at the same time.
     type Context: Default;
 
-    fn into_builder(self, strategies: Vec<Box<dyn Strategy<Self>>>) -> APIBuilder<Self> {
+    fn into_builder<S: Strategy<Self>>(self, strategies: Vec<S>) -> APIBuilder<Self, S> {
         APIBuilder {
             api: self,
             strategies,

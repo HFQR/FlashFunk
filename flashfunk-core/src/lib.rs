@@ -78,6 +78,6 @@ mod test {
             symbols: vec!["da_gong_ren"],
         };
         let api = Rem;
-        api.into_builder(vec![Box::new(st)]).build();
+        api.into_builder(vec![st]).build();
     }
 }

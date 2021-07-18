@@ -25,14 +25,17 @@ where
     S: Strategy<A> + ?Sized,
     A: API,
 {
+    #[inline]
     fn symbol(&self) -> &[&'static str] {
         (**self).symbol()
     }
 
+    #[inline]
     fn call(&mut self, msg: A::SndMessage, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {
         (**self).call(msg, ctx)
     }
 
+    #[inline]
     fn on_idle(&mut self, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {
         (**self).on_idle(ctx)
     }

@@ -7,14 +7,15 @@ use super::worker::Worker;
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
 const MESSAGE_LIMIT: usize = 3024usize;
 
-pub struct APIBuilder<A: API> {
+pub struct APIBuilder<A, S> {
     pub(crate) api: A,
-    pub(crate) strategies: Vec<Box<dyn Strategy<A>>>,
+    pub(crate) strategies: Vec<S>,
 }
 
-impl<A> APIBuilder<A>
+impl<A, S> APIBuilder<A, S>
 where
     A: API + 'static,
+    S: Strategy<A> + 'static,
 {
     pub fn build(self) {
         let Self { api, strategies } = self;
