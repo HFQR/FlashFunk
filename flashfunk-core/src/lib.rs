@@ -11,7 +11,7 @@ pub mod util;
 mod test {
     use super::api::API;
     use super::strategy::{Strategy, StrategyCtx};
-    use super::util::channel::{GroupSender, Receiver};
+    use super::util::channel::{GroupReceiver, GroupSender};
 
     use std::sync::mpsc::{sync_channel, SyncSender};
 
@@ -29,11 +29,11 @@ mod test {
         type RecvMessage = StrategyMessage;
         type Context = RemContext;
 
-        fn run(
+        fn run<const N: usize>(
             self,
             symbols: Vec<&str>,
             sender: GroupSender<Self::SndMessage>,
-            receiver: Vec<Receiver<Self::RecvMessage>>,
+            receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
             assert_eq!(*symbols.first().unwrap(), "da_gong_ren");
             let (tx, rx) = sync_channel(1);
@@ -42,11 +42,11 @@ mod test {
 
             assert_eq!(996, rx.recv().unwrap());
 
-            for r in receiver {
+            receiver.iter().for_each(|r| {
                 if let Ok(m) = r.recv() {
                     assert_eq!(m.0, 251);
                 }
-            }
+            });
         }
     }
 
@@ -78,6 +78,6 @@ mod test {
             symbols: vec!["da_gong_ren"],
         };
         let api = Rem;
-        api.into_builder(vec![st]).build();
+        api.into_builder([st]).build();
     }
 }

@@ -1,6 +1,6 @@
 use super::builder::APIBuilder;
 use super::strategy::Strategy;
-use super::util::channel::{GroupSender, Receiver};
+use super::util::channel::{GroupReceiver, GroupSender};
 
 pub trait API: Sized {
     /// message type from server to API and would be sent to strategies.
@@ -15,17 +15,20 @@ pub trait API: Sized {
     /// e.g: reference &mut context and &mut strategy at the same time.
     type Context: Default;
 
-    fn into_builder<S: Strategy<Self>>(self, strategies: Vec<S>) -> APIBuilder<Self, S> {
+    fn into_builder<S: Strategy<Self>, const N: usize>(
+        self,
+        strategies: [S; N],
+    ) -> APIBuilder<Self, S, N> {
         APIBuilder {
             api: self,
             strategies,
         }
     }
 
-    fn run(
+    fn run<const N: usize>(
         self,
         symbols: Vec<&str>,
         sender: GroupSender<Self::SndMessage>,
-        receiver: Vec<Receiver<Self::RecvMessage>>,
+        receiver: GroupReceiver<Self::RecvMessage, N>,
     );
 }

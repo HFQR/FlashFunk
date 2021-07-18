@@ -1,4 +1,8 @@
 use core::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use core::mem::{ManuallyDrop, MaybeUninit};
+use core::ops::{Deref, DerefMut};
+use core::ptr;
+use core::slice;
 
 use super::spsc::{new, Consumer, Producer};
 
@@ -119,6 +123,103 @@ impl<M> Debug for ChannelError<M> {
 
 impl<M> Display for ChannelError<M> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "({})", self)
+        write!(f, "{:?}", self)
+    }
+}
+
+pub struct GroupReceiver<M, const N: usize> {
+    receivers: StackGroup<Receiver<M>, N>,
+}
+
+impl<M, const N: usize> GroupReceiver<M, N> {
+    pub(crate) fn from_vec(vec: Vec<Receiver<M>>) -> Self {
+        Self {
+            receivers: StackGroup::from_vec(vec),
+        }
+    }
+}
+
+impl<M, const N: usize> Deref for GroupReceiver<M, N> {
+    type Target = [Receiver<M>];
+
+    fn deref(&self) -> &Self::Target {
+        self.receivers.deref()
+    }
+}
+
+struct StackGroup<T, const N: usize> {
+    group: ManuallyDrop<MaybeUninit<[T; N]>>,
+}
+
+impl<T, const N: usize> StackGroup<T, N> {
+    fn from_vec(mut vec: Vec<T>) -> Self {
+        assert_eq!(vec.len(), N);
+
+        let mut group = ManuallyDrop::new(MaybeUninit::uninit());
+
+        unsafe {
+            // SAFETY:
+            //
+            // Set len to zero is safe:
+            //
+            // vector is the same length as N. This is assert checked beforehand.
+            vec.set_len(0);
+
+            // SAFETY:
+            //
+            // pointer copy is safe:
+            //
+            // Vector is the same length as N and receivers are constructed in scope
+            // with mut reference in unsafe block.
+            let dst = group.as_mut_ptr() as *mut T;
+            ptr::copy_nonoverlapping(vec.as_ptr(), dst, N);
+        }
+
+        Self { group }
+    }
+}
+
+impl<T, const N: usize> Deref for StackGroup<T, N> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        // SAFETY:
+        //
+        // Deref is safe:
+        //
+        // StackGroup is only constructed from a non empty Vec<T>.
+        // Deref can only happen after.
+        //
+        // N is a const generic param inherent from [Strategy; N] and it always
+        // equal to the input length of Vec<T>.
+        unsafe {
+            let ptr = self.group.as_ptr() as *const T;
+            slice::from_raw_parts(ptr, N)
+        }
+    }
+}
+
+impl<T, const N: usize> DerefMut for StackGroup<T, N> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        // SAFETY:
+        //
+        // DerefMut is safe:
+        //
+        // For the same reason of Deref
+        unsafe {
+            let ptr = self.group.as_mut_ptr() as *mut T;
+            slice::from_raw_parts_mut(ptr, N)
+        }
+    }
+}
+
+impl<T, const N: usize> Drop for StackGroup<T, N> {
+    fn drop(&mut self) {
+        // SAFETY:
+        //
+        // Drop is safe:
+        //
+        // StackGroup itself is stateless and only the T needed to be dropped.
+        unsafe { ptr::drop_in_place(&mut self[..]) }
     }
 }
