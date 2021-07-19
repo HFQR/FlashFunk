@@ -15,11 +15,13 @@ pub struct Sender<M>(Producer<M>);
 
 impl<M> Sender<M> {
     // 发送失败会panic
+    #[inline]
     pub fn send(&self, m: impl Into<M>) {
         self.0.push(m.into()).unwrap();
     }
 
     // 发送失败返回消息
+    #[inline]
     pub fn try_send(&self, m: M) -> Result<(), ChannelError<M>> {
         self.0.push(m).map_err(|e| ChannelError::TrySendError(e.0))
     }
@@ -28,6 +30,7 @@ impl<M> Sender<M> {
 pub struct Receiver<M>(Consumer<M>);
 
 impl<M> Receiver<M> {
+    #[inline]
     pub fn recv(&self) -> Result<M, ChannelError<M>> {
         self.0.pop().map_err(|_| ChannelError::RecvError)
     }
@@ -44,6 +47,7 @@ impl<M> GroupSender<M> {
     }
 
     // 发送至所有sender
+    #[inline]
     pub fn send_all<MM>(&self, mm: MM)
     where
         MM: Into<M> + Clone,
@@ -52,6 +56,7 @@ impl<M> GroupSender<M> {
     }
 
     // 发送至指定index的sender. 失败会panic
+    #[inline]
     pub fn send_to(&self, m: impl Into<M>, sender_index: usize) {
         match self.sender.get(sender_index) {
             Some(t) => t.send(m.into()),
@@ -60,6 +65,7 @@ impl<M> GroupSender<M> {
     }
 
     // 发送至指定index的sender. 失败会返回消息
+    #[inline]
     pub fn try_send_to<MM>(&self, m: MM, sender_index: usize) -> Result<(), ChannelError<MM>>
     where
         MM: Into<M>,
@@ -74,6 +80,7 @@ impl<M> GroupSender<M> {
     }
 
     // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
+    #[inline]
     pub fn try_send_group<MM>(&self, mm: MM, group_index: usize) -> Result<(), ChannelError<MM>>
     where
         MM: Into<M> + Clone,
@@ -221,5 +228,73 @@ impl<T, const N: usize> Drop for StackGroup<T, N> {
         //
         // StackGroup itself is stateless and only the T needed to be dropped.
         unsafe { ptr::drop_in_place(&mut self[..]) }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    #[test]
+    fn stack_group_iter() {
+        let v = vec![1, 2, 3];
+
+        let group = StackGroup::<_, 3>::from_vec(v);
+
+        let mut iter = group.iter();
+
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&3));
+    }
+
+    #[test]
+    fn stack_group_drop() {
+        let rc = Rc::new(Cell::new(0));
+
+        struct DropItem(Rc<Cell<usize>>);
+
+        impl Drop for DropItem {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+
+        let v = vec![
+            DropItem(rc.clone()),
+            DropItem(rc.clone()),
+            DropItem(rc.clone()),
+            DropItem(rc.clone()),
+        ];
+
+        let group = StackGroup::<_, 4>::from_vec(v);
+
+        drop(group);
+
+        assert_eq!(rc.get(), 4);
+    }
+
+    #[test]
+    fn stack_group_get_idx() {
+        let v = vec![1, 2, 3];
+
+        let group = StackGroup::<_, 3>::from_vec(v);
+
+        assert_eq!(group[0], 1);
+        assert_eq!(group[1], 2);
+        assert_eq!(group[2], 3);
+    }
+
+    #[test]
+    #[should_panic]
+    fn stack_group_get_idx_out_of_range() {
+        let v = vec![1, 2, 3];
+
+        let group = StackGroup::<_, 3>::from_vec(v);
+
+        let _ = group[3];
     }
 }
