@@ -67,7 +67,7 @@ where
             st_index += 1;
         }
 
-        let group_senders = GroupSender::new(senders, group);
+        let group_senders = GroupSender::<_, N>::new(senders, group);
         let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);
 
         // 分配最后一个核心给主线程

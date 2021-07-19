@@ -32,7 +32,7 @@ mod test {
         fn run<const N: usize>(
             self,
             symbols: Vec<&str>,
-            sender: GroupSender<Self::SndMessage>,
+            sender: GroupSender<Self::SndMessage, N>,
             receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
             assert_eq!(*symbols.first().unwrap(), "da_gong_ren");

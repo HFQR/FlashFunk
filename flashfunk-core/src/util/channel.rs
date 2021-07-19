@@ -36,65 +36,6 @@ impl<M> Receiver<M> {
     }
 }
 
-pub struct GroupSender<M> {
-    sender: Vec<Sender<M>>,
-    group: Vec<Vec<usize>>,
-}
-
-impl<M> GroupSender<M> {
-    pub fn new(sender: Vec<Sender<M>>, group: Vec<Vec<usize>>) -> Self {
-        Self { sender, group }
-    }
-
-    // 发送至所有sender
-    #[inline]
-    pub fn send_all<MM>(&self, mm: MM)
-    where
-        MM: Into<M> + Clone,
-    {
-        self.sender.iter().for_each(|s| s.send(mm.clone().into()))
-    }
-
-    // 发送至指定index的sender. 失败会panic
-    #[inline]
-    pub fn send_to(&self, m: impl Into<M>, sender_index: usize) {
-        match self.sender.get(sender_index) {
-            Some(t) => t.send(m.into()),
-            None => println!("can find index strategy"),
-        }
-    }
-
-    // 发送至指定index的sender. 失败会返回消息
-    #[inline]
-    pub fn try_send_to<MM>(&self, m: MM, sender_index: usize) -> Result<(), ChannelError<MM>>
-    where
-        MM: Into<M>,
-    {
-        match self.sender.get(sender_index) {
-            Some(s) => {
-                s.send(m.into());
-                Ok(())
-            }
-            None => Err(ChannelError::SenderOverFlow(m)),
-        }
-    }
-
-    // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
-    #[inline]
-    pub fn try_send_group<MM>(&self, mm: MM, group_index: usize) -> Result<(), ChannelError<MM>>
-    where
-        MM: Into<M> + Clone,
-    {
-        match self.group.get(group_index) {
-            Some(g) => {
-                g.iter().for_each(|i| self.send_to(mm.clone(), *i));
-                Ok(())
-            }
-            None => Err(ChannelError::SenderGroupNotFound(mm)),
-        }
-    }
-}
-
 pub enum ChannelError<M> {
     RecvError,
     TrySendError(M),
@@ -131,6 +72,65 @@ impl<M> Debug for ChannelError<M> {
 impl<M> Display for ChannelError<M> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{:?}", self)
+    }
+}
+
+pub struct GroupSender<M, const N: usize> {
+    senders: StackGroup<Sender<M>, N>,
+    group: Vec<Vec<usize>>,
+}
+
+impl<M, const N: usize> GroupSender<M, N> {
+    pub fn new(sender: Vec<Sender<M>>, group: Vec<Vec<usize>>) -> Self {
+        Self {
+            senders: StackGroup::from_vec(sender),
+            group,
+        }
+    }
+
+    // 发送至所有sender
+    #[inline]
+    pub fn send_all<MM>(&self, mm: MM)
+    where
+        MM: Into<M> + Clone,
+    {
+        self.senders.iter().for_each(|s| s.send(mm.clone().into()))
+    }
+
+    // 发送至指定index的sender. 失败会panic
+    #[inline]
+    pub fn send_to(&self, m: impl Into<M>, sender_index: usize) {
+        self.senders[sender_index].send(m.into());
+    }
+
+    // 发送至指定index的sender. 失败会返回消息
+    #[inline]
+    pub fn try_send_to<MM>(&self, m: MM, sender_index: usize) -> Result<(), ChannelError<MM>>
+    where
+        MM: Into<M>,
+    {
+        match self.senders.get(sender_index) {
+            Some(s) => {
+                s.send(m.into());
+                Ok(())
+            }
+            None => Err(ChannelError::SenderOverFlow(m)),
+        }
+    }
+
+    // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
+    #[inline]
+    pub fn try_send_group<MM>(&self, mm: MM, group_index: usize) -> Result<(), ChannelError<MM>>
+    where
+        MM: Into<M> + Clone,
+    {
+        match self.group.get(group_index) {
+            Some(g) => {
+                g.iter().for_each(|i| self.send_to(mm.clone(), *i));
+                Ok(())
+            }
+            None => Err(ChannelError::SenderGroupNotFound(mm)),
+        }
     }
 }
 
