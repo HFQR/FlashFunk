@@ -1,8 +1,9 @@
-use core_affinity::CoreId;
-
 use super::api::API;
 use super::strategy::{Strategy, StrategyCtx};
-use super::util::channel::{Receiver, Sender};
+use super::util::{
+    channel::{Receiver, Sender},
+    pin_to_core::{self, CoreId},
+};
 
 pub struct Worker<S, A>
 where
@@ -32,9 +33,9 @@ where
     }
 
     #[inline]
-    pub(super) fn run_in_core(self, core_id: CoreId) {
+    pub(super) fn run_in_core(self, id: Option<CoreId>) {
         std::thread::spawn(move || {
-            core_affinity::set_for_current(core_id);
+            pin_to_core::pin_to_core(id);
             self.run()
         });
     }

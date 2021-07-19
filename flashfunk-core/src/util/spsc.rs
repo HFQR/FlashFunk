@@ -7,6 +7,7 @@ use core::mem;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 use cache_padded::CachePadded;
 

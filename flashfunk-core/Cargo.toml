@@ -4,6 +4,10 @@ version = "0.5.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 
+[features]
+default = ["std"]
+std = ["core_affinity"]
+
 [dependencies]
 cache-padded = "1.1.1"
-core_affinity = "0.5.10"
+core_affinity = { version = "0.5.10", optional = true }

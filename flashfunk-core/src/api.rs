@@ -20,6 +20,7 @@ pub trait API: Sized {
         strategies: [S; N],
     ) -> APIBuilder<Self, S, N> {
         APIBuilder {
+            pin_to_core: true,
             api: self,
             strategies,
         }

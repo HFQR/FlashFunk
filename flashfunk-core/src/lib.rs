@@ -11,16 +11,16 @@ pub mod util;
 mod test {
     use super::api::API;
     use super::strategy::{Strategy, StrategyCtx};
-    use super::util::channel::{GroupReceiver, GroupSender};
+    use super::util::channel::{channel, GroupReceiver, GroupSender, Sender};
 
-    use std::sync::mpsc::{sync_channel, SyncSender};
+    use alloc::vec::Vec;
 
     struct Rem;
 
     #[derive(Default)]
     struct RemContext;
 
-    struct APIMessage(SyncSender<u32>);
+    struct APIMessage(Sender<u32>);
 
     struct StrategyMessage(u32);
 
@@ -36,11 +36,16 @@ mod test {
             receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
             assert_eq!(*symbols.first().unwrap(), "da_gong_ren");
-            let (tx, rx) = sync_channel(1);
+            let (tx, rx) = channel(1);
 
             sender.send_to(APIMessage(tx), 0);
 
-            assert_eq!(996, rx.recv().unwrap());
+            loop {
+                if let Ok(item) = rx.recv() {
+                    assert_eq!(996, item);
+                    break;
+                }
+            }
 
             receiver.iter().for_each(|r| {
                 if let Ok(m) = r.recv() {
@@ -68,7 +73,7 @@ mod test {
 
             ctx.sender().send(StrategyMessage(251));
 
-            tx.send(996).unwrap();
+            tx.send(996u32);
         }
     }
 

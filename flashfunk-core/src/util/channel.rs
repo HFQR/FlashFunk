@@ -4,6 +4,8 @@ use core::ops::{Deref, DerefMut};
 use core::ptr;
 use core::slice;
 
+use alloc::vec::Vec;
+
 use super::spsc::{new, Consumer, Producer};
 
 pub fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
