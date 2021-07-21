@@ -28,7 +28,6 @@ pub trait API: Sized {
 
     fn run<const N: usize>(
         self,
-        symbols: Vec<&str>,
         sender: GroupSender<Self::SndMessage, N>,
         receiver: GroupReceiver<Self::RecvMessage, N>,
     );

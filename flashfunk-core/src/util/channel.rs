@@ -4,6 +4,7 @@ use core::ops::{Deref, DerefMut};
 use core::ptr;
 use core::slice;
 
+use ahash::AHashMap;
 use alloc::vec::Vec;
 
 use super::spsc::{new, Consumer, Producer};
@@ -79,15 +80,25 @@ impl<M> Display for ChannelError<M> {
 
 pub struct GroupSender<M, const N: usize> {
     senders: StackGroup<Sender<M>, N>,
-    group: Vec<Vec<usize>>,
+    group: AHashMap<&'static str, Vec<usize>>,
 }
 
 impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: Vec<Vec<usize>>) -> Self {
+    pub fn new(sender: Vec<Sender<M>>, group: AHashMap<&'static str, Vec<usize>>) -> Self {
         Self {
             senders: StackGroup::from_vec(sender),
             group,
         }
+    }
+
+    #[inline]
+    pub fn group(&self) -> &AHashMap<&'static str, Vec<usize>> {
+        &self.group
+    }
+
+    #[inline]
+    pub fn senders(&self) -> &[Sender<M>] {
+        &*self.senders
     }
 
     // 发送至所有sender
@@ -122,11 +133,11 @@ impl<M, const N: usize> GroupSender<M, N> {
 
     // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
     #[inline]
-    pub fn try_send_group<MM>(&self, mm: MM, group_index: usize) -> Result<(), ChannelError<MM>>
+    pub fn try_send_group<MM>(&self, mm: MM, symbol: &str) -> Result<(), ChannelError<MM>>
     where
         MM: Into<M> + Clone,
     {
-        match self.group.get(group_index) {
+        match self.group.get(symbol) {
             Some(g) => {
                 g.iter().for_each(|i| self.send_to(mm.clone(), *i));
                 Ok(())

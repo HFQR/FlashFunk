@@ -1,3 +1,4 @@
+use ahash::AHashMap;
 use alloc::vec::Vec;
 
 use super::api::API;
@@ -38,11 +39,8 @@ where
         // 收集核心cid
         let mut cores = pin_to_core::get_core_ids();
 
-        // symbols为订阅symbol &str的非重复vec集合
-        let mut symbols = Vec::new();
-
         // groups为与symbols相对应(vec index)的策略们的发送端vec.
-        let mut group = Vec::<Vec<usize>>::new();
+        let mut group = AHashMap::new();
 
         // 单向spsc:
         // API -> Strategies.
@@ -50,21 +48,27 @@ where
         // Strategies -> API.
         let mut receivers = Vec::new();
 
-        let mut st_index = 0;
+        let mut st_index = 0usize;
 
         for st in strategies {
             st.symbol().iter().for_each(|symbol| {
-                symbols
-                    .iter()
-                    .enumerate()
-                    .find_map(|(index, s)| if s == symbol { Some(index) } else { None })
-                    .map(|index| {
-                        group.get_mut(index).unwrap().push(st_index);
-                    })
-                    .unwrap_or_else(|| {
-                        group.push(vec![st_index]);
-                        symbols.push(*symbol);
-                    });
+                let g = group.entry(*symbol).or_insert_with(Vec::<usize>::new);
+
+                assert!(!g.contains(&st_index));
+
+                g.push(st_index);
+
+                // symbols
+                //     .iter()
+                //     .enumerate()
+                //     .find_map(|(index, s)| if s == symbol { Some(index) } else { None })
+                //     .map(|index| {
+                //         group.get_mut(index).unwrap().push(st_index);
+                //     })
+                //     .unwrap_or_else(|| {
+                //         group.push(vec![st_index]);
+                //         symbols.push(*symbol);
+                //     });
             });
 
             // API -> Strategies
@@ -89,6 +93,6 @@ where
         let id = pin_to_core.then(|| cores.pop()).flatten();
         pin_to_core::pin_to_core(id);
 
-        api.run(symbols, group_senders, group_receivers);
+        api.run(group_senders, group_receivers);
     }
 }

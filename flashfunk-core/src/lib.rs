@@ -31,11 +31,10 @@ mod test {
 
         fn run<const N: usize>(
             self,
-            symbols: Vec<&str>,
             sender: GroupSender<Self::SndMessage, N>,
             receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
-            assert_eq!(*symbols.first().unwrap(), "da_gong_ren");
+            assert_eq!(sender.group().get("da_gong_ren").unwrap().len(), 1);
             let (tx, rx) = channel(1);
 
             sender.send_to(APIMessage(tx), 0);
