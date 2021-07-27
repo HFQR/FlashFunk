@@ -49,7 +49,7 @@ where
     pub fn build(self) {
         let Self {
             pin_to_core,
-            message_capacity: message_cap,
+            message_capacity,
             api,
             strategies,
         } = self;
@@ -77,10 +77,10 @@ where
             });
 
             // API -> Strategies
-            let (s1, r1) = channel(message_cap);
+            let (s1, r1) = channel(message_capacity);
 
             // Strategies -> API.
-            let (s2, r2) = channel(message_cap);
+            let (s2, r2) = channel(message_capacity);
 
             senders.push(s1);
             receivers.push(r2);
