@@ -15,6 +15,7 @@ const MESSAGE_LIMIT: usize = 3024usize;
 
 pub struct APIBuilder<A, S, const N: usize> {
     pub(crate) pin_to_core: bool,
+    pub(crate) message_capacity: usize,
     pub(crate) api: A,
     pub(crate) strategies: [S; N],
 }
@@ -24,14 +25,31 @@ where
     A: API + 'static,
     S: Strategy<A> + 'static,
 {
+    pub(super) fn new(api: A, strategies: [S; N]) -> Self {
+        Self {
+            pin_to_core: false,
+            message_capacity: MESSAGE_LIMIT,
+            api,
+            strategies,
+        }
+    }
+
     pub fn disable_pin_to_core(mut self) -> Self {
         self.pin_to_core = false;
         self
     }
 
+    pub fn message_capacity(mut self, cap: usize) -> Self {
+        assert_ne!(cap, 0);
+        self.message_capacity = cap;
+        self
+    }
+
+    #[allow(clippy::explicit_counter_loop)]
     pub fn build(self) {
         let Self {
             pin_to_core,
+            message_capacity: message_cap,
             api,
             strategies,
         } = self;
@@ -49,7 +67,6 @@ where
         let mut receivers = Vec::new();
 
         let mut st_index = 0usize;
-
         for st in strategies {
             st.symbol().iter().for_each(|symbol| {
                 let g = group.entry(*symbol).or_insert_with(Vec::<usize>::new);
@@ -57,25 +74,13 @@ where
                 assert!(!g.contains(&st_index));
 
                 g.push(st_index);
-
-                // symbols
-                //     .iter()
-                //     .enumerate()
-                //     .find_map(|(index, s)| if s == symbol { Some(index) } else { None })
-                //     .map(|index| {
-                //         group.get_mut(index).unwrap().push(st_index);
-                //     })
-                //     .unwrap_or_else(|| {
-                //         group.push(vec![st_index]);
-                //         symbols.push(*symbol);
-                //     });
             });
 
             // API -> Strategies
-            let (s1, r1) = channel(MESSAGE_LIMIT);
+            let (s1, r1) = channel(message_cap);
 
             // Strategies -> API.
-            let (s2, r2) = channel(MESSAGE_LIMIT);
+            let (s2, r2) = channel(message_cap);
 
             senders.push(s1);
             receivers.push(r2);

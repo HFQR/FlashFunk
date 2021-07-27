@@ -15,15 +15,12 @@ pub trait API: Sized {
     /// e.g: reference &mut context and &mut strategy at the same time.
     type Context: Default;
 
-    fn into_builder<S: Strategy<Self>, const N: usize>(
-        self,
-        strategies: [S; N],
-    ) -> APIBuilder<Self, S, N> {
-        APIBuilder {
-            pin_to_core: true,
-            api: self,
-            strategies,
-        }
+    fn into_builder<S, const N: usize>(self, strategies: [S; N]) -> APIBuilder<Self, S, N>
+    where
+        S: Strategy<Self> + 'static,
+        Self: 'static,
+    {
+        APIBuilder::new(self, strategies)
     }
 
     fn run<const N: usize>(

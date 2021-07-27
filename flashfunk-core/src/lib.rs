@@ -82,6 +82,9 @@ mod test {
             symbols: vec!["da_gong_ren"],
         };
         let api = Rem;
-        api.into_builder([st]).build();
+        api.into_builder([st])
+            .disable_pin_to_core()
+            .message_capacity(128)
+            .build();
     }
 }
