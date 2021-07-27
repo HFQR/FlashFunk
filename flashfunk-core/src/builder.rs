@@ -27,24 +27,32 @@ where
 {
     pub(super) fn new(api: A, strategies: [S; N]) -> Self {
         Self {
-            pin_to_core: false,
+            pin_to_core: true,
             message_capacity: MESSAGE_LIMIT,
             api,
             strategies,
         }
     }
 
+    /// Do not pin strategy worker thread to cpu cores.
     pub fn disable_pin_to_core(mut self) -> Self {
         self.pin_to_core = false;
         self
     }
 
+    /// Change capacity of message channel between API thread and strategy worker threads.
+    ///
+    /// Capacity is for per strategy.
     pub fn message_capacity(mut self, cap: usize) -> Self {
         assert_ne!(cap, 0);
         self.message_capacity = cap;
         self
     }
 
+    /// Build and start API on current thread.
+    /// [API::run](crate::api::API::run) would be called when build finished.
+    ///
+    /// Every strategy would run on it's own dedicated thread.
     #[allow(clippy::explicit_counter_loop)]
     pub fn build(self) {
         let Self {
