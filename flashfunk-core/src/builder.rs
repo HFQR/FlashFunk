@@ -1,58 +1,111 @@
-use core::marker::PhantomData;
+use ahash::AHashMap;
+use alloc::vec::Vec;
 
-use crate::worker::start_workers;
-use flashfunk_level::data_type::LoginForm;
-use flashfunk_level::interface::{Ac, Interface};
-use flashfunk_level::types::message::{MdApiMessage, TdApiMessage};
-use std::borrow::Cow;
+use super::api::API;
+use super::strategy::Strategy;
+use super::util::{
+    channel::{channel, GroupReceiver, GroupSender},
+    pin_to_core,
+};
+use super::worker::Worker;
 
-pub struct Builder<'a, MdApi, TdApi> {
-    pub(crate) name: Cow<'a, str>,
-    pub(crate) id: Cow<'a, str>,
-    pub(crate) pwd: Cow<'a, str>,
-    pub(crate) path: Cow<'a, str>,
-    pub(crate) strategy: Vec<Box<dyn Ac + Send>>,
-    pub(crate) login_form: LoginForm,
-    pub(crate) _md: PhantomData<MdApi>,
-    pub(crate) _td: PhantomData<TdApi>,
+// 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
+// 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
+const MESSAGE_LIMIT: usize = 3024usize;
+
+pub struct APIBuilder<A, S, const N: usize> {
+    pub(crate) pin_to_core: bool,
+    pub(crate) message_capacity: usize,
+    pub(crate) api: A,
+    pub(crate) strategies: [S; N],
 }
 
-impl<'a, I, I2> Builder<'a, I, I2>
+impl<A, S, const N: usize> APIBuilder<A, S, N>
 where
-    I: Interface<Message = MdApiMessage>,
-    I2: Interface<Message = TdApiMessage>,
+    A: API + 'static,
+    S: Strategy<A> + 'static,
 {
-    pub fn id(mut self, id: impl Into<Cow<'a, str>>) -> Self {
-        self.id = id.into();
+    pub(super) fn new(api: A, strategies: [S; N]) -> Self {
+        Self {
+            pin_to_core: true,
+            message_capacity: MESSAGE_LIMIT,
+            api,
+            strategies,
+        }
+    }
+
+    /// Do not pin strategy worker thread to cpu cores.
+    pub fn disable_pin_to_core(mut self) -> Self {
+        self.pin_to_core = false;
         self
     }
 
-    pub fn pwd(mut self, pwd: impl Into<Cow<'a, str>>) -> Self {
-        self.pwd = pwd.into();
+    /// Change capacity of message channel between API thread and strategy worker threads.
+    ///
+    /// Capacity is for per strategy.
+    pub fn message_capacity(mut self, cap: usize) -> Self {
+        assert_ne!(cap, 0);
+        self.message_capacity = cap;
         self
     }
 
-    pub fn path(mut self, path: impl Into<Cow<'a, str>>) -> Self {
-        self.path = path.into();
-        self
-    }
+    /// Build and start API on current thread.
+    /// [API::run](crate::api::API::run) would be called when build finished.
+    ///
+    /// Every strategy would run on it's own dedicated thread.
+    #[allow(clippy::explicit_counter_loop)]
+    pub fn build(self) {
+        let Self {
+            pin_to_core,
+            message_capacity,
+            api,
+            strategies,
+        } = self;
 
-    pub fn strategy(mut self, strategy: Box<dyn Ac + Send>) -> Self {
-        self.strategy.push(strategy);
-        self
-    }
+        // 收集核心cid
+        let mut cores = pin_to_core::get_core_ids();
 
-    pub fn strategies(mut self, strategy: Vec<Box<dyn Ac + Send>>) -> Self {
-        self.strategy = strategy;
-        self
-    }
+        // groups为与symbols相对应(vec index)的策略们的发送端vec.
+        let mut group = AHashMap::new();
 
-    pub fn login_form(mut self, login_form: LoginForm) -> Self {
-        self.login_form = login_form;
-        self
-    }
+        // 单向spsc:
+        // API -> Strategies.
+        let mut senders = Vec::new();
+        // Strategies -> API.
+        let mut receivers = Vec::new();
 
-    pub fn start(self) {
-        start_workers(self);
+        let mut st_index = 0usize;
+        for st in strategies {
+            st.symbol().iter().for_each(|symbol| {
+                let g = group.entry(*symbol).or_insert_with(Vec::<usize>::new);
+
+                assert!(!g.contains(&st_index));
+
+                g.push(st_index);
+            });
+
+            // API -> Strategies
+            let (s1, r1) = channel(message_capacity);
+
+            // Strategies -> API.
+            let (s2, r2) = channel(message_capacity);
+
+            senders.push(s1);
+            receivers.push(r2);
+
+            let id = pin_to_core.then(|| cores.pop()).flatten();
+            Worker::new(st, s2, r1).run_in_core(id);
+
+            st_index += 1;
+        }
+
+        let group_senders = GroupSender::<_, N>::new(senders, group);
+        let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);
+
+        // 分配最后一个核心给主线程
+        let id = pin_to_core.then(|| cores.pop()).flatten();
+        pin_to_core::pin_to_core(id);
+
+        api.run(group_senders, group_receivers);
     }
 }

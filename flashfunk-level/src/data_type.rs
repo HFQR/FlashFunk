@@ -6,8 +6,8 @@ use bitflags::_core::ops::{Deref, DerefMut};
 use chrono::{Date, DateTime, NaiveDateTime, Timelike, Utc};
 use chrono_tz::Tz;
 use clickhouse_rs::types::{Block, Complex, Row};
+use std::fmt::{Display, Formatter, Result};
 use std::time::Instant;
-use std::fmt::{Display,Formatter, Result};
 /// Tick Data
 #[derive(Clone)]
 pub struct TickData {
@@ -591,14 +591,9 @@ impl LoginForm {
 
 impl Display for LoginForm {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(
-            f,
-            "Login Account: {}",
-            self.user_id
-        )
+        write!(f, "Login Account: {}", self.user_id)
     }
 }
-
 
 pub struct QueryRequest {}
 

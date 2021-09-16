@@ -6,18 +6,18 @@ use std::os::raw::{c_char, c_int, c_uchar, c_void};
 use encoding::all::GB18030;
 use encoding::{DecoderTrap, Encoding};
 
+use crate::c_func::translate_zh_to_string;
 use crate::{get_interface_path, os_path};
 use chrono::{NaiveDate, NaiveTime, Timelike};
-use crate::c_func::translate_zh_to_string;
 
 #[cfg(not(target_os = "windows"))]
 include!(concat!(env!("HOME"), "/.HFQ/ctp/bindings.rs"));
 
 #[cfg(target_os = "windows")]
 include!(concat!(
-env!("HOMEDRIVE"),
-env!("HOMEPATH"),
-"/.HFQ/ctp/bindings.rs"
+    env!("HOMEDRIVE"),
+    env!("HOMEPATH"),
+    "/.HFQ/ctp/bindings.rs"
 ));
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -83,7 +83,6 @@ pub fn get_rsp_info(rsp_info: *const CThostFtdcRspInfoField) -> RspResult {
         None => Ok(()),
     }
 }
-
 
 pub trait ToCSlice<T> {
     fn to_c_slice(&self) -> T;
