@@ -7,6 +7,7 @@ pub mod builder;
 pub mod strategy;
 pub mod util;
 
+#[cfg(not(feature = "async"))]
 #[cfg(test)]
 mod test {
     use super::api::API;

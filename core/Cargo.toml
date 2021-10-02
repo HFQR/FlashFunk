@@ -4,10 +4,16 @@ version = "0.5.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2018"
 
+[[bench]]
+name = "async-channel"
+path = "benches/async_channel.rs"
+harness = false
+required-features = ["async"]
+
 [features]
 default = ["std"]
 std = ["core_affinity"]
-async = ["futures-core", "tokio"]
+async = ["std", "futures-core", "tokio"]
 
 [dependencies]
 ahash = { version = "0.7", features = ["compile-time-rng"] }
@@ -16,3 +22,7 @@ core_affinity = { version = "0.5.10", optional = true }
 
 futures-core = { version = "0.3", default-features = false, features = ["alloc"], optional = true }
 tokio = { version = "1", features = ["rt"], optional = true }
+
+[dev-dependencies]
+criterion = "0.3.4"
+futures = { version = "0.3", default-features = false, features = ["executor"]}

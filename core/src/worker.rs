@@ -64,8 +64,8 @@ where
     #[inline]
     pub(super) fn run_in_core(self, id: Option<CoreId>) {
         std::thread::spawn(move || {
+            pin_to_core::pin_to_core(id);
             tokio::runtime::Builder::new_current_thread()
-                .on_thread_start(move || pin_to_core::pin_to_core(id))
                 .enable_all()
                 .build()
                 .unwrap()
