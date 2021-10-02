@@ -7,8 +7,12 @@ edition = "2018"
 [features]
 default = ["std"]
 std = ["core_affinity"]
+async = ["futures-core", "tokio"]
 
 [dependencies]
 ahash = { version = "0.7", features = ["compile-time-rng"] }
 cache-padded = "1.1.1"
 core_affinity = { version = "0.5.10", optional = true }
+
+futures-core = { version = "0.3", default-features = false, features = ["alloc"], optional = true }
+tokio = { version = "1", features = ["rt"], optional = true }

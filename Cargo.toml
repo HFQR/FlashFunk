@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "./flashfunk-level",
-    "./flashfunk-core",
+    "./level",
+    "./core",
 ]
 
 [profile.release]
