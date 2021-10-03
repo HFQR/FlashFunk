@@ -32,12 +32,24 @@ where
         }
     }
 
-    #[cfg(not(feature = "async"))]
     #[inline]
     pub(super) fn run_in_core(self, id: Option<CoreId>) {
         std::thread::spawn(move || {
             pin_to_core::pin_to_core(id);
-            self.run()
+
+            #[cfg(feature = "async")]
+            {
+                tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(self.run())
+            }
+
+            #[cfg(not(feature = "async"))]
+            {
+                self.run()
+            }
         });
     }
 
@@ -58,19 +70,6 @@ where
             }
             strategy.on_idle(ctx);
         }
-    }
-
-    #[cfg(feature = "async")]
-    #[inline]
-    pub(super) fn run_in_core(self, id: Option<CoreId>) {
-        std::thread::spawn(move || {
-            pin_to_core::pin_to_core(id);
-            tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(self.run())
-        });
     }
 
     #[cfg(feature = "async")]
