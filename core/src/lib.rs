@@ -39,18 +39,34 @@ mod test {
 
             sender.send_to(APIMessage(tx), 0);
 
-            loop {
-                if let Ok(item) = rx.recv() {
-                    assert_eq!(996, item);
-                    break;
+            #[cfg(not(feature = "async"))]
+            {
+                loop {
+                    if let Ok(item) = rx.recv() {
+                        assert_eq!(996, item);
+                        break;
+                    }
                 }
+
+                receiver.iter().for_each(|r| {
+                    if let Ok(m) = r.recv() {
+                        assert_eq!(m.0, 251);
+                    }
+                });
             }
 
-            receiver.iter().for_each(|r| {
-                if let Ok(m) = r.recv() {
-                    assert_eq!(m.0, 251);
-                }
-            });
+            #[cfg(feature = "async")]
+            {
+                futures::executor::block_on(async move {
+                    assert_eq!(996, rx.recv().await.unwrap());
+
+                    for r in receiver.iter() {
+                        if let Ok(m) = r.recv().await {
+                            assert_eq!(m.0, 251);
+                        }
+                    }
+                });
+            }
         }
     }
 

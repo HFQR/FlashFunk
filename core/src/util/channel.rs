@@ -6,38 +6,11 @@ use core::{
 use ahash::AHashMap;
 use alloc::vec::Vec;
 
+#[cfg(feature = "async")]
+use {alloc::sync::Arc, futures_core::task::__internal::AtomicWaker};
+
 use super::spsc::{new, Consumer, Producer};
 use super::stack_array::StackArray;
-
-pub fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
-    let (tx, rx) = new(cap);
-    (Sender(tx), Receiver(rx))
-}
-
-pub struct Sender<M>(Producer<M>);
-
-impl<M> Sender<M> {
-    // 发送失败会panic
-    #[inline]
-    pub fn send(&self, m: impl Into<M>) {
-        self.0.push(m.into()).unwrap();
-    }
-
-    // 发送失败返回消息
-    #[inline]
-    pub fn try_send(&self, m: M) -> Result<(), ChannelError<M>> {
-        self.0.push(m).map_err(|e| ChannelError::TrySendError(e.0))
-    }
-}
-
-pub struct Receiver<M>(Consumer<M>);
-
-impl<M> Receiver<M> {
-    #[inline]
-    pub fn recv(&self) -> Result<M, ChannelError<M>> {
-        self.0.pop().map_err(|_| ChannelError::RecvError)
-    }
-}
 
 pub enum ChannelError<M> {
     RecvError,
@@ -75,6 +48,110 @@ impl<M> Debug for ChannelError<M> {
 impl<M> Display for ChannelError<M> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{:?}", self)
+    }
+}
+
+pub struct Sender<M> {
+    tx: Producer<M>,
+    #[cfg(feature = "async")]
+    waker: Arc<AtomicWaker>,
+}
+
+impl<M> Sender<M> {
+    // 发送失败会panic
+    #[inline]
+    pub fn send(&self, m: impl Into<M>) {
+        self.tx.push(m.into()).unwrap();
+        #[cfg(feature = "async")]
+        self.waker.wake();
+    }
+
+    // 发送失败返回消息
+    #[inline]
+    pub fn try_send(&self, m: M) -> Result<(), ChannelError<M>> {
+        match self.tx.push(m) {
+            Ok(_) => {
+                #[cfg(feature = "async")]
+                self.waker.wake();
+                Ok(())
+            }
+            Err(e) => Err(ChannelError::TrySendError(e.0)),
+        }
+    }
+}
+
+pub struct Receiver<M> {
+    rx: Consumer<M>,
+    #[cfg(feature = "async")]
+    waker: Arc<AtomicWaker>,
+}
+
+#[cfg(not(feature = "async"))]
+pub use r#sync::*;
+
+#[cfg(not(feature = "async"))]
+mod r#sync {
+    use super::*;
+
+    pub fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
+        let (tx, rx) = new(cap);
+        (Sender { tx }, Receiver { rx })
+    }
+
+    impl<M> Receiver<M> {
+        #[inline]
+        pub fn recv(&self) -> Result<M, ChannelError<M>> {
+            self.rx.pop().map_err(|_| ChannelError::RecvError)
+        }
+    }
+}
+
+#[cfg(feature = "async")]
+pub use r#async::*;
+
+#[cfg(feature = "async")]
+mod r#async {
+    use super::*;
+
+    use core::{
+        future::Future,
+        pin::Pin,
+        task::{Context, Poll},
+    };
+
+    pub fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
+        let (tx, rx) = new(cap);
+        let waker = Arc::new(AtomicWaker::new());
+        (
+            Sender {
+                tx,
+                waker: waker.clone(),
+            },
+            Receiver { rx, waker },
+        )
+    }
+
+    impl<M> Receiver<M> {
+        #[inline]
+        pub async fn recv(&self) -> Result<M, ChannelError<M>> {
+            struct Recv<'a, M>(&'a Receiver<M>);
+
+            impl<M> Future for Recv<'_, M> {
+                type Output = Result<M, ChannelError<M>>;
+
+                fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+                    match self.0.rx.pop() {
+                        Ok(msg) => Poll::Ready(Ok(msg)),
+                        Err(_) => {
+                            self.0.waker.register(cx.waker());
+                            Poll::Pending
+                        }
+                    }
+                }
+            }
+
+            Recv(self).await
+        }
     }
 }
 
