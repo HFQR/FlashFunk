@@ -26,4 +26,3 @@ parking = { version = "2", optional = true }
 
 [dev-dependencies]
 criterion = "0.3.4"
-futures = { version = "0.3", default-features = false, features = ["executor"] }

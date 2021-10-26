@@ -4,7 +4,10 @@ use core::{
     task::{Context, Poll},
 };
 
-use super::{park::Park, waker::waker};
+use super::{
+    park::{Park, Unpark},
+    waker::waker_fn,
+};
 
 pub struct Runtime<P: Park> {
     parker: P,
@@ -18,7 +21,7 @@ impl<P: Park> Runtime<P> {
     pub fn block_on<Fut: Future>(&mut self, mut fut: Fut) -> Fut::Output {
         let unparker = self.parker.unparker();
 
-        let waker = waker(unparker);
+        let waker = waker_fn(move || unparker.unpark());
 
         // SAFETY
         // Pinning is safe. Future is shadow named after Pin.
