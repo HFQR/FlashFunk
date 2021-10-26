@@ -24,31 +24,34 @@ mod r#async {
             Unparker(unparker)
         }
 
+        #[inline]
         fn park(&self) {
             self.0.park();
         }
     }
 
     impl Unpark for Unparker {
+        #[inline]
         fn unpark(&self) {
             self.0.unpark();
         }
     }
 
-    pub(crate) struct StdRuntime(Runtime<Parker>);
+    pub struct StdRuntime(Runtime<Parker>);
 
     impl StdRuntime {
-        pub(crate) fn new() -> Self {
+        pub fn new() -> Self {
             let parker = Parker(parking::Parker::new());
             let rt = Runtime::new(parker);
             Self(rt)
         }
 
-        pub(crate) fn block_on<Fut: Future>(&mut self, fut: Fut) -> Fut::Output {
+        #[inline]
+        pub fn block_on<Fut: Future>(&mut self, fut: Fut) -> Fut::Output {
             self.0.block_on(fut)
         }
     }
 }
 
 #[cfg(feature = "async")]
-pub(crate) use r#async::*;
+pub use r#async::*;
