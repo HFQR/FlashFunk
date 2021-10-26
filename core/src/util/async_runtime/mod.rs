@@ -20,8 +20,7 @@ mod r#async {
         type Unparker = Unparker;
 
         fn unparker(&mut self) -> Self::Unparker {
-            let unparker = self.0.unparker();
-            Unparker(unparker)
+            Unparker(self.0.unparker())
         }
 
         #[inline]
