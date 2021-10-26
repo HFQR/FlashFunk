@@ -1,4 +1,4 @@
-s推荐在Linux下使用本框架
+> 推荐在Linux下使用本框架
 
 ## 1. 安装`rust`和`cargo`
 

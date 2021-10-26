@@ -4,19 +4,12 @@
 
 ## Why choose `Rust`
 
-fast and safe 
+fast, safe and avoid `ub`
 
 ## Support API 
-- [x] ctp 上期所标准API  
-- [x] REM 盛立纯socket对接 -> 未开源  
-
-## Todo List
-
-- Test Coverage
-
-- Logger Need
-
-- fix waring and remove clippy error
+- [x] ctp 上期所标准API c++ bindings封装 等待开源
+- [x] ctp_mini2 上期所标准API c++ bindings封装 等待开源
+- [x] REM 盛立纯socket对接 -> 未开源
 
 ### Install
 
