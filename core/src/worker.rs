@@ -39,11 +39,7 @@ where
 
             #[cfg(feature = "async")]
             {
-                tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap()
-                    .block_on(self.run())
+                crate::util::async_runtime::StdRuntime::new().block_on(self.run())
             }
 
             #[cfg(not(feature = "async"))]
