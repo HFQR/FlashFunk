@@ -1,18 +1,20 @@
-use core::mem::{self, ManuallyDrop};
-use core::task::{RawWaker, RawWakerVTable, Waker};
+use core::{
+    mem::{self, ManuallyDrop},
+    task::{RawWaker, RawWakerVTable, Waker},
+};
 
-// TODO: make waker generic over no_std and no allocation.
-use std::sync::Arc;
+use super::park::Unpark;
 
-pub(crate) fn waker_fn<F: Fn() + Send + Sync + 'static>(f: F) -> Waker {
-    let raw = Arc::into_raw(Arc::new(f)) as *const ();
-    let vtable = &Helper::<F>::VTABLE;
+pub(crate) fn waker<U: Unpark>(f: U) -> Waker {
+    let raw = &f as *const U as *const ();
+    mem::forget(f);
+    let vtable = &Helper::<U>::VTABLE;
     unsafe { Waker::from_raw(RawWaker::new(raw, vtable)) }
 }
 
 struct Helper<F>(F);
 
-impl<F: Fn() + Send + Sync + 'static> Helper<F> {
+impl<U: Unpark> Helper<U> {
     const VTABLE: RawWakerVTable = RawWakerVTable::new(
         Self::clone_waker,
         Self::wake,
@@ -21,22 +23,22 @@ impl<F: Fn() + Send + Sync + 'static> Helper<F> {
     );
 
     unsafe fn clone_waker(ptr: *const ()) -> RawWaker {
-        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const F));
-        mem::forget(arc.clone());
+        let u = ManuallyDrop::new(ptr as *const U);
+        mem::forget(u.clone());
         RawWaker::new(ptr, &Self::VTABLE)
     }
 
     unsafe fn wake(ptr: *const ()) {
-        let arc = Arc::from_raw(ptr as *const F);
-        (arc)();
+        let u = ptr as *const U;
+        (&*u).unpark();
     }
 
     unsafe fn wake_by_ref(ptr: *const ()) {
-        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const F));
-        (arc)();
+        let u = ManuallyDrop::new(ptr as *const U);
+        (&**u).unpark();
     }
 
     unsafe fn drop_waker(ptr: *const ()) {
-        drop(Arc::from_raw(ptr as *const F));
+        drop(ptr as *const U);
     }
 }
