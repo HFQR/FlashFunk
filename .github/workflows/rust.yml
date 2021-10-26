@@ -1,22 +1,57 @@
-name: Rust
+name: CI
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
-    branches: [ master ]
-
-env:
-  CARGO_TERM_COLOR: always
+  push:
+    branches:
+      - master
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  build_and_test:
+    name: Build and test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # TODO: add other os
+        os: [ubuntu-latest]
+        rust: [stable]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose --release
-    - name: Run tests
-      run: cargo test --verbose
+    - uses: actions/checkout@master
+
+    - name: Install ${{ matrix.rust }}
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: clippy, rustfmt
+        override: true
+        
+    - name: check
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+        args: --all --bins --examples
+
+    - name: check no-default-features
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+        args: --no-default-features
+
+    - name: tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --all
+        
+    - name: clippy
+      uses: actions-rs/clippy-check@v1
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features --tests --examples     
+    
+    - name: fmt
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check

@@ -24,6 +24,8 @@ See [Install](./install.md)
 
 ### 系统要求
 
+- stable-x86_64-unknown-linux-gnu - rustc 1.56.0 (09c42c458 2021-10-18) and later
+
 - linux
 
 - windows visual studio and llvm

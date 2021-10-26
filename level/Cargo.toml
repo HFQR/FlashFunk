@@ -6,23 +6,15 @@ edition = "2018"
 include = ["src/**/*", "sdk_sources/*", "Cargo.toml", "build.rs"]
 
 build = "build.rs"
-[profile.release]
-lto = "fat"
-opt-level = 3
-codegen-units = 1
-debug-assertions = false
-overflow-checks = false
-panic = "abort"
-
 
 [dependencies]
-ahash = "0.4.5"
+ahash = { version = "0.7", features = ["compile-time-rng"] }
+cache-padded = "1.1.1"
 encoding = "0.2.33"
 libc = "0.2.0"
 chrono = { version = "0.4.13", default-features = false, features = ["clock"] }
 bitflags = "1.2.1"
 clickhouse-rs = { git = "https://github.com/suharev7/clickhouse-rs/", branch = "async-await" }
-cache-padded = "1.1.1"
 chrono-tz = { version = "0.5", features = ["serde"] }
 
 [features]

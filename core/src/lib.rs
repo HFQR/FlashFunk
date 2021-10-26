@@ -57,7 +57,7 @@ mod test {
 
             #[cfg(feature = "async")]
             {
-                futures::executor::block_on(async move {
+                crate::util::async_runtime::StdRuntime::new().block_on(async move {
                     assert_eq!(996, rx.recv().await.unwrap());
 
                     for r in receiver.iter() {

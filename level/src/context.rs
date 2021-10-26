@@ -61,10 +61,10 @@ impl ContextInner {
         self.contract_map.get(symbol)
     }
 
-    pub fn get_position(&mut self, symbol: &String) -> &Position {
+    pub fn get_position(&mut self, symbol: &str) -> &Position {
         self.position_map
             .entry(symbol.to_owned())
-            .or_insert_with(|| Position::new_with_symbol())
+            .or_insert_with(Position::new_with_symbol)
     }
 
     pub fn get_account(&self) -> &AccountData {
@@ -153,7 +153,7 @@ impl ContextInner {
         let mut pos = self
             .position_map
             .entry(order.symbol.to_owned())
-            .or_insert_with(|| Position::new_with_symbol());
+            .or_insert_with(Position::new_with_symbol);
         match order.direction {
             Direction::LONG => {
                 match order.offset {
@@ -296,7 +296,7 @@ pub trait ContextTrait {
 
     fn get_contract(&self, symbol: &str) -> Option<&ContractData>;
 
-    fn get_position(&mut self, symbol: &String) -> &Position;
+    fn get_position(&mut self, symbol: &str) -> &Position;
 
     fn get_account(&self) -> &AccountData;
 
@@ -349,7 +349,7 @@ impl ContextTrait for Context<'_> {
         self.1.get_contract(symbol)
     }
 
-    fn get_position(&mut self, symbol: &String) -> &Position {
+    fn get_position(&mut self, symbol: &str) -> &Position {
         self.1.get_position(symbol)
     }
 

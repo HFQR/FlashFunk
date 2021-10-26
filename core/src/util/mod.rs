@@ -1,5 +1,8 @@
 mod spsc;
 
+#[cfg(feature = "async")]
+pub mod async_runtime;
+
 pub mod channel;
 pub mod stack_array;
 
