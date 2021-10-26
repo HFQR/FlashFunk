@@ -18,6 +18,8 @@ async = ["std", "futures-core", "parking"]
 [dependencies]
 ahash = { version = "0.7", features = ["compile-time-rng"] }
 cache-padded = "1.1.1"
+
+# core affinity support
 core_affinity = { version = "0.5.10", optional = true }
 
 # async feature support

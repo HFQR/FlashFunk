@@ -51,7 +51,7 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
         sdk
     );
     let dll_dir = format!(
-        "{}/flashfunk-level/sdk_sources/{}/linux",
+        "{}/level/sdk_sources/{}/linux",
         current_dir.to_str().unwrap(),
         sdk
     );
