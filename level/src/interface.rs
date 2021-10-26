@@ -40,7 +40,7 @@ pub trait Ac {
     #[doc(hidden)]
     /// 内置函数 不应该被重写
     fn name<'a>(&mut self) -> &'a str {
-        Box::leak(self.flash_name().clone().into_boxed_str())
+        Box::leak(self.flash_name().into_boxed_str())
     }
 
     fn codes(&mut self) -> Vec<String>;

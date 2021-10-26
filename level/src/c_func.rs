@@ -12,7 +12,7 @@ use chrono::{NaiveDate, NaiveTime, Timelike};
 
 /// change the string to CString and will be panic at a bad string
 pub fn to_c_string(string: &str) -> CString {
-    CString::new(string).expect(format!("转换CString失败").as_str())
+    CString::new(string).expect("转换CString失败")
 }
 
 /// make the string
@@ -30,7 +30,7 @@ pub fn translate_zh(v: &[u8]) -> Cow<str> {
     let slice = v
         .split(|&c| c == 0u8)
         .next()
-        .expect(format!("unicode 切换失败 无法转换中文").as_str());
+        .expect("unicode 切换失败 无法转换中文");
     if slice.is_ascii() {
         unsafe {
             return Cow::Borrowed::<str>(std::str::from_utf8_unchecked(slice));
@@ -61,7 +61,8 @@ pub fn bytes_to_string(v: &[i8]) -> String {
 /// let time = "15:00:00";
 /// // todo: 添加测试用例
 /// ```
-pub fn parse_datetime_from_str(
+#[allow(clippy::many_single_char_names)]
+pub(crate) fn parse_datetime_from_str(
     date: *const i8,
     time: *const i8,
     mill: c_int,

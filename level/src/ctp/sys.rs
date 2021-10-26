@@ -67,8 +67,7 @@ pub fn result_to_string(rsp_result: &RspResult) -> String {
     }
 }
 
-pub fn get_rsp_info(rsp_info: *const CThostFtdcRspInfoField) -> RspResult {
-    #[allow(unused_unsafe)] // for future "unsafe blocks in unsafe fn" feature
+pub(crate) fn get_rsp_info(rsp_info: *const CThostFtdcRspInfoField) -> RspResult {
     match unsafe { rsp_info.as_ref() } {
         Some(info) => match info {
             CThostFtdcRspInfoField { ErrorID: 0, .. } => Ok(()),
@@ -144,7 +143,7 @@ pub fn split_into_vec(order_id: &str) -> (usize, i32) {
             order_id[0..9].parse::<i32>().unwrap_or(10000000),
         )
     } else {
-        (10000000 as usize, order_id.parse::<i32>().unwrap())
+        (10_000_000_usize, order_id.parse::<i32>().unwrap())
     }
 }
 

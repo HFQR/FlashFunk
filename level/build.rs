@@ -36,7 +36,7 @@ fn mkdir_path(sdk: &str) -> PathBuf {
     if !pw.exists() {
         fs::create_dir(pw.clone());
     }
-    PathBuf::from(pw)
+    pw
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -83,12 +83,11 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
 }
 
 fn file_name(name: String) -> String {
+    let n = name.split('.').collect::<Vec<_>>();
     if name.starts_with("lib") {
-        let n: Vec<_> = name.split(".").collect();
-        let name = n.first().unwrap().clone();
+        let name = n.first().unwrap();
         name[3..].to_string()
     } else {
-        let n: Vec<_> = name.split(".").collect();
         n.first().unwrap().to_string()
     }
 }
@@ -100,7 +99,7 @@ fn sdk_source_path(sdk: &str) -> (String, String, String, String) {
         .unwrap()
         .to_path_buf();
     let lib_dir = format!(
-        "{}\\flashfunk-level\\sdk_sources\\{}\\lib",
+        "{}\\level\\sdk_sources\\{}\\lib",
         current_dir.to_str().unwrap(),
         sdk
     );
@@ -160,7 +159,7 @@ fn build(target: &str) {
         .out_dir(path.clone())
         .include("/usr/include/")
         .flag(format!("-L {}/sdk_sources/{}/linux", c.to_str().unwrap(), target).as_str())
-        .compile(format!("{}", target).as_str());
+        .compile(target);
 
     let bindings = bindgen::Builder::default()
         .header(format!("src/{}/wrapper.hpp", target))
@@ -168,9 +167,10 @@ fn build(target: &str) {
         .derive_default(true)
         .clang_arg("-I /usr/include/")
         .generate()
-        .expect(format!("Unable to generate {} bindings", target).as_str());
+        .unwrap_or_else(|_| panic!("Unable to generate {} bindings", target))
+        .to_string();
+
     // write to file
-    let bindings = bindings.to_string();
     let mut output_file = std::fs::File::create(file_path.as_path())
         .map_err(|e| format!("cannot create struct file, {}", e))
         .unwrap();

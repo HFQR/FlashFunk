@@ -272,7 +272,7 @@ impl Interface for CtpMdApi {
         let market_pointer = unsafe { CThostFtdcMdApi::CreateFtdcMdApi(flow_path_ptr, true, true) };
         // 创建了行情对象
         CtpMdApi {
-            user_id: p.clone(),
+            user_id: p,
             flow_path_ptr,
             password: pwd,
             request_id: 0,

@@ -41,7 +41,7 @@ pub mod util;
 
 #[cfg(not(target_os = "windows"))]
 fn os_path(target: &str) -> PathBuf {
-    let path = PathBuf::from(format!("{}", var("HOME").unwrap()));
+    let path = PathBuf::from(var("HOME").unwrap());
     let path = path.join(".HFQ");
     if !path.exists() {
         fs::create_dir(path.clone()).unwrap();

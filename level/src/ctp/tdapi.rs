@@ -120,7 +120,7 @@ impl CtpTdCApi for TraderLevel {
         unsafe {
             let status = *pInstrumentStatus;
             let symbol = CStr::from_ptr(status.InstrumentID.as_ptr());
-            let status_code = status.InstrumentStatus.clone();
+            let status_code = status.InstrumentStatus;
             let status = ContractStatus {
                 code: symbol.to_str().unwrap().to_string(),
                 status: status_code as i32,
@@ -703,7 +703,7 @@ impl TraderLevel {
             request_id: 0,
             login_status: false,
             connect_status: false,
-            sender: sender,
+            sender,
             blocker: Option::from(blocker),
             pos: Default::default(),
             size_map: Default::default(),
@@ -752,10 +752,10 @@ impl TraderLevel {
                 .to_c_slice(),
             ContingentCondition: THOST_FTDC_CC_Immediately as i8,
             ForceCloseReason: THOST_FTDC_FCC_NotForceClose as i8,
-            IsAutoSuspend: 0 as c_int,
+            IsAutoSuspend: 0_i32,
             TimeCondition: time_condition,
             VolumeCondition: volume_condition,
-            MinVolume: 1 as c_int,
+            MinVolume: 1_i32,
             ExchangeID: get_order_exchange(order.exchange).to_c_slice(),
             ..CThostFtdcInputOrderField::default()
         };

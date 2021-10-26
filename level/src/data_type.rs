@@ -720,7 +720,7 @@ impl Tick {
         block
             .rows()
             .into_iter()
-            .map(|x| Tick::new(x))
+            .map(Tick::new)
             .collect::<Vec<Tick>>()
     }
     pub fn new(row: Row<Complex>) -> Tick {
