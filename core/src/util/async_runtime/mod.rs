@@ -38,6 +38,12 @@ mod r#async {
 
     pub struct StdRuntime(Runtime<Parker>);
 
+    impl Default for StdRuntime {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl StdRuntime {
         pub fn new() -> Self {
             let parker = Parker(parking::Parker::new());
