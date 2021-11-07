@@ -153,6 +153,33 @@ mod r#async {
             Recv(self).await
         }
     }
+
+    impl<M, const N: usize> GroupReceiver<M, N> {
+        pub async fn recv(&self) -> Result<M, ChannelError<M>> {
+            struct GroupReceiveFut<'a, M, const N: usize> {
+                group: &'a GroupReceiver<M, N>,
+            }
+
+            impl<M, const N: usize> Future for GroupReceiveFut<'_, M, N> {
+                type Output = Result<M, ChannelError<M>>;
+
+                fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+                    for rx in self.get_mut().group.iter() {
+                        match rx.rx.pop() {
+                            Ok(msg) => return Poll::Ready(Ok(msg)),
+                            Err(_) => {
+                                rx.waker.register(cx.waker());
+                            }
+                        }
+                    }
+
+                    Poll::Pending
+                }
+            }
+
+            GroupReceiveFut { group: self }.await
+        }
+    }
 }
 
 pub struct GroupSender<M, const N: usize> {

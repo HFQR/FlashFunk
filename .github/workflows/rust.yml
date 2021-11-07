@@ -14,7 +14,7 @@ jobs:
       matrix:
         # TODO: add other os
         os: [ubuntu-latest]
-        rust: [stable]
+        rust: [nightly]
 
     steps:
     - uses: actions/checkout@master

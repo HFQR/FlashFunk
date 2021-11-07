@@ -1,5 +1,7 @@
 //! A bounded single-producer single-consumer queue.
 
+#![allow(clippy::non_send_fields_in_send_ty)]
+
 use core::cell::Cell;
 use core::fmt;
 use core::marker::PhantomData;
