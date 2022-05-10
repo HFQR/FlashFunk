@@ -31,37 +31,3 @@ pub mod __private {
 
     pub use crate::no_op::NoOpLogger;
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test() {
-        struct MyLogger;
-
-        impl MyLogger {
-            fn init() {
-                OWNED_LOGGER.set(Arc::new(MyLogger)).ok().unwrap();
-            }
-        }
-
-        impl OwnedLog for MyLogger {
-            fn log(&self, mut value: Box<dyn Value>) {
-                value.display();
-            }
-        }
-
-        MyLogger::init();
-
-        struct MyValue(Option<usize>);
-
-        impl Value for MyValue {
-            fn display(&mut self) {
-                assert_eq!(self.0.take().unwrap(), 996);
-            }
-        }
-
-        log!(MyValue(Some(996)))
-    }
-}
