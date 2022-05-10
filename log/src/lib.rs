@@ -13,9 +13,8 @@ pub trait Value: Send + 'static {
 #[macro_export]
 macro_rules! log {
     ($value: expr) => {
-        ::owned_log::__private::OWNED_LOGGER
-            .get_or_init(|| ::std::sync::Arc::new(::owned_log::__private::NoOpLogger))
-            .log(Box::new($value) as _);
+        ::owned_log::__private::OWNED_LOGGER_THREAD_LOCAL
+            .with(|logger| logger.log(Box::new($value) as _));
     };
 }
 
@@ -28,6 +27,12 @@ pub mod __private {
     use once_cell::sync::OnceCell;
 
     pub static OWNED_LOGGER: OnceCell<Arc<dyn OwnedLog>> = OnceCell::new();
+
+    thread_local! {
+        pub static OWNED_LOGGER_THREAD_LOCAL: Arc<dyn OwnedLog> = {
+            OWNED_LOGGER.get_or_init(|| Arc::new(NoOpLogger)).clone()
+        };
+    }
 
     pub use crate::no_op::NoOpLogger;
 }
