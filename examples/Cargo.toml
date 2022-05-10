@@ -17,4 +17,4 @@ owned-log = { version = "0.1", features = ["async"] }
 
 futures-util = "0.3.17"
 tokio = { version = "1.13", features = ["macros", "rt"] }
-xitca-client = { version = "0.1", features = ["rustls"] }
+xitca-client = { version = "0.1", features = ["rustls", "websocket"] }
