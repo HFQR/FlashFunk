@@ -30,9 +30,7 @@ pub mod __private {
 
     thread_local! {
         pub static OWNED_LOGGER_THREAD_LOCAL: Arc<dyn OwnedLog> = {
-            OWNED_LOGGER.get_or_init(|| Arc::new(NoOpLogger)).clone()
+            OWNED_LOGGER.get_or_init(|| Arc::new(crate::no_op::NoOpLogger)).clone()
         };
     }
-
-    pub use crate::no_op::NoOpLogger;
 }
