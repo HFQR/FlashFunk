@@ -5,9 +5,10 @@ edition = "2021"
 
 [features]
 default = []
-async = ["tokio/sync", "tokio/rt-multi-thread"]
+async = ["core_affinity", "tokio/sync", "tokio/rt-multi-thread"]
 
 [dependencies]
 once_cell = "1.10.0"
 
+core_affinity = { version = "0.5.10", optional = true }
 tokio = { version = "1.18.2", optional = true }

@@ -1,4 +1,10 @@
-use std::{io, sync::Arc};
+use std::{
+    io,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 use tokio::runtime::{Builder, Runtime};
 
@@ -33,6 +39,41 @@ impl TokioLoggerBuilder {
 
     pub fn worker_threads(&mut self, val: usize) -> &mut Self {
         self.0.worker_threads(val);
+        self
+    }
+
+    pub fn bind_to_cpus<const N: usize>(&mut self, cpus: &[usize; N]) -> &mut Self {
+        use core_affinity::CoreId;
+
+        struct CpuAff {
+            cores: Box<[CoreId]>,
+            len: usize,
+            next: AtomicUsize,
+        }
+
+        impl CpuAff {
+            fn next(&self) -> CoreId {
+                let n = self.next.fetch_add(1, Ordering::Relaxed);
+                self.cores[n % self.len]
+            }
+        }
+
+        let aff = Arc::new(CpuAff {
+            cores: cpus
+                .into_iter()
+                .map(|id| CoreId { id: *id })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            len: N,
+            next: AtomicUsize::new(0),
+        });
+
+        self.0.on_thread_start(move || {
+            let aff = aff.clone();
+            let id = aff.next();
+            core_affinity::set_for_current(id);
+        });
+
         self
     }
 
