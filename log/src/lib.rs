@@ -1,37 +1,12 @@
-#![feature(once_cell)]
-
 mod no_op;
 
 pub trait OwnedLog: 'static {
     fn log(&self, value: Box<dyn Value>);
 }
 
-pub trait Value {
+pub trait Value: Send + 'static {
     fn display(&mut self);
 }
-
-impl Value for ValueType {
-    fn display(&mut self) {
-        todo!()
-    }
-}
-
-#[derive(Default)]
-pub struct ValueType(
-    u32,
-    u32,
-    u128,
-    u8,
-    u8,
-    u64,
-    u32,
-    i32,
-    i32,
-    i32,
-    i32,
-    usize,
-    [u8; 12],
-);
 
 use once_cell::unsync::OnceCell;
 
