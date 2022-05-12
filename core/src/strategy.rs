@@ -11,7 +11,9 @@ where
 {
     fn symbol(&self) -> &[&'static str];
 
-    fn on_start(&mut self, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>);
+    /// Method called when strategy is about to start.
+    #[allow(unused_variables)]
+    fn on_start(&mut self, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {}
 
     /// Method called when a new message is received by strategy.
     fn call(&mut self, msg: A::SndMessage, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>);
