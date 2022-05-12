@@ -1,7 +1,6 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use std::any::Any;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -81,13 +80,15 @@ impl MyLogger {
             .ok()
             .unwrap();
 
-        std::thread::spawn(move || loop {
+        std::thread::spawn(move || {
             set_for_current(CoreId {
                 id: id.unwrap_or(0),
             });
-            match queue.pop() {
-                Some(msg) => func(msg),
-                None => std::thread::sleep(std::time::Duration::from_millis(100)),
+            loop {
+                match queue.pop() {
+                    Some(msg) => func(msg),
+                    None => std::thread::sleep(std::time::Duration::from_millis(100)),
+                }
             }
         });
     }
