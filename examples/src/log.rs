@@ -1,26 +1,55 @@
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
+    atomic::{AtomicBool, Ordering},
     Arc,
 };
 
-use owned_log::{async_impl::TokioLogger, Value};
+use owned_log::{OwnedLog, Value};
+use flashfunk_core::util::channel::{channel, Sender};
 
 fn main() {
-    struct MyValue(Arc<AtomicUsize>);
+    struct MyLogger(Sender<Value>);
 
-    impl Value for MyValue {
-        fn display(&mut self) {
-            self.0.store(996, Ordering::SeqCst);
+    impl OwnedLog for MyLogger {
+        fn log(&self, value: Value) {
+            self.0.send(value)
         }
     }
 
-    TokioLogger::builder().build().unwrap();
+    let (tx, rx) = channel(256);
 
-    let value = Arc::new(AtomicUsize::new(0));
+    owned_log::OWNED_LOGGER.with(|logger| logger.set(Box::new(MyLogger(tx)) as _)).ok().unwrap();
 
-    owned_log::log!(MyValue(value.clone()));
+    for _ in 0..99 {
+        owned_log::log!(Value::default());
+    }
 
-    std::thread::sleep(std::time::Duration::from_secs(1));
+    let flag = Arc::new(AtomicBool::new(false));
 
-    assert_eq!(value.load(Ordering::Relaxed), 996);
+    let flag1 = flag.clone();
+    let handle = std::thread::spawn(move || {
+        for _ in 0..8 {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            flag1.store(true, Ordering::Relaxed);
+        }
+    });
+
+    let mut total = 0u128;
+    let mut time = 0;
+
+    while time < 8 {
+        if flag.swap(false, Ordering::SeqCst) {
+            let now = std::time::Instant::now();
+            owned_log::log!(Value::default());
+            total += now.elapsed().as_nanos();
+            time += 1;
+        } else {
+        }
+    }
+
+    println!("average time is {:?} ns", total / 8);
+
+    handle.join().unwrap();
 }
