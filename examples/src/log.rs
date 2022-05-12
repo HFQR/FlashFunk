@@ -1,24 +1,27 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+use std::any::Any;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
 
 use core_affinity::{set_for_current, CoreId};
-use flashfunk_core::util::channel::{channel, Sender};
+use crossbeam_queue::ArrayQueue;
 use owned_log::{OwnedLog, Value};
 
 fn main() {
     MyLogger::with_handler(
         |mut value| {
+            let value = value.downcast_mut::<MyValue>().unwrap();
+            println!("value is {:?}", value.0);
             value.display();
         },
         Some(1),
     );
 
-    struct MyValue;
+    struct MyValue(usize);
 
     impl Value for MyValue {
         fn display(&mut self) {
@@ -27,7 +30,7 @@ fn main() {
     }
 
     for _ in 0..99 {
-        owned_log::log!(Box::new(MyValue));
+        owned_log::log!(Box::new(MyValue(1)));
     }
 
     let flag = Arc::new(AtomicBool::new(false));
@@ -45,7 +48,7 @@ fn main() {
 
     while time < 8 {
         if flag.swap(false, Ordering::SeqCst) {
-            let value = Box::new(MyValue) as _;
+            let value = Box::new(MyValue(2)) as _;
             let now = std::time::Instant::now();
             owned_log::log!(value);
             total += now.elapsed().as_nanos();
@@ -58,11 +61,11 @@ fn main() {
     handle.join().unwrap();
 }
 
-struct MyLogger(Sender<Box<dyn Value>>);
+struct MyLogger(Arc<ArrayQueue<Box<dyn Value>>>);
 
 impl OwnedLog for MyLogger {
     fn log(&self, value: Box<dyn Value>) {
-        self.0.send(value)
+        self.0.push(value).ok().unwrap();
     }
 }
 
@@ -71,10 +74,10 @@ impl MyLogger {
     where
         F: FnMut(Box<dyn Value>) -> () + Send + 'static,
     {
-        let (tx, rx) = channel(256);
+        let queue = Arc::new(ArrayQueue::new(256));
 
         owned_log::OWNED_LOGGER
-            .with(|logger| logger.set(Box::new(MyLogger(tx)) as _))
+            .set(Arc::new(MyLogger(queue.clone())) as _)
             .ok()
             .unwrap();
 
@@ -82,9 +85,9 @@ impl MyLogger {
             set_for_current(CoreId {
                 id: id.unwrap_or(0),
             });
-            match rx.recv() {
-                Ok(msg) => func(msg),
-                Err(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
+            match queue.pop() {
+                Some(msg) => func(msg),
+                None => std::thread::sleep(std::time::Duration::from_millis(100)),
             }
         });
     }
