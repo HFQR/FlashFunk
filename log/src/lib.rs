@@ -1,11 +1,23 @@
+#![feature(once_cell)]
+
 mod no_op;
 
 pub trait OwnedLog: 'static {
-    fn log(&self, value: Value);
+    fn log(&self, value: Box<dyn Value>);
+}
+
+pub trait Value {
+    fn display(&mut self);
+}
+
+impl Value for ValueType {
+    fn display(&mut self) {
+        todo!()
+    }
 }
 
 #[derive(Default)]
-pub struct Value(
+pub struct ValueType(
     u32,
     u32,
     u128,

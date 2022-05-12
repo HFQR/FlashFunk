@@ -6,15 +6,23 @@ use std::sync::{
     Arc,
 };
 
-use owned_log::{OwnedLog, Value};
+use owned_log::{OwnedLog, ValueType, Value};
 use flashfunk_core::util::channel::{channel, Sender};
 
 fn main() {
-    struct MyLogger(Sender<Value>);
+    struct MyLogger(Sender<Box<dyn Value>>);
 
     impl OwnedLog for MyLogger {
-        fn log(&self, value: Value) {
+        fn log(&self, value: Box<dyn Value>) {
             self.0.send(value)
+        }
+    }
+
+    struct MyValue;
+
+    impl Value for MyValue {
+        fn display(&mut self) {
+            todo!()
         }
     }
 
@@ -23,7 +31,7 @@ fn main() {
     owned_log::OWNED_LOGGER.with(|logger| logger.set(Box::new(MyLogger(tx)) as _)).ok().unwrap();
 
     for _ in 0..99 {
-        owned_log::log!(Value::default());
+        owned_log::log!(Box::new(ValueType::default()));
     }
 
     let flag = Arc::new(AtomicBool::new(false));
@@ -41,11 +49,12 @@ fn main() {
 
     while time < 8 {
         if flag.swap(false, Ordering::SeqCst) {
+            let value = ValueType::default();
             let now = std::time::Instant::now();
-            owned_log::log!(Value::default());
+            let value = Box::new(value) as _;
+            owned_log::log!(value);
             total += now.elapsed().as_nanos();
             time += 1;
-        } else {
         }
     }
 
