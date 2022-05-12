@@ -12,7 +12,6 @@ owned-log = { path = "./log" }
 xitca-client = { git = "https://github.com/HFQR/xitca-web.git" }
 xitca-http = { git = "https://github.com/HFQR/xitca-web.git" }
 xitca-io = { git = "https://github.com/HFQR/xitca-web.git" }
-xitca-server = { git = "https://github.com/HFQR/xitca-web.git" }
 xitca-service = { git = "https://github.com/HFQR/xitca-web.git" }
 xitca-unsafe-collection = { git = "https://github.com/HFQR/xitca-web.git" }
 
