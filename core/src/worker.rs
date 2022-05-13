@@ -60,6 +60,8 @@ where
 
         let ctx = &mut StrategyCtx::new(sender);
 
+        strategy.on_start(ctx);
+
         loop {
             if let Ok(msg) = receiver.recv() {
                 strategy.call(msg, ctx);
@@ -78,6 +80,8 @@ where
         } = self;
 
         let ctx = &mut StrategyCtx::new(sender);
+
+        strategy.on_start(ctx);
 
         loop {
             if let Ok(msg) = receiver.recv().await {

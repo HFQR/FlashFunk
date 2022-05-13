@@ -6,10 +6,19 @@ edition = "2021"
 [[example]]
 name = "websocket"
 path = "./src/websocket.rs"
+required-features = ["flashfunk-core/async"]
+
+[[example]]
+name = "log"
+path = "./src/log.rs"
 
 [dependencies]
-flashfunk-core = { version = "0.5", features = ["async"] }
+flashfunk-core = { version = "0.5" }
+owned-log = { version = "0.1" }
 
+crossbeam-queue = "0.3.5"
+core_affinity = "0.5.10"
 futures-util = "0.3.17"
+mimalloc = { version = "0.1.28", default-features = false }
 tokio = { version = "1.13", features = ["macros", "rt"] }
-xitca-client = { version = "0.1", features = ["rustls"] }
+xitca-client = { version = "0.1", features = ["rustls", "websocket"] }
