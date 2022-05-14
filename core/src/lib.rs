@@ -47,6 +47,11 @@ mod test {
                 );
             }
 
+            #[cfg(not(feature = "small-symbol"))]
+            {
+                assert_eq!(sender.group().get("dgr123").unwrap().len(), 1);
+            }
+
             let (tx, rx) = channel(1);
 
             sender.send_to(APIMessage(tx), 0);
