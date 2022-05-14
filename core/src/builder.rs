@@ -1,13 +1,15 @@
-use ahash::AHashMap;
 use alloc::vec::Vec;
 
-use super::api::API;
-use super::strategy::Strategy;
-use super::util::{
-    channel::{channel, GroupReceiver, GroupSender},
-    pin_to_core,
+use super::{
+    api::API,
+    strategy::Strategy,
+    util::{
+        channel::{channel, GroupReceiver, GroupSender},
+        fx_hasher::FxHashMap,
+        pin_to_core,
+    },
+    worker::Worker,
 };
-use super::worker::Worker;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
@@ -66,7 +68,7 @@ where
         let mut cores = pin_to_core::get_core_ids();
 
         // groups为与symbols相对应(vec index)的策略们的发送端vec.
-        let mut group = AHashMap::new();
+        let mut group = FxHashMap::default();
 
         // 单向spsc:
         // API -> Strategies.

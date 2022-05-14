@@ -3,14 +3,16 @@ use core::{
     ops::Deref,
 };
 
-use ahash::AHashMap;
 use alloc::vec::Vec;
 
 #[cfg(feature = "async")]
 use {alloc::sync::Arc, futures_core::task::__internal::AtomicWaker};
 
-use super::spsc::{new, Consumer, Producer};
-use super::stack_array::StackArray;
+use super::{
+    fx_hasher::FxHashMap,
+    spsc::{new, Consumer, Producer},
+    stack_array::StackArray,
+};
 
 pub enum ChannelError<M> {
     RecvError,
@@ -184,11 +186,11 @@ mod r#async {
 
 pub struct GroupSender<M, const N: usize> {
     senders: StackArray<Sender<M>, N>,
-    group: AHashMap<&'static str, Vec<usize>>,
+    group: FxHashMap<&'static str, Vec<usize>>,
 }
 
 impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: AHashMap<&'static str, Vec<usize>>) -> Self {
+    pub fn new(sender: Vec<Sender<M>>, group: FxHashMap<&'static str, Vec<usize>>) -> Self {
         Self {
             senders: StackArray::from_vec(sender),
             group,
@@ -196,7 +198,7 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     #[inline]
-    pub fn group(&self) -> &AHashMap<&'static str, Vec<usize>> {
+    pub fn group(&self) -> &FxHashMap<&'static str, Vec<usize>> {
         &self.group
     }
 
