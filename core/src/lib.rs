@@ -34,7 +34,19 @@ mod test {
             sender: GroupSender<Self::SndMessage, N>,
             receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
-            assert_eq!(sender.group().get("da_gong_ren").unwrap().len(), 1);
+            #[cfg(feature = "small-symbol")]
+            {
+                let mut buf = [0; 8];
+                for (idx, char) in "dgr123".as_bytes().into_iter().enumerate() {
+                    buf[idx] = *char;
+                }
+
+                assert_eq!(
+                    sender.group().get(&u64::from_le_bytes(buf)).unwrap().len(),
+                    1
+                );
+            }
+
             let (tx, rx) = channel(1);
 
             sender.send_to(APIMessage(tx), 0);
@@ -95,7 +107,7 @@ mod test {
     #[test]
     fn build() {
         let st = RemStrategy {
-            symbols: vec!["da_gong_ren"],
+            symbols: vec!["dgr123"],
         };
         let api = Rem;
         api.into_builder([st])

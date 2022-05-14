@@ -13,6 +13,8 @@ required-features = ["async"]
 [features]
 default = ["std"]
 std = ["core_affinity"]
+# optional feature for small symbol type less than 8 bytes
+small-symbol = []
 async = ["std", "futures-core", "parking"]
 
 [dependencies]

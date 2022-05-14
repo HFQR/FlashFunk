@@ -9,7 +9,6 @@ use alloc::vec::Vec;
 use {alloc::sync::Arc, futures_core::task::__internal::AtomicWaker};
 
 use super::{
-    fx_hasher::FxHashMap,
     spsc::{new, Consumer, Producer},
     stack_array::StackArray,
 };
@@ -184,13 +183,19 @@ mod r#async {
     }
 }
 
+#[cfg(feature = "small-symbol")]
+pub(crate) type HashMap = super::no_hasher::NoHashMap<u64, Box<[usize]>>;
+
+#[cfg(not(feature = "small-symbol"))]
+pub(crate) type HashMap = super::fx_hasher::FxHashMap<&'static str, Box<[usize]>>;
+
 pub struct GroupSender<M, const N: usize> {
     senders: StackArray<Sender<M>, N>,
-    group: FxHashMap<&'static str, Box<[usize]>>,
+    group: HashMap,
 }
 
 impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: FxHashMap<&'static str, Box<[usize]>>) -> Self {
+    pub fn new(sender: Vec<Sender<M>>, group: HashMap) -> Self {
         Self {
             senders: StackArray::from_vec(sender),
             group,
@@ -198,7 +203,7 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     #[inline]
-    pub fn group(&self) -> &FxHashMap<&'static str, Box<[usize]>> {
+    pub fn group(&self) -> &HashMap {
         &self.group
     }
 
@@ -238,6 +243,22 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
+    #[cfg(feature = "small-symbol")]
+    #[inline]
+    pub fn try_send_group<MM>(&self, mm: MM, symbol: &u64) -> Result<(), ChannelError<MM>>
+    where
+        MM: Into<M> + Clone,
+    {
+        match self.group.get(symbol) {
+            Some(g) => {
+                g.iter().for_each(|i| self.send_to(mm.clone(), *i));
+                Ok(())
+            }
+            None => Err(ChannelError::SenderGroupNotFound(mm)),
+        }
+    }
+
+    #[cfg(not(feature = "small-symbol"))]
     #[inline]
     pub fn try_send_group<MM>(&self, mm: MM, symbol: &str) -> Result<(), ChannelError<MM>>
     where
