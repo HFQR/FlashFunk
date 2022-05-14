@@ -186,11 +186,11 @@ mod r#async {
 
 pub struct GroupSender<M, const N: usize> {
     senders: StackArray<Sender<M>, N>,
-    group: FxHashMap<&'static str, Vec<usize>>,
+    group: FxHashMap<&'static str, Box<[usize]>>,
 }
 
 impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: FxHashMap<&'static str, Vec<usize>>) -> Self {
+    pub fn new(sender: Vec<Sender<M>>, group: FxHashMap<&'static str, Box<[usize]>>) -> Self {
         Self {
             senders: StackArray::from_vec(sender),
             group,
@@ -198,7 +198,7 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     #[inline]
-    pub fn group(&self) -> &FxHashMap<&'static str, Vec<usize>> {
+    pub fn group(&self) -> &FxHashMap<&'static str, Box<[usize]>> {
         &self.group
     }
 

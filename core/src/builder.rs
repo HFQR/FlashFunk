@@ -101,6 +101,12 @@ where
             st_index += 1;
         }
 
+        // shrink the Vec<usize> to Box<[usize]>
+        let group = group
+            .into_iter()
+            .map(|(k, v)| (k, v.into_boxed_slice()))
+            .collect();
+
         let group_senders = GroupSender::<_, N>::new(senders, group);
         let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);
 
