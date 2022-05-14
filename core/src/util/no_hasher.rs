@@ -1,19 +1,17 @@
-use core::hash::{BuildHasher, Hasher};
+use core::hash::Hasher;
 
-/// A simple hash builder for a [NoHasher] that does not do hashing.
-struct NoHasherBuilder;
+pub type NoHashMap<K, V> =
+    std::collections::HashMap<K, V, core::hash::BuildHasherDefault<NoHasher>>;
 
-impl BuildHasher for NoHasherBuilder {
-    type Hasher = NoHasher;
+/// A simple hasher that do hashing by not doing it.
+#[derive(Debug, Copy, Clone)]
+pub struct NoHasher(u64);
 
-    fn build_hasher(&self) -> Self::Hasher {
-        NoHasher(0)
+impl Default for NoHasher {
+    fn default() -> Self {
+        Self(0)
     }
 }
-
-/// A simple hasher that do hasing by not doing it.
-#[derive(Debug, Default, Copy, Clone)]
-pub struct NoHasher(u64);
 
 impl Hasher for NoHasher {
     #[inline]
@@ -80,9 +78,11 @@ impl Hasher for NoHasher {
 mod test {
     use super::*;
 
+    use core::hash::{BuildHasher, BuildHasherDefault};
+
     #[test]
     fn test() {
-        let mut hasher = NoHasherBuilder.build_hasher();
+        let mut hasher = BuildHasherDefault::<NoHasher>::default().build_hasher();
 
         hasher.write_i8(7);
         assert_eq!(hasher.finish(), 7u64);
@@ -118,7 +118,7 @@ mod test {
     #[test]
     #[should_panic]
     fn not_support() {
-        let mut hasher = NoHasherBuilder.build_hasher();
+        let mut hasher = BuildHasherDefault::<NoHasher>::default().build_hasher();
         hasher.write_i128(996);
     }
 }
