@@ -15,6 +15,7 @@ pub type FxHashMap<K, V> =
 /// out-performs an FNV-based hash within rustc itself -- the collision rate is
 /// similar or slightly worse than FNV, but the speed of the hash function
 /// itself is much higher because it works on up to 8 bytes at a time.
+#[derive(Default)]
 pub struct FxHasher {
     hash: usize,
 }
@@ -23,13 +24,6 @@ pub struct FxHasher {
 const K: usize = 0x9e3779b9;
 #[cfg(target_pointer_width = "64")]
 const K: usize = 0x517cc1b727220a95;
-
-impl Default for FxHasher {
-    #[inline]
-    fn default() -> FxHasher {
-        FxHasher { hash: 0 }
-    }
-}
 
 impl FxHasher {
     #[inline]
@@ -60,7 +54,7 @@ impl Hasher for FxHasher {
             hash.add_to_hash(u16::from_ne_bytes(bytes[..2].try_into().unwrap()) as usize);
             bytes = &bytes[2..];
         }
-        if (size_of::<usize>() > 1) && bytes.len() >= 1 {
+        if (size_of::<usize>() > 1) && !bytes.is_empty() {
             hash.add_to_hash(bytes[0] as usize);
         }
         self.hash = hash.hash;

@@ -96,11 +96,11 @@ where
                         assert!(bytes.len() <= 8, "small-symbol feature require a symbol with no more than 8 bytes in length.");
 
                         let mut buf = [0; 8];
-                        for (idx, char) in bytes.into_iter().enumerate() {
+                        for (idx, char) in bytes.iter().enumerate() {
                             buf[idx] = *char;
                         }
 
-                        let symbol = u64::from_le_bytes(buf.try_into().unwrap());
+                        let symbol = u64::from_le_bytes(buf);
 
                         group.entry(symbol).or_insert_with(Vec::<usize>::new)
                     }

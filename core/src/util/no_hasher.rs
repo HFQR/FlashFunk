@@ -4,14 +4,8 @@ pub type NoHashMap<K, V> =
     std::collections::HashMap<K, V, core::hash::BuildHasherDefault<NoHasher>>;
 
 /// A simple hasher that do hashing by not doing it.
-#[derive(Debug, Copy, Clone)]
+#[derive(Default)]
 pub struct NoHasher(u64);
-
-impl Default for NoHasher {
-    fn default() -> Self {
-        Self(0)
-    }
-}
 
 impl Hasher for NoHasher {
     #[inline]

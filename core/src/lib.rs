@@ -37,7 +37,7 @@ mod test {
             #[cfg(feature = "small-symbol")]
             {
                 let mut buf = [0; 8];
-                for (idx, char) in "dgr123".as_bytes().into_iter().enumerate() {
+                for (idx, char) in "dgr123".as_bytes().iter().enumerate() {
                     buf[idx] = *char;
                 }
 
