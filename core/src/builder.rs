@@ -88,7 +88,7 @@ where
         let mut st_index = 0usize;
         for st in strategies {
             st.symbol().iter().for_each(|symbol| {
-                let g = {
+                let (arr, len) = {
                     #[cfg(feature = "small-symbol")]
                     {
                         let bytes = symbol.as_bytes();
@@ -102,18 +102,19 @@ where
 
                         let symbol = u64::from_le_bytes(buf);
 
-                        group.entry(symbol).or_insert_with(Vec::<usize>::new)
+                        group.entry(symbol).or_insert_with(|| ([0; N], 0))
                     }
 
                     #[cfg(not(feature = "small-symbol"))]
                     {
-                        group.entry(*symbol).or_insert_with(Vec::<usize>::new)
+                        group.entry(*symbol).or_insert_with(|| ([0; N], 0))
                     }
                 };
 
-                assert!(!g.contains(&st_index));
+                assert!(!arr[..*len].contains(&st_index));
 
-                g.push(st_index);
+                arr[*len] = st_index;
+                *len += 1;
             });
 
             // API -> Strategies
@@ -130,12 +131,6 @@ where
 
             st_index += 1;
         }
-
-        // shrink the Vec<usize> to Box<[usize]>
-        let group = group
-            .into_iter()
-            .map(|(k, v)| (k, v.into_boxed_slice()))
-            .collect();
 
         let group_senders = GroupSender::<_, N>::new(senders, group);
         let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);

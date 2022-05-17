@@ -184,18 +184,19 @@ mod r#async {
 }
 
 #[cfg(feature = "small-symbol")]
-pub(crate) type HashMap = super::no_hasher::NoHashMap<u64, Box<[usize]>>;
+pub(crate) type HashMap<const N: usize> = super::no_hasher::NoHashMap<u64, ([usize; N], usize)>;
 
 #[cfg(not(feature = "small-symbol"))]
-pub(crate) type HashMap = super::fx_hasher::FxHashMap<&'static str, Box<[usize]>>;
+pub(crate) type HashMap<const N: usize> =
+    super::fx_hasher::FxHashMap<&'static str, ([usize; N], usize)>;
 
 pub struct GroupSender<M, const N: usize> {
     senders: StackArray<Sender<M>, N>,
-    group: HashMap,
+    group: HashMap<N>,
 }
 
 impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: HashMap) -> Self {
+    pub fn new(sender: Vec<Sender<M>>, group: HashMap<N>) -> Self {
         Self {
             senders: StackArray::from_vec(sender),
             group,
@@ -203,7 +204,7 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     #[inline]
-    pub fn group(&self) -> &HashMap {
+    pub fn group(&self) -> &HashMap<N> {
         &self.group
     }
 
@@ -250,8 +251,10 @@ impl<M, const N: usize> GroupSender<M, N> {
         MM: Into<M> + Clone,
     {
         match self.group.get(symbol) {
-            Some(g) => {
-                g.iter().for_each(|i| self.send_to(mm.clone(), *i));
+            Some((arr, len)) => {
+                arr[..*len]
+                    .iter()
+                    .for_each(|i| self.send_to(mm.clone(), *i));
                 Ok(())
             }
             None => Err(ChannelError::SenderGroupNotFound(mm)),
@@ -265,8 +268,10 @@ impl<M, const N: usize> GroupSender<M, N> {
         MM: Into<M> + Clone,
     {
         match self.group.get(symbol) {
-            Some(g) => {
-                g.iter().for_each(|i| self.send_to(mm.clone(), *i));
+            Some((arr, len)) => {
+                arr[..*len]
+                    .iter()
+                    .for_each(|i| self.send_to(mm.clone(), *i));
                 Ok(())
             }
             None => Err(ChannelError::SenderGroupNotFound(mm)),
