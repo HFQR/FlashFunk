@@ -1,13 +1,14 @@
-use ahash::AHashMap;
 use alloc::vec::Vec;
 
-use super::api::API;
-use super::strategy::Strategy;
-use super::util::{
-    channel::{channel, GroupReceiver, GroupSender},
-    pin_to_core,
+use super::{
+    api::API,
+    strategy::Strategy,
+    util::{
+        channel::{channel, GroupReceiver, GroupSender},
+        pin_to_core,
+    },
+    worker::Worker,
 };
-use super::worker::Worker;
 
 // 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
@@ -65,19 +66,50 @@ where
         // 收集核心cid
         let mut cores = pin_to_core::get_core_ids();
 
-        // groups为与symbols相对应(vec index)的策略们的发送端vec.
-        let mut group = AHashMap::new();
-
         // 单向spsc:
         // API -> Strategies.
         let mut senders = Vec::new();
         // Strategies -> API.
         let mut receivers = Vec::new();
 
+        // groups为与symbols相对应(vec index)的策略们的发送端vec.
+        let mut group = {
+            #[cfg(not(feature = "small-symbol"))]
+            {
+                crate::util::fx_hasher::FxHashMap::default()
+            }
+
+            #[cfg(feature = "small-symbol")]
+            {
+                crate::util::no_hasher::NoHashMap::default()
+            }
+        };
+
         let mut st_index = 0usize;
         for st in strategies {
             st.symbol().iter().for_each(|symbol| {
-                let g = group.entry(*symbol).or_insert_with(Vec::<usize>::new);
+                let g = {
+                    #[cfg(feature = "small-symbol")]
+                    {
+                        let bytes = symbol.as_bytes();
+
+                        assert!(bytes.len() <= 8, "small-symbol feature require a symbol with no more than 8 bytes in length.");
+
+                        let mut buf = [0; 8];
+                        for (idx, char) in bytes.iter().enumerate() {
+                            buf[idx] = *char;
+                        }
+
+                        let symbol = u64::from_le_bytes(buf);
+
+                        group.entry(symbol).or_insert_with(Vec::<usize>::new)
+                    }
+
+                    #[cfg(not(feature = "small-symbol"))]
+                    {
+                        group.entry(*symbol).or_insert_with(Vec::<usize>::new)
+                    }
+                };
 
                 assert!(!g.contains(&st_index));
 
@@ -98,6 +130,12 @@ where
 
             st_index += 1;
         }
+
+        // shrink the Vec<usize> to Box<[usize]>
+        let group = group
+            .into_iter()
+            .map(|(k, v)| (k, v.into_boxed_slice()))
+            .collect();
 
         let group_senders = GroupSender::<_, N>::new(senders, group);
         let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);
