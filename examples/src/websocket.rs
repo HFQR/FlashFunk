@@ -24,8 +24,8 @@ impl API for WsAPI {
 
     fn run<const N: usize>(
         self,
-        sender: GroupSender<Self::SndMessage, N>,
-        receiver: GroupReceiver<Self::RecvMessage, N>,
+        mut sender: GroupSender<Self::SndMessage, N>,
+        mut receiver: GroupReceiver<Self::RecvMessage, N>,
     ) {
         let res = tokio::runtime::Builder::new_current_thread()
             .enable_all()
