@@ -184,18 +184,25 @@ mod r#async {
 }
 
 #[cfg(feature = "small-symbol")]
-pub(crate) type HashMap = super::no_hasher::NoHashMap<u64, Box<[usize]>>;
+pub(crate) type HashMap<const N: usize> = super::no_hasher::NoHashMap<u64, ([usize; N], usize)>;
+
+#[cfg(feature = "small-symbol")]
+type KeyRef<'a> = &'a u64;
 
 #[cfg(not(feature = "small-symbol"))]
-pub(crate) type HashMap = super::fx_hasher::FxHashMap<&'static str, Box<[usize]>>;
+pub(crate) type HashMap<const N: usize> =
+    super::fx_hasher::FxHashMap<&'static str, ([usize; N], usize)>;
+
+#[cfg(not(feature = "small-symbol"))]
+type KeyRef<'a> = &'a str;
 
 pub struct GroupSender<M, const N: usize> {
     senders: StackArray<Sender<M>, N>,
-    group: HashMap,
+    group: HashMap<N>,
 }
 
 impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: HashMap) -> Self {
+    pub fn new(sender: Vec<Sender<M>>, group: HashMap<N>) -> Self {
         Self {
             senders: StackArray::from_vec(sender),
             group,
@@ -203,7 +210,7 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     #[inline]
-    pub fn group(&self) -> &HashMap {
+    pub fn group(&self) -> &HashMap<N> {
         &self.group
     }
 
@@ -243,30 +250,16 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
-    #[cfg(feature = "small-symbol")]
     #[inline]
-    pub fn try_send_group<MM>(&self, mm: MM, symbol: &u64) -> Result<(), ChannelError<MM>>
+    pub fn try_send_group<MM>(&self, mm: MM, symbol: KeyRef<'_>) -> Result<(), ChannelError<MM>>
     where
         MM: Into<M> + Clone,
     {
         match self.group.get(symbol) {
-            Some(g) => {
-                g.iter().for_each(|i| self.send_to(mm.clone(), *i));
-                Ok(())
-            }
-            None => Err(ChannelError::SenderGroupNotFound(mm)),
-        }
-    }
-
-    #[cfg(not(feature = "small-symbol"))]
-    #[inline]
-    pub fn try_send_group<MM>(&self, mm: MM, symbol: &str) -> Result<(), ChannelError<MM>>
-    where
-        MM: Into<M> + Clone,
-    {
-        match self.group.get(symbol) {
-            Some(g) => {
-                g.iter().for_each(|i| self.send_to(mm.clone(), *i));
+            Some((arr, len)) => {
+                arr[..*len]
+                    .iter()
+                    .for_each(|i| self.send_to(mm.clone(), *i));
                 Ok(())
             }
             None => Err(ChannelError::SenderGroupNotFound(mm)),
