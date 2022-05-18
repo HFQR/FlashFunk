@@ -67,8 +67,8 @@ impl<R, I: Default> StrategyCtx<R, I> {
     /// Get a sender type from strategy which can be used to send message
     /// to API.
     #[inline]
-    pub fn sender(&self) -> &Sender<R> {
-        &self.sender
+    pub fn sender(&mut self) -> &mut Sender<R> {
+        &mut self.sender
     }
 }
 

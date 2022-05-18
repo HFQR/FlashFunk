@@ -1,6 +1,6 @@
 use core::{
     fmt::{Debug, Display, Formatter, Result as FmtResult},
-    ops::Deref,
+    ops::{Deref, DerefMut},
 };
 
 use alloc::vec::Vec;
@@ -61,7 +61,7 @@ pub struct Sender<M> {
 impl<M> Sender<M> {
     // 发送失败会panic
     #[inline]
-    pub fn send(&self, m: impl Into<M>) {
+    pub fn send(&mut self, m: impl Into<M>) {
         self.tx.push(m.into()).unwrap();
         #[cfg(feature = "async")]
         self.waker.wake();
@@ -69,7 +69,7 @@ impl<M> Sender<M> {
 
     // 发送失败返回消息
     #[inline]
-    pub fn try_send(&self, m: M) -> Result<(), ChannelError<M>> {
+    pub fn try_send(&mut self, m: M) -> Result<(), ChannelError<M>> {
         match self.tx.push(m) {
             Ok(_) => {
                 #[cfg(feature = "async")]
@@ -101,7 +101,7 @@ mod r#sync {
 
     impl<M> Receiver<M> {
         #[inline]
-        pub fn recv(&self) -> Result<M, ChannelError<M>> {
+        pub fn recv(&mut self) -> Result<M, ChannelError<M>> {
             self.rx.pop().map_err(|_| ChannelError::RecvError)
         }
     }
@@ -134,17 +134,18 @@ mod r#async {
 
     impl<M> Receiver<M> {
         #[inline]
-        pub async fn recv(&self) -> Result<M, ChannelError<M>> {
-            struct Recv<'a, M>(&'a Receiver<M>);
+        pub async fn recv(&mut self) -> Result<M, ChannelError<M>> {
+            struct Recv<'a, M>(&'a mut Receiver<M>);
 
             impl<M> Future for Recv<'_, M> {
                 type Output = Result<M, ChannelError<M>>;
 
                 fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                    match self.0.rx.pop() {
+                    let this = self.get_mut();
+                    match this.0.rx.pop() {
                         Ok(msg) => Poll::Ready(Ok(msg)),
                         Err(_) => {
-                            self.0.waker.register(cx.waker());
+                            this.0.waker.register(cx.waker());
                             Poll::Pending
                         }
                     }
@@ -156,16 +157,16 @@ mod r#async {
     }
 
     impl<M, const N: usize> GroupReceiver<M, N> {
-        pub async fn recv(&self) -> Result<M, ChannelError<M>> {
+        pub async fn recv(&mut self) -> Result<M, ChannelError<M>> {
             struct GroupReceiveFut<'a, M, const N: usize> {
-                group: &'a GroupReceiver<M, N>,
+                group: &'a mut GroupReceiver<M, N>,
             }
 
             impl<M, const N: usize> Future for GroupReceiveFut<'_, M, N> {
                 type Output = Result<M, ChannelError<M>>;
 
                 fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                    for rx in self.get_mut().group.iter() {
+                    for rx in self.get_mut().group.iter_mut() {
                         match rx.rx.pop() {
                             Ok(msg) => return Poll::Ready(Ok(msg)),
                             Err(_) => {
@@ -221,26 +222,28 @@ impl<M, const N: usize> GroupSender<M, N> {
 
     // 发送至所有sender
     #[inline]
-    pub fn send_all<MM>(&self, mm: MM)
+    pub fn send_all<MM>(&mut self, mm: MM)
     where
         MM: Into<M> + Clone,
     {
-        self.senders.iter().for_each(|s| s.send(mm.clone().into()))
+        self.senders
+            .iter_mut()
+            .for_each(|s| s.send(mm.clone().into()))
     }
 
     // 发送至指定index的sender. 失败会panic
     #[inline]
-    pub fn send_to(&self, m: impl Into<M>, sender_index: usize) {
+    pub fn send_to(&mut self, m: impl Into<M>, sender_index: usize) {
         self.senders[sender_index].send(m.into());
     }
 
     // 发送至指定index的sender. 失败会返回消息
     #[inline]
-    pub fn try_send_to<MM>(&self, m: MM, sender_index: usize) -> Result<(), ChannelError<MM>>
+    pub fn try_send_to<MM>(&mut self, m: MM, sender_index: usize) -> Result<(), ChannelError<MM>>
     where
         MM: Into<M>,
     {
-        match self.senders.get(sender_index) {
+        match self.senders.get_mut(sender_index) {
             Some(s) => {
                 s.send(m.into());
                 Ok(())
@@ -251,15 +254,15 @@ impl<M, const N: usize> GroupSender<M, N> {
 
     // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
     #[inline]
-    pub fn try_send_group<MM>(&self, mm: MM, symbol: KeyRef<'_>) -> Result<(), ChannelError<MM>>
+    pub fn try_send_group<MM>(&mut self, mm: MM, symbol: KeyRef<'_>) -> Result<(), ChannelError<MM>>
     where
         MM: Into<M> + Clone,
     {
-        match self.group.get(symbol) {
+        match self.group.get_mut(symbol) {
             Some((arr, len)) => {
                 arr[..*len]
-                    .iter()
-                    .for_each(|i| self.send_to(mm.clone(), *i));
+                    .iter_mut()
+                    .for_each(|i| self.senders[*i].send(mm.clone().into()));
                 Ok(())
             }
             None => Err(ChannelError::SenderGroupNotFound(mm)),
@@ -284,5 +287,11 @@ impl<M, const N: usize> Deref for GroupReceiver<M, N> {
 
     fn deref(&self) -> &Self::Target {
         self.receivers.deref()
+    }
+}
+
+impl<M, const N: usize> DerefMut for GroupReceiver<M, N> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.receivers.deref_mut()
     }
 }

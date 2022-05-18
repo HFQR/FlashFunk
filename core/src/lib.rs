@@ -31,8 +31,8 @@ mod test {
 
         fn run<const N: usize>(
             self,
-            sender: GroupSender<Self::SndMessage, N>,
-            receiver: GroupReceiver<Self::RecvMessage, N>,
+            mut sender: GroupSender<Self::SndMessage, N>,
+            mut receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
             #[cfg(feature = "small-symbol")]
             {
@@ -49,7 +49,7 @@ mod test {
                 assert_eq!(sender.group().get("dgr123").unwrap().1, 1);
             }
 
-            let (tx, rx) = channel(1);
+            let (tx, mut rx) = channel(1);
 
             sender.send_to(APIMessage(tx), 0);
 
@@ -62,7 +62,7 @@ mod test {
                     }
                 }
 
-                receiver.iter().for_each(|r| {
+                receiver.iter_mut().for_each(|r| {
                     if let Ok(m) = r.recv() {
                         assert_eq!(m.0, 251);
                     }
@@ -74,7 +74,7 @@ mod test {
                 crate::util::async_runtime::StdRuntime::new().block_on(async move {
                     assert_eq!(996, rx.recv().await.unwrap());
 
-                    for r in receiver.iter() {
+                    for r in receiver.iter_mut() {
                         if let Ok(m) = r.recv().await {
                             assert_eq!(m.0, 251);
                         }
@@ -98,7 +98,7 @@ mod test {
             msg: <Rem as API>::SndMessage,
             ctx: &mut StrategyCtx<<Rem as API>::RecvMessage, <Rem as API>::Context>,
         ) {
-            let tx = msg.0;
+            let mut tx = msg.0;
 
             ctx.sender().send(StrategyMessage(251));
 
