@@ -54,7 +54,7 @@ impl<T, const N: usize> Drop for StackArray<T, N> {
         // SAFETY:
         // This is safe for the the same reason of StackArray as DerefMut is safe.
         unsafe {
-            ptr::drop_in_place(&mut *(&mut self.group as *mut [MaybeUninit<T>] as *mut [T]));
+            ptr::drop_in_place(&mut self.group as *mut [MaybeUninit<T>] as *mut [T]);
         }
     }
 }
@@ -105,6 +105,7 @@ mod test {
         drop(group);
 
         assert_eq!(rc.get(), 4);
+        assert_eq!(Rc::strong_count(&rc), 1);
     }
 
     #[test]
