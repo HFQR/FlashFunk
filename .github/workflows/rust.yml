@@ -55,3 +55,20 @@ jobs:
       with:
         command: fmt
         args: --all -- --check
+
+  miri-test-unsafe:
+    name: miri-test-unsafe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          components: miri
+          override: true
+      - name: miri
+        run: cargo miri test util --no-fail-fast -- --nocapture
+        env:
+          MIRIFLAGS: -Zmiri-strict-provenance -Zmiri-disable-isolation -Zmiri-symbolic-alignment-check
+          PROPTEST_CASES: 10

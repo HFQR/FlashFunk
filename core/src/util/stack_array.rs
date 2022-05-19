@@ -1,36 +1,31 @@
 use core::{
-    mem::{ManuallyDrop, MaybeUninit},
+    mem::MaybeUninit,
     ops::{Deref, DerefMut},
-    ptr, slice,
+    ptr,
 };
 
 pub struct StackArray<T, const N: usize> {
-    group: ManuallyDrop<MaybeUninit<[T; N]>>,
+    group: [MaybeUninit<T>; N],
 }
 
 impl<T, const N: usize> StackArray<T, N> {
-    pub fn from_vec(mut vec: Vec<T>) -> Self {
+    pub fn from_vec(vec: Vec<T>) -> Self {
         assert_eq!(vec.len(), N);
 
-        let mut group = ManuallyDrop::new(MaybeUninit::uninit());
+        // SAFETY:
+        // assume_init is valid for [MaybeUninit<T>; N];
+        let mut group: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 
-        unsafe {
-            // SAFETY:
-            //
-            // Set len to zero is safe:
-            //
-            // vector is the same length as N. This is assert checked beforehand.
-            vec.set_len(0);
+        let n = vec
+            .into_iter()
+            .enumerate()
+            .map(|(idx, value)| {
+                group[idx].write(value);
+            })
+            .count();
 
-            // SAFETY:
-            //
-            // pointer copy is safe:
-            //
-            // Vector is the same length as N and receivers are constructed in scope
-            // with mut reference in unsafe block.
-            let dst = group.as_mut_ptr() as *mut T;
-            ptr::copy_nonoverlapping(vec.as_ptr(), dst, N);
-        }
+        // make sure all items in group are initialized.
+        assert_eq!(N, n);
 
         Self { group }
     }
@@ -41,43 +36,26 @@ impl<T, const N: usize> Deref for StackArray<T, N> {
 
     fn deref(&self) -> &Self::Target {
         // SAFETY:
-        //
-        // Deref is safe:
-        //
-        // StackGroup is only constructed from a non empty Vec<T>.
-        // Deref can only happen after.
-        //
-        // N is a const generic param inherent from [Strategy; N] and it always
-        // equal to the input length of Vec<T>.
-        unsafe {
-            let ptr = self.group.as_ptr() as *const T;
-            slice::from_raw_parts(ptr, N)
-        }
+        // from_vec method did double check making sure all items are initialized in constructor.
+        unsafe { &*(&self.group as *const [MaybeUninit<T>] as *const [T]) }
     }
 }
 
 impl<T, const N: usize> DerefMut for StackArray<T, N> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         // SAFETY:
-        //
-        // DerefMut is safe:
-        //
-        // For the same reason of Deref
-        unsafe {
-            let ptr = self.group.as_mut_ptr() as *mut T;
-            slice::from_raw_parts_mut(ptr, N)
-        }
+        // from_vec method did double check making sure all items are initialized in constructor.
+        unsafe { &mut *(&mut self.group as *mut [MaybeUninit<T>] as *mut [T]) }
     }
 }
 
 impl<T, const N: usize> Drop for StackArray<T, N> {
     fn drop(&mut self) {
         // SAFETY:
-        //
-        // Drop is safe:
-        //
-        // StackGroup itself is stateless and only the T needed to be dropped.
-        unsafe { ptr::drop_in_place(&mut self[..]) }
+        // This is safe for the the same reason of StackArray as DerefMut is safe.
+        unsafe {
+            ptr::drop_in_place(&mut *(&mut self.group as *mut [MaybeUninit<T>] as *mut [T]));
+        }
     }
 }
 
