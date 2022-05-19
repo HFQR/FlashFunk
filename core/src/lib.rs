@@ -1,4 +1,5 @@
 extern crate alloc;
+extern crate core;
 
 mod worker;
 
@@ -41,12 +42,15 @@ mod test {
                     buf[idx] = *char;
                 }
 
-                assert_eq!(sender.group().get(&u64::from_le_bytes(buf)).unwrap().1, 1);
+                assert_eq!(
+                    sender.group().get(&u64::from_le_bytes(buf)).unwrap().len(),
+                    1
+                );
             }
 
             #[cfg(not(feature = "small-symbol"))]
             {
-                assert_eq!(sender.group().get("dgr123").unwrap().1, 1);
+                assert_eq!(sender.group().get("dgr123").unwrap().len(), 1);
             }
 
             let (tx, mut rx) = channel(1);

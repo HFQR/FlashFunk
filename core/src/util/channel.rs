@@ -185,14 +185,13 @@ mod r#async {
 }
 
 #[cfg(feature = "small-symbol")]
-pub(crate) type HashMap<const N: usize> = super::no_hasher::NoHashMap<u64, ([usize; N], usize)>;
+pub(crate) type HashMap<const N: usize> = super::no_hasher::NoHashMap<u64, GroupIndex<N>>;
 
 #[cfg(feature = "small-symbol")]
 type KeyRef<'a> = &'a u64;
 
 #[cfg(not(feature = "small-symbol"))]
-pub(crate) type HashMap<const N: usize> =
-    super::fx_hasher::FxHashMap<&'static str, ([usize; N], usize)>;
+pub(crate) type HashMap<const N: usize> = super::fx_hasher::FxHashMap<&'static str, GroupIndex<N>>;
 
 #[cfg(not(feature = "small-symbol"))]
 type KeyRef<'a> = &'a str;
@@ -258,15 +257,26 @@ impl<M, const N: usize> GroupSender<M, N> {
     where
         MM: Into<M> + Clone,
     {
-        match self.group.get_mut(symbol) {
-            Some((arr, len)) => {
-                arr[..*len]
-                    .iter_mut()
-                    .for_each(|i| self.senders[*i].send(mm.clone().into()));
+        match self.group.get(symbol) {
+            Some(g) => {
+                g.iter().for_each(|i| {
+                    // SAFETY:
+                    //
+                    // Self::bound_check guarantee i is in range of Sender's stack array.
+                    unsafe {
+                        self.senders.get_unchecked_mut(*i).send(mm.clone().into());
+                    }
+                });
                 Ok(())
             }
             None => Err(ChannelError::SenderGroupNotFound(mm)),
         }
+    }
+
+    pub(crate) fn bound_check(&self) {
+        self.group
+            .iter()
+            .for_each(|(_, g)| g.iter().for_each(|i| assert!(*i < self.senders.len())));
     }
 }
 
@@ -293,5 +303,46 @@ impl<M, const N: usize> Deref for GroupReceiver<M, N> {
 impl<M, const N: usize> DerefMut for GroupReceiver<M, N> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.receivers.deref_mut()
+    }
+}
+
+/// a collection of Index of [GroupSender]'s [StackArray].
+pub struct GroupIndex<const N: usize> {
+    idx: [usize; N],
+    len: usize,
+}
+
+impl<const N: usize> Default for GroupIndex<N> {
+    fn default() -> Self {
+        Self {
+            idx: [0; N],
+            len: 0,
+        }
+    }
+}
+
+impl<const N: usize> GroupIndex<N> {
+    #[cold]
+    #[inline(never)]
+    pub(crate) fn push(&mut self, i: usize) {
+        assert_ne!(self.len, N, "GroupIndex is full");
+        self.idx[self.len] = i;
+        self.len += 1;
+    }
+
+    #[cold]
+    #[inline(never)]
+    pub(crate) fn contains(&self, idx: &usize) -> bool {
+        self.iter().any(|i| i == idx)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &usize> {
+        self.idx[..self.len].iter()
+    }
+
+    #[allow(clippy::len_without_is_empty)]
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
     }
 }
