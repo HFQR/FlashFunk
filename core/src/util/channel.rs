@@ -203,10 +203,15 @@ pub struct GroupSender<M, const N: usize> {
 
 impl<M, const N: usize> GroupSender<M, N> {
     pub fn new(sender: Vec<Sender<M>>, group: HashMap<N>) -> Self {
-        Self {
+        let this = Self {
             senders: StackArray::from_vec(sender),
             group,
-        }
+        };
+        // IMPORTANT:
+        //
+        // Don't remove. See GroupSender::try_send_group method for reason.
+        this.bound_check();
+        this
     }
 
     #[inline]
@@ -273,7 +278,9 @@ impl<M, const N: usize> GroupSender<M, N> {
         }
     }
 
-    pub(crate) fn bound_check(&self) {
+    #[cold]
+    #[inline(never)]
+    fn bound_check(&self) {
         self.group
             .iter()
             .for_each(|(_, g)| g.iter().for_each(|i| assert!(*i < self.senders.len())));

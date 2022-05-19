@@ -130,11 +130,6 @@ where
         let group_senders = GroupSender::<_, N>::new(senders, group);
         let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);
 
-        // IMPORTANT:
-        //
-        // Don't remove. See GroupSender::try_send_group method for reason.
-        group_senders.bound_check();
-
         // 分配最后一个核心给主线程
         let id = pin_to_core.then(|| cores.pop()).flatten();
         pin_to_core::pin_to_core(id);
