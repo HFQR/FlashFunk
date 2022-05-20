@@ -2,14 +2,14 @@
 
 #![allow(clippy::non_send_fields_in_send_ty)]
 
-use core::cell::Cell;
-use core::fmt;
-use core::marker::PhantomData;
-use core::mem;
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::{
+    fmt,
+    marker::PhantomData,
+    mem,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
-use alloc::sync::Arc;
-use alloc::vec::Vec;
+use alloc::{sync::Arc, vec::Vec};
 
 use cache_padded::CachePadded;
 
@@ -122,14 +122,14 @@ pub fn new<T>(cap: usize) -> (Producer<T>, Consumer<T>) {
 
     let p = Producer {
         inner: inner.clone(),
-        head: Cell::new(0),
-        tail: Cell::new(0),
+        head: 0,
+        tail: 0,
     };
 
     let c = Consumer {
         inner,
-        head: Cell::new(0),
-        tail: Cell::new(0),
+        head: 0,
+        tail: 0,
     };
 
     (p, c)
@@ -143,12 +143,12 @@ pub struct Producer<T> {
     /// A copy of `inner.head` for quick access.
     ///
     /// This value can be stale and sometimes needs to be resynchronized with `inner.head`.
-    head: Cell<usize>,
+    head: usize,
 
     /// A copy of `inner.tail` for quick access.
     ///
     /// This value is always in sync with `inner.tail`.
-    tail: Cell<usize>,
+    tail: usize,
 }
 
 unsafe impl<T: Send> Send for Producer<T> {}
@@ -157,15 +157,15 @@ impl<T> Producer<T> {
     /// Attempts to push an element into the queue.
     ///
     /// If the queue is full, the element is returned back as an error.
-    pub fn push(&self, value: T) -> Result<(), PushError<T>> {
-        let mut head = self.head.get();
-        let mut tail = self.tail.get();
+    pub fn push(&mut self, value: T) -> Result<(), PushError<T>> {
+        let mut head = self.head;
+        let mut tail = self.tail;
 
         // Check if the queue is *possibly* full.
         if self.inner.distance(head, tail) == self.inner.cap {
             // We need to refresh the head and check again if the queue is *really* full.
             head = self.inner.head.load(Ordering::Acquire);
-            self.head.set(head);
+            self.head = head;
 
             // Is the queue *really* full?
             if self.inner.distance(head, tail) == self.inner.cap {
@@ -181,7 +181,7 @@ impl<T> Producer<T> {
         // Move the tail one slot forward.
         tail = self.inner.increment(tail);
         self.inner.tail.store(tail, Ordering::Release);
-        self.tail.set(tail);
+        self.tail = tail;
 
         Ok(())
     }
@@ -206,12 +206,12 @@ pub struct Consumer<T> {
     /// A copy of `inner.head` for quick access.
     ///
     /// This value is always in sync with `inner.head`.
-    head: Cell<usize>,
+    head: usize,
 
     /// A copy of `inner.tail` for quick access.
     ///
     /// This value can be stale and sometimes needs to be resynchronized with `inner.tail`.
-    tail: Cell<usize>,
+    tail: usize,
 }
 
 unsafe impl<T: Send> Send for Consumer<T> {}
@@ -220,15 +220,15 @@ impl<T> Consumer<T> {
     /// Attempts to pop an element from the queue.
     ///
     /// If the queue is empty, an error is returned.
-    pub fn pop(&self) -> Result<T, PopError> {
-        let mut head = self.head.get();
-        let mut tail = self.tail.get();
+    pub fn pop(&mut self) -> Result<T, PopError> {
+        let mut head = self.head;
+        let mut tail = self.tail;
 
         // Check if the queue is *possibly* empty.
         if head == tail {
             // We need to refresh the tail and check again if the queue is *really* empty.
             tail = self.inner.tail.load(Ordering::Acquire);
-            self.tail.set(tail);
+            self.tail = tail;
 
             // Is the queue *really* empty?
             if head == tail {
@@ -242,7 +242,7 @@ impl<T> Consumer<T> {
         // Move the head one slot forward.
         head = self.inner.increment(head);
         self.inner.head.store(head, Ordering::Release);
-        self.head.set(head);
+        self.head = head;
 
         Ok(value)
     }

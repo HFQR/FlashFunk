@@ -55,7 +55,7 @@ where
         let Self {
             mut strategy,
             sender,
-            receiver,
+            mut receiver,
         } = self;
 
         let ctx = &mut StrategyCtx::new(sender);
@@ -76,7 +76,7 @@ where
         let Self {
             mut strategy,
             sender,
-            receiver,
+            mut receiver,
         } = self;
 
         let ctx = &mut StrategyCtx::new(sender);

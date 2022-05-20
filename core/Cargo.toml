@@ -5,10 +5,9 @@ authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2021"
 
 [[bench]]
-name = "async-channel"
-path = "benches/async_channel.rs"
+name = "channel"
+path = "benches/channel.rs"
 harness = false
-required-features = ["async"]
 
 [features]
 default = ["std"]

@@ -6,7 +6,6 @@ pub mod async_runtime;
 pub mod channel;
 pub mod fx_hasher;
 pub mod no_hasher;
-pub mod stack_array;
 
 pub(super) mod pin_to_core {
     use alloc::vec::Vec;

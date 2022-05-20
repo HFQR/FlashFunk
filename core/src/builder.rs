@@ -1,3 +1,4 @@
+use crate::util::channel::GroupIndex;
 use alloc::vec::Vec;
 
 use super::{
@@ -54,7 +55,6 @@ where
     /// [API::run](crate::api::API::run) would be called when build finished.
     ///
     /// Every strategy would run on it's own dedicated thread.
-    #[allow(clippy::explicit_counter_loop)]
     pub fn build(self) {
         let Self {
             pin_to_core,
@@ -85,10 +85,9 @@ where
             }
         };
 
-        let mut st_index = 0usize;
-        for st in strategies {
+        for (st_idx, st) in strategies.into_iter().enumerate() {
             st.symbol().iter().for_each(|symbol| {
-                let (arr, len) = {
+                let g = {
                     #[cfg(feature = "small-symbol")]
                     {
                         let bytes = symbol.as_bytes();
@@ -102,19 +101,17 @@ where
 
                         let symbol = u64::from_le_bytes(buf);
 
-                        group.entry(symbol).or_insert_with(|| ([0; N], 0))
+                        group.entry(symbol).or_insert_with(GroupIndex::default)
                     }
 
                     #[cfg(not(feature = "small-symbol"))]
                     {
-                        group.entry(*symbol).or_insert_with(|| ([0; N], 0))
+                        group.entry(*symbol).or_insert_with(GroupIndex::default)
                     }
                 };
 
-                assert!(!arr[..*len].contains(&st_index));
-
-                arr[*len] = st_index;
-                *len += 1;
+                assert!(!g.contains(&st_idx));
+                g.push(st_idx);
             });
 
             // API -> Strategies
@@ -128,8 +125,6 @@ where
 
             let id = pin_to_core.then(|| cores.pop()).flatten();
             Worker::new(st, s2, r1).run_in_core(id);
-
-            st_index += 1;
         }
 
         let group_senders = GroupSender::<_, N>::new(senders, group);
