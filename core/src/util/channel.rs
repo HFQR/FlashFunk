@@ -8,10 +8,7 @@ use alloc::vec::Vec;
 #[cfg(feature = "async")]
 use {alloc::sync::Arc, futures_core::task::__internal::AtomicWaker};
 
-use super::{
-    spsc::{new, Consumer, Producer},
-    stack_array::StackArray,
-};
+use super::spsc::{new, Consumer, Producer};
 
 pub enum ChannelError<M> {
     RecvError,
@@ -197,14 +194,14 @@ pub(crate) type HashMap<const N: usize> = super::fx_hasher::FxHashMap<&'static s
 type KeyRef<'a> = &'a str;
 
 pub struct GroupSender<M, const N: usize> {
-    senders: StackArray<Sender<M>, N>,
+    senders: [Sender<M>; N],
     group: HashMap<N>,
 }
 
 impl<M, const N: usize> GroupSender<M, N> {
     pub fn new(sender: Vec<Sender<M>>, group: HashMap<N>) -> Self {
         let this = Self {
-            senders: StackArray::from_vec(sender),
+            senders: sender.try_into().ok().unwrap(),
             group,
         };
         // IMPORTANT:
@@ -221,7 +218,7 @@ impl<M, const N: usize> GroupSender<M, N> {
 
     #[inline]
     pub fn senders(&self) -> &[Sender<M>] {
-        &*self.senders
+        &self.senders
     }
 
     // 发送至所有sender
@@ -288,13 +285,13 @@ impl<M, const N: usize> GroupSender<M, N> {
 }
 
 pub struct GroupReceiver<M, const N: usize> {
-    receivers: StackArray<Receiver<M>, N>,
+    receivers: [Receiver<M>; N],
 }
 
 impl<M, const N: usize> GroupReceiver<M, N> {
     pub(crate) fn from_vec(vec: Vec<Receiver<M>>) -> Self {
         Self {
-            receivers: StackArray::from_vec(vec),
+            receivers: vec.try_into().ok().unwrap(),
         }
     }
 }
@@ -303,17 +300,17 @@ impl<M, const N: usize> Deref for GroupReceiver<M, N> {
     type Target = [Receiver<M>];
 
     fn deref(&self) -> &Self::Target {
-        self.receivers.deref()
+        &self.receivers
     }
 }
 
 impl<M, const N: usize> DerefMut for GroupReceiver<M, N> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.receivers.deref_mut()
+        &mut self.receivers
     }
 }
 
-/// a collection of Index of [GroupSender]'s [StackArray].
+/// a collection of Index of [GroupSender]'s `[Sender<M>; N]`.
 pub struct GroupIndex<const N: usize> {
     idx: [usize; N],
     len: usize,
