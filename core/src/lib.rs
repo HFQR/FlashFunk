@@ -10,7 +10,7 @@ pub mod util;
 #[cfg(test)]
 mod test {
     use super::api::API;
-    use super::strategy::{Strategy, StrategyCtx};
+    use super::strategy::{Context, Strategy};
     use super::util::channel::{channel, GroupReceiver, GroupSender, Sender};
 
     use alloc::vec::Vec;
@@ -27,7 +27,6 @@ mod test {
     impl API for Rem {
         type SndMessage = APIMessage;
         type RecvMessage = StrategyMessage;
-        type Context = RemContext;
 
         fn run<const N: usize>(
             self,
@@ -96,11 +95,7 @@ mod test {
             self.symbols.as_slice()
         }
 
-        fn call(
-            &mut self,
-            msg: <Rem as API>::SndMessage,
-            ctx: &mut StrategyCtx<<Rem as API>::RecvMessage, <Rem as API>::Context>,
-        ) {
+        fn call(&mut self, msg: <Rem as API>::SndMessage, ctx: &mut Context<Rem>) {
             let mut tx = msg.0;
 
             ctx.sender().send(StrategyMessage(251));
