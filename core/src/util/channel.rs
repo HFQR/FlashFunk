@@ -374,18 +374,23 @@ mod test {
         group.push(2);
         group.push(4);
 
+        {
+            let mut iter = group.iter();
+
+            assert_eq!(iter.next(), Some(&1));
+            assert_eq!(iter.next(), Some(&2));
+            assert_eq!(iter.next(), Some(&4));
+            assert_eq!(iter.next(), None);
+        }
+
+        group.push(8);
+
         let mut iter = group.iter();
 
         assert_eq!(iter.next(), Some(&1));
         assert_eq!(iter.next(), Some(&2));
         assert_eq!(iter.next(), Some(&4));
-        assert_eq!(iter.next(), None);
-
-        let mut iter = group.iter();
-
-        assert_eq!(iter.next(), Some(&1));
-        assert_eq!(iter.next(), Some(&2));
-        assert_eq!(iter.next(), Some(&4));
+        assert_eq!(iter.next(), Some(&8));
         assert_eq!(iter.next(), None);
     }
 
