@@ -107,7 +107,10 @@ impl<T> Drop for SpinGuard<'_, T> {
 mod test {
     use super::*;
 
+    use core::ptr;
+
     use alloc::sync::Arc;
+
     use std::time::Duration;
 
     #[test]
@@ -159,6 +162,30 @@ mod test {
                     std::thread::sleep(Duration::from_nanos(1));
                 }
             }
+        });
+
+        handle.join().unwrap();
+        handle2.join().unwrap();
+    }
+
+    #[test]
+    fn send_non_sync() {
+        #[allow(dead_code)]
+        struct Foo {
+            v: *const (),
+        }
+
+        unsafe impl Send for Foo {}
+
+        let spin = Arc::new(SpinLock::new(Foo { v: ptr::null() }));
+
+        let spin2 = spin.clone();
+        let handle = std::thread::spawn(move || {
+            let _guard = spin.lock();
+        });
+
+        let handle2 = std::thread::spawn(move || {
+            let _ = spin2.lock();
         });
 
         handle.join().unwrap();
