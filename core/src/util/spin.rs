@@ -2,18 +2,30 @@
 
 use core::{
     cell::UnsafeCell,
+    fmt,
     ops::{Deref, DerefMut},
     sync::atomic::{AtomicBool, Ordering},
 };
 
-pub struct SpinLock<T> {
+pub struct SpinLock<T: ?Sized> {
     locked: AtomicBool,
     value: UnsafeCell<T>,
 }
 
+impl<T: fmt::Debug> fmt::Debug for SpinLock<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.try_lock() {
+            Some(guard) => write!(f, "SpinLock {{ value: ")
+                .and_then(|()| (&*guard).fmt(f))
+                .and_then(|()| write!(f, "}}")),
+            None => write!(f, "SpinLock {{ <locked> }}"),
+        }
+    }
+}
+
 // SAFETY: As long as T is Send type the lock is Send is Sync.
-unsafe impl<T: Send> Send for SpinLock<T> {}
-unsafe impl<T: Send> Sync for SpinLock<T> {}
+unsafe impl<T: ?Sized + Send> Send for SpinLock<T> {}
+unsafe impl<T: ?Sized + Send> Sync for SpinLock<T> {}
 
 impl<T> SpinLock<T> {
     pub const fn new(value: T) -> Self {
@@ -25,11 +37,16 @@ impl<T> SpinLock<T> {
 
     #[inline]
     pub fn lock(&self) -> SpinGuard<'_, T> {
-        loop {
-            if let Some(guard) = self.try_lock() {
-                return guard;
-            }
+        while self
+            .locked
+            .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            #[allow(clippy::missing_spin_loop)]
+            while self.locked.load(Ordering::Relaxed) {}
         }
+
+        SpinGuard(self)
     }
 
     #[inline]
@@ -37,8 +54,8 @@ impl<T> SpinLock<T> {
         self.value.into_inner()
     }
 
-    fn try_lock(&self) -> Option<SpinGuard<'_, T>> {
-        if self.locked.swap(true, Ordering::Release) {
+    pub fn try_lock(&self) -> Option<SpinGuard<'_, T>> {
+        if self.locked.swap(true, Ordering::Acquire) {
             None
         } else {
             Some(SpinGuard(self))
@@ -47,11 +64,17 @@ impl<T> SpinLock<T> {
 
     #[inline(always)]
     fn release(&self) {
-        self.locked.store(false, Ordering::Relaxed)
+        self.locked.store(false, Ordering::Release)
     }
 }
 
 pub struct SpinGuard<'a, T>(&'a SpinLock<T>);
+
+impl<T: fmt::Debug> fmt::Debug for SpinGuard<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
 
 impl<T> Deref for SpinGuard<'_, T> {
     type Target = T;
@@ -105,6 +128,36 @@ mod test {
         let handle2 = std::thread::spawn(move || {
             while *spin2.lock() != 99 {
                 std::thread::sleep(Duration::from_nanos(1));
+            }
+        });
+
+        handle.join().unwrap();
+        handle2.join().unwrap();
+    }
+
+    #[test]
+    fn try_lock() {
+        let spin = Arc::new(SpinLock::new(0usize));
+
+        let spin2 = spin.clone();
+        let handle = std::thread::spawn(move || {
+            for _ in 0..99 {
+                {
+                    let mut guard = spin.lock();
+                    *guard += 1;
+                }
+                std::thread::sleep(Duration::from_nanos(1));
+            }
+        });
+
+        let handle2 = std::thread::spawn(move || loop {
+            if let Some(guard) = spin2.try_lock() {
+                if *guard == 99 {
+                    return;
+                } else {
+                    drop(guard);
+                    std::thread::sleep(Duration::from_nanos(1));
+                }
             }
         });
 
