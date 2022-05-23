@@ -54,6 +54,7 @@ impl<T> SpinLock<T> {
         self.value.into_inner()
     }
 
+    #[inline]
     pub fn try_lock(&self) -> Option<SpinGuard<'_, T>> {
         if self.locked.swap(true, Ordering::Acquire) {
             None
