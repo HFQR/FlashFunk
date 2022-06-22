@@ -9,12 +9,6 @@ pub trait API: Sized {
     /// message type from strategies to API and sent to server.
     type RecvMessage: Send;
 
-    /// context type used by strategy. serves as state storage for strategy that
-    /// can be reference separately from strategy's state.
-    ///
-    /// e.g: reference &mut context and &mut strategy at the same time.
-    type Context: Default;
-
     fn into_builder<S, const N: usize>(self, strategies: [S; N]) -> APIBuilder<Self, S, N>
     where
         S: Strategy<Self> + 'static,

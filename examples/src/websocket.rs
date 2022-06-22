@@ -4,7 +4,7 @@ use std::io;
 
 use flashfunk_core::{
     api::API,
-    strategy::{Strategy, StrategyCtx},
+    strategy::{Context, Strategy},
     util::channel::{GroupReceiver, GroupSender},
 };
 use futures_util::{SinkExt, StreamExt};
@@ -12,15 +12,11 @@ use xitca_client::{bytes::Bytes, error::Error, http::Version, ws::Message, Clien
 
 struct WsAPI;
 
-#[derive(Default)]
-struct WsContext;
-
 struct StrategyMessage(String);
 
 impl API for WsAPI {
     type SndMessage = Bytes;
     type RecvMessage = StrategyMessage;
-    type Context = WsContext;
 
     fn run<const N: usize>(
         self,
@@ -82,7 +78,7 @@ impl Strategy<WsAPI> for WsStrategy {
         self.symbols.as_slice()
     }
 
-    fn call(&mut self, msg: Bytes, ctx: &mut StrategyCtx<StrategyMessage, WsContext>) {
+    fn call(&mut self, msg: Bytes, ctx: &mut Context<WsAPI>) {
         println!("Message from WsAPI: {}\r\n", String::from_utf8_lossy(&msg));
         ctx.sender().send(StrategyMessage(
             self.symbol()

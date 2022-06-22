@@ -1,5 +1,5 @@
 use super::api::API;
-use super::strategy::{Strategy, StrategyCtx};
+use super::strategy::{Context, Strategy};
 use super::util::{
     channel::{Receiver, Sender},
     pin_to_core::{self, CoreId},
@@ -58,7 +58,7 @@ where
             mut receiver,
         } = self;
 
-        let ctx = &mut StrategyCtx::new(sender);
+        let ctx = &mut Context::new(sender);
 
         strategy.on_start(ctx);
 
@@ -79,7 +79,7 @@ where
             mut receiver,
         } = self;
 
-        let ctx = &mut StrategyCtx::new(sender);
+        let ctx = &mut Context::new(sender);
 
         strategy.on_start(ctx);
 

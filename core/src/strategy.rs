@@ -1,10 +1,7 @@
-use core::ops::{Deref, DerefMut};
-
-use super::api::API;
-use super::util::channel::Sender;
+use super::{api::API, util::channel::Sender};
 
 /// Trait for single strategy of given NAME.
-pub trait Strategy<A: API>
+pub trait Strategy<A>
 where
     A: API,
     Self: Send,
@@ -13,15 +10,15 @@ where
 
     /// Method called when strategy is about to start.
     #[allow(unused_variables)]
-    fn on_start(&mut self, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {}
+    fn on_start(&mut self, ctx: &mut Context<A>) {}
 
     /// Method called when a new message is received by strategy.
-    fn call(&mut self, msg: A::SndMessage, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>);
+    fn call(&mut self, msg: A::SndMessage, ctx: &mut Context<A>);
 
     /// Method called when all message are processed by strategy and wait for next
     /// message to arrive.
     #[allow(unused_variables)]
-    fn on_idle(&mut self, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {}
+    fn on_idle(&mut self, ctx: &mut Context<A>) {}
 }
 
 impl<S, A> Strategy<A> for Box<S>
@@ -35,53 +32,41 @@ where
     }
 
     #[inline]
-    fn on_start(&mut self, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {
+    fn on_start(&mut self, ctx: &mut Context<A>) {
         (**self).on_start(ctx)
     }
 
     #[inline]
-    fn call(&mut self, msg: A::SndMessage, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {
+    fn call(&mut self, msg: A::SndMessage, ctx: &mut Context<A>) {
         (**self).call(msg, ctx)
     }
 
     #[inline]
-    fn on_idle(&mut self, ctx: &mut StrategyCtx<A::RecvMessage, A::Context>) {
+    fn on_idle(&mut self, ctx: &mut Context<A>) {
         (**self).on_idle(ctx)
     }
 }
 
 /// Context type of a strategy.
-pub struct StrategyCtx<R, I> {
-    sender: Sender<R>,
-    inner: I,
+pub struct Context<A>
+where
+    A: API,
+{
+    sender: Sender<A::RecvMessage>,
 }
 
-impl<R, I: Default> StrategyCtx<R, I> {
-    pub(super) fn new(sender: Sender<R>) -> Self {
-        Self {
-            sender,
-            inner: I::default(),
-        }
+impl<A> Context<A>
+where
+    A: API,
+{
+    pub(super) fn new(sender: Sender<A::RecvMessage>) -> Self {
+        Self { sender }
     }
 
     /// Get a sender type from strategy which can be used to send message
     /// to API.
     #[inline]
-    pub fn sender(&mut self) -> &mut Sender<R> {
+    pub fn sender(&mut self) -> &mut Sender<A::RecvMessage> {
         &mut self.sender
-    }
-}
-
-impl<R, I> Deref for StrategyCtx<R, I> {
-    type Target = I;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl<R, I> DerefMut for StrategyCtx<R, I> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
     }
 }

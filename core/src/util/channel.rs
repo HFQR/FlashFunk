@@ -1,6 +1,7 @@
 use core::{
     fmt::{Debug, Display, Formatter, Result as FmtResult},
     ops::{Deref, DerefMut},
+    ptr,
 };
 
 use alloc::vec::Vec;
@@ -341,12 +342,69 @@ impl<const N: usize> GroupIndex<N> {
     }
 
     fn iter(&self) -> impl Iterator<Item = &usize> {
-        self.idx[..self.len].iter()
+        // SAFETY:
+        //
+        // This is safe as self.len is bound checked against N with every GroupIndex::push call.
+        unsafe { &*ptr::slice_from_raw_parts(self.idx.as_ptr(), self.len) }.iter()
     }
 
     #[allow(clippy::len_without_is_empty)]
     #[inline]
     pub fn len(&self) -> usize {
         self.len
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn overflow() {
+        let mut group = GroupIndex::<1>::default();
+        group.push(1);
+        group.push(2);
+    }
+
+    #[test]
+    fn iter() {
+        let mut group = GroupIndex::<4>::default();
+        group.push(1);
+        group.push(2);
+        group.push(4);
+
+        {
+            let mut iter = group.iter();
+
+            assert_eq!(iter.next(), Some(&1));
+            assert_eq!(iter.next(), Some(&2));
+            assert_eq!(iter.next(), Some(&4));
+            assert_eq!(iter.next(), None);
+        }
+
+        group.push(8);
+
+        let mut iter = group.iter();
+
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&4));
+        assert_eq!(iter.next(), Some(&8));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn len() {
+        let mut group = GroupIndex::<4>::default();
+
+        group.push(1);
+        assert_eq!(group.len(), 1);
+
+        group.push(2);
+        assert_eq!(group.len(), 2);
+
+        group.push(4);
+        assert_eq!(group.len(), 3);
     }
 }
