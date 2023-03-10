@@ -20,11 +20,11 @@ async = ["std", "futures-core", "parking"]
 cache-padded = "1.1.1"
 
 # core affinity support
-core_affinity = { version = "0.5.10", optional = true }
+core_affinity = { version = "0.8", optional = true }
 
 # async feature support
 futures-core = { version = "0.3", default-features = false, features = ["alloc"], optional = true }
 parking = { version = "2", optional = true }
 
 [dev-dependencies]
-criterion = "0.3.4"
+criterion = "0.4"

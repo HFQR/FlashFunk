@@ -17,7 +17,7 @@ flashfunk-core = { version = "0.5" }
 owned-log = { version = "0.1" }
 
 crossbeam-queue = "0.3.5"
-core_affinity = "0.5.10"
+core_affinity = "0.8"
 futures-util = "0.3.17"
 mimalloc = { version = "0.1.28", default-features = false }
 tokio = { version = "1.13", features = ["macros", "rt"] }

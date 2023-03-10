@@ -33,7 +33,7 @@ pub(super) mod pin_to_core {
         if let Some(id) = id {
             #[cfg(feature = "std")]
             {
-                core_affinity::set_for_current(id)
+                core_affinity::set_for_current(id);
             }
 
             #[cfg(not(feature = "std"))]

@@ -34,7 +34,7 @@ impl API for WsAPI {
                     .set_pool_capacity(8)
                     .finish();
 
-                let mut ws = client.ws("wss://ws.kraken.com/")?.send().await?.ws()?;
+                let mut ws = client.ws("wss://ws.kraken.com/")?.send().await?;
 
                 let msg = ws.next().await.unwrap()?;
                 println!("Connected: {:?}", msg);
