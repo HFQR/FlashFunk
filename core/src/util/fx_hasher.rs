@@ -34,6 +34,11 @@ impl FxHasher {
 
 impl Hasher for FxHasher {
     #[inline]
+    fn finish(&self) -> u64 {
+        self.hash as u64
+    }
+
+    #[inline]
     fn write(&mut self, mut bytes: &[u8]) {
         #[cfg(target_pointer_width = "32")]
         let read_usize = |bytes: &[u8]| u32::from_ne_bytes(bytes[..4].try_into().unwrap());
@@ -91,10 +96,5 @@ impl Hasher for FxHasher {
     #[inline]
     fn write_usize(&mut self, i: usize) {
         self.add_to_hash(i);
-    }
-
-    #[inline]
-    fn finish(&self) -> u64 {
-        self.hash as u64
     }
 }

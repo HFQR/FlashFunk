@@ -13,7 +13,7 @@ where
     fn on_start(&mut self, ctx: &mut Context<A>) {}
 
     /// Method called when a new message is received by strategy.
-    fn call(&mut self, msg: A::SndMessage, ctx: &mut Context<A>);
+    fn call(&mut self, msg: &A::SndMessage, ctx: &mut Context<A>);
 
     /// Method called when all message are processed by strategy and wait for next
     /// message to arrive.
@@ -37,7 +37,7 @@ where
     }
 
     #[inline]
-    fn call(&mut self, msg: A::SndMessage, ctx: &mut Context<A>) {
+    fn call(&mut self, msg: &A::SndMessage, ctx: &mut Context<A>) {
         (**self).call(msg, ctx)
     }
 

@@ -1,7 +1,6 @@
 use core::{
     fmt::{Debug, Display, Formatter, Result as FmtResult},
     ops::{Deref, DerefMut},
-    ptr,
 };
 
 use alloc::vec::Vec;
@@ -9,7 +8,7 @@ use alloc::vec::Vec;
 #[cfg(feature = "async")]
 use {alloc::sync::Arc, futures_core::task::__internal::AtomicWaker};
 
-use super::spsc::{new, Consumer, Producer};
+use super::{spmc, spsc};
 
 pub enum ChannelError<M> {
     RecvError,
@@ -51,7 +50,7 @@ impl<M> Display for ChannelError<M> {
 }
 
 pub struct Sender<M> {
-    tx: Producer<M>,
+    tx: spsc::Producer<M>,
     #[cfg(feature = "async")]
     waker: Arc<AtomicWaker>,
 }
@@ -80,9 +79,54 @@ impl<M> Sender<M> {
 }
 
 pub struct Receiver<M> {
-    rx: Consumer<M>,
+    rx: spsc::Consumer<M>,
     #[cfg(feature = "async")]
     waker: Arc<AtomicWaker>,
+}
+
+pub struct BroadcastSender<M> {
+    tx: spmc::Producer<M>,
+    #[cfg(feature = "async")]
+    waker: Arc<AtomicWaker>,
+}
+
+impl<M> BroadcastSender<M> {
+    // 发送失败会panic
+    #[inline]
+    pub fn send(&mut self, m: impl Into<M>) {
+        self.tx.push(m.into()).unwrap();
+        #[cfg(feature = "async")]
+        self.waker.wake();
+    }
+
+    // 发送失败返回消息
+    #[inline]
+    pub fn try_send(&mut self, m: M) -> Result<(), ChannelError<M>> {
+        match self.tx.push(m) {
+            Ok(_) => {
+                #[cfg(feature = "async")]
+                self.waker.wake();
+                Ok(())
+            }
+            Err(e) => Err(ChannelError::TrySendError(e.0)),
+        }
+    }
+}
+
+pub struct BroadcastReceiver<M> {
+    rx: spmc::Consumer<M>,
+    #[cfg(feature = "async")]
+    waker: Arc<AtomicWaker>,
+}
+
+impl<M> Clone for BroadcastReceiver<M> {
+    fn clone(&self) -> Self {
+        Self {
+            rx: self.rx.clone(),
+            #[cfg(feature = "async")]
+            waker: Arc::new(AtomicWaker::new()),
+        }
+    }
 }
 
 #[cfg(not(feature = "async"))]
@@ -93,14 +137,26 @@ mod r#sync {
     use super::*;
 
     pub fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
-        let (tx, rx) = new(cap);
+        let (tx, rx) = spsc::new(cap);
         (Sender { tx }, Receiver { rx })
+    }
+
+    pub fn broadcast<M>(cap: usize) -> (BroadcastSender<M>, BroadcastReceiver<M>) {
+        let (tx, rx) = spmc::new(cap);
+        (BroadcastSender { tx }, BroadcastReceiver { rx })
     }
 
     impl<M> Receiver<M> {
         #[inline]
         pub fn recv(&mut self) -> Result<M, ChannelError<M>> {
             self.rx.pop().map_err(|_| ChannelError::RecvError)
+        }
+    }
+
+    impl<M> BroadcastReceiver<M> {
+        #[inline]
+        pub fn recv(&mut self) -> Result<&M, ChannelError<M>> {
+            self.rx.pop().ok_or(ChannelError::RecvError)
         }
     }
 }
@@ -119,7 +175,7 @@ mod r#async {
     };
 
     pub fn channel<M>(cap: usize) -> (Sender<M>, Receiver<M>) {
-        let (tx, rx) = new(cap);
+        let (tx, rx) = spsc::new(cap);
         let waker = Arc::new(AtomicWaker::new());
         (
             Sender {
@@ -127,6 +183,18 @@ mod r#async {
                 waker: waker.clone(),
             },
             Receiver { rx, waker },
+        )
+    }
+
+    pub fn broadcast<M>(cap: usize) -> (BroadcastSender<M>, BroadcastReceiver<M>) {
+        let (tx, rx) = spmc::new(cap);
+        let waker = Arc::new(AtomicWaker::new());
+        (
+            BroadcastSender {
+                tx,
+                waker: waker.clone(),
+            },
+            BroadcastReceiver { rx, waker },
         )
     }
 
@@ -151,6 +219,13 @@ mod r#async {
             }
 
             Recv(self).await
+        }
+    }
+
+    impl<M> BroadcastReceiver<M> {
+        #[inline]
+        pub async fn recv(&mut self) -> Result<&M, ChannelError<M>> {
+            todo!()
         }
     }
 
@@ -182,109 +257,6 @@ mod r#async {
     }
 }
 
-#[cfg(feature = "small-symbol")]
-pub(crate) type HashMap<const N: usize> = super::no_hasher::NoHashMap<u64, GroupIndex<N>>;
-
-#[cfg(feature = "small-symbol")]
-type KeyRef<'a> = &'a u64;
-
-#[cfg(not(feature = "small-symbol"))]
-pub(crate) type HashMap<const N: usize> = super::fx_hasher::FxHashMap<&'static str, GroupIndex<N>>;
-
-#[cfg(not(feature = "small-symbol"))]
-type KeyRef<'a> = &'a str;
-
-pub struct GroupSender<M, const N: usize> {
-    senders: [Sender<M>; N],
-    group: HashMap<N>,
-}
-
-impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: HashMap<N>) -> Self {
-        let this = Self {
-            senders: sender.try_into().ok().unwrap(),
-            group,
-        };
-        // IMPORTANT:
-        //
-        // Don't remove. See GroupSender::try_send_group method for reason.
-        this.bound_check();
-        this
-    }
-
-    #[inline]
-    pub fn group(&self) -> &HashMap<N> {
-        &self.group
-    }
-
-    #[inline]
-    pub fn senders(&self) -> &[Sender<M>] {
-        &self.senders
-    }
-
-    // 发送至所有sender
-    #[inline]
-    pub fn send_all<MM>(&mut self, mm: MM)
-    where
-        MM: Into<M> + Clone,
-    {
-        self.senders
-            .iter_mut()
-            .for_each(|s| s.send(mm.clone().into()))
-    }
-
-    // 发送至指定index的sender. 失败会panic
-    #[inline]
-    pub fn send_to(&mut self, m: impl Into<M>, sender_index: usize) {
-        self.senders[sender_index].send(m.into());
-    }
-
-    // 发送至指定index的sender. 失败会返回消息
-    #[inline]
-    pub fn try_send_to<MM>(&mut self, m: MM, sender_index: usize) -> Result<(), ChannelError<MM>>
-    where
-        MM: Into<M>,
-    {
-        match self.senders.get_mut(sender_index) {
-            Some(s) => {
-                s.send(m.into());
-                Ok(())
-            }
-            None => Err(ChannelError::SenderOverFlow(m)),
-        }
-    }
-
-    // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
-    #[inline]
-    pub fn try_send_group<MM>(&mut self, mm: MM, symbol: KeyRef<'_>) -> Result<(), ChannelError<MM>>
-    where
-        MM: Into<M> + Clone,
-    {
-        match self.group.get(symbol) {
-            Some(g) => {
-                g.iter().for_each(|i| {
-                    // SAFETY:
-                    //
-                    // Self::bound_check guarantee i is in range of Sender's stack array.
-                    unsafe {
-                        self.senders.get_unchecked_mut(*i).send(mm.clone().into());
-                    }
-                });
-                Ok(())
-            }
-            None => Err(ChannelError::SenderGroupNotFound(mm)),
-        }
-    }
-
-    #[cold]
-    #[inline(never)]
-    fn bound_check(&self) {
-        self.group
-            .iter()
-            .for_each(|(_, g)| g.iter().for_each(|i| assert!(*i < self.senders.len())));
-    }
-}
-
 pub struct GroupReceiver<M, const N: usize> {
     receivers: [Receiver<M>; N],
 }
@@ -308,103 +280,5 @@ impl<M, const N: usize> Deref for GroupReceiver<M, N> {
 impl<M, const N: usize> DerefMut for GroupReceiver<M, N> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.receivers
-    }
-}
-
-/// a collection of Index of [GroupSender]'s `[Sender<M>; N]`.
-pub struct GroupIndex<const N: usize> {
-    idx: [usize; N],
-    len: usize,
-}
-
-impl<const N: usize> Default for GroupIndex<N> {
-    fn default() -> Self {
-        Self {
-            idx: [0; N],
-            len: 0,
-        }
-    }
-}
-
-impl<const N: usize> GroupIndex<N> {
-    #[cold]
-    #[inline(never)]
-    pub(crate) fn push(&mut self, i: usize) {
-        assert_ne!(self.len, N, "GroupIndex is full");
-        self.idx[self.len] = i;
-        self.len += 1;
-    }
-
-    #[cold]
-    #[inline(never)]
-    pub(crate) fn contains(&self, idx: &usize) -> bool {
-        self.iter().any(|i| i == idx)
-    }
-
-    fn iter(&self) -> impl Iterator<Item = &usize> {
-        // SAFETY:
-        //
-        // This is safe as self.len is bound checked against N with every GroupIndex::push call.
-        unsafe { &*ptr::slice_from_raw_parts(self.idx.as_ptr(), self.len) }.iter()
-    }
-
-    #[allow(clippy::len_without_is_empty)]
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.len
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    #[should_panic]
-    fn overflow() {
-        let mut group = GroupIndex::<1>::default();
-        group.push(1);
-        group.push(2);
-    }
-
-    #[test]
-    fn iter() {
-        let mut group = GroupIndex::<4>::default();
-        group.push(1);
-        group.push(2);
-        group.push(4);
-
-        {
-            let mut iter = group.iter();
-
-            assert_eq!(iter.next(), Some(&1));
-            assert_eq!(iter.next(), Some(&2));
-            assert_eq!(iter.next(), Some(&4));
-            assert_eq!(iter.next(), None);
-        }
-
-        group.push(8);
-
-        let mut iter = group.iter();
-
-        assert_eq!(iter.next(), Some(&1));
-        assert_eq!(iter.next(), Some(&2));
-        assert_eq!(iter.next(), Some(&4));
-        assert_eq!(iter.next(), Some(&8));
-        assert_eq!(iter.next(), None);
-    }
-
-    #[test]
-    fn len() {
-        let mut group = GroupIndex::<4>::default();
-
-        group.push(1);
-        assert_eq!(group.len(), 1);
-
-        group.push(2);
-        assert_eq!(group.len(), 2);
-
-        group.push(4);
-        assert_eq!(group.len(), 3);
     }
 }
