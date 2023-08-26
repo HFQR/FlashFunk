@@ -5,6 +5,8 @@ members = [
     "examples"
 ]
 
+resolver = "2"
+
 [patch.crates-io]
 flashfunk-core = { path = "./core" }
 owned-log = { path = "./log" }

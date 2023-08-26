@@ -1,4 +1,5 @@
 extern crate alloc;
+extern crate core;
 
 mod worker;
 

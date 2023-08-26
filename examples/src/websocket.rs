@@ -5,7 +5,7 @@ use std::io;
 use flashfunk_core::{
     api::API,
     strategy::{Context, Strategy},
-    util::channel::{GroupReceiver, GroupSender},
+    util::channel::{BroadcastSender, GroupReceiver},
 };
 use futures_util::{SinkExt, StreamExt};
 use xitca_client::{bytes::Bytes, error::Error, http::Version, ws::Message, Client};
@@ -20,7 +20,7 @@ impl API for WsAPI {
 
     fn run<const N: usize>(
         self,
-        mut sender: GroupSender<Self::SndMessage, N>,
+        mut sender: BroadcastSender<Self::SndMessage>,
         mut receiver: GroupReceiver<Self::RecvMessage, N>,
     ) {
         let res = tokio::runtime::Builder::new_current_thread()
@@ -46,7 +46,7 @@ impl API for WsAPI {
                         res = ws.next() => {
                             let msg = res.ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))??;
                             match msg {
-                                Message::Text(bytes) | Message::Binary(bytes) => sender.send_all(bytes),
+                                Message::Text(bytes) | Message::Binary(bytes) => sender.send(bytes),
                                 Message::Ping(bytes) => ws.send(Message::Pong(bytes)).await?,
                                 Message::Close(reason) => {
                                     ws.send(Message::Close(reason)).await?;
@@ -78,7 +78,7 @@ impl Strategy<WsAPI> for WsStrategy {
         self.symbols.as_slice()
     }
 
-    fn call(&mut self, msg: Bytes, ctx: &mut Context<WsAPI>) {
+    fn call(&mut self, msg: &Bytes, ctx: &mut Context<WsAPI>) {
         println!("Message from WsAPI: {}\r\n", String::from_utf8_lossy(&msg));
         ctx.sender().send(StrategyMessage(
             self.symbol()

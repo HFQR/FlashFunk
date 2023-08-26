@@ -1,6 +1,6 @@
 [package]
 name = "flashfunk-core"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2021"
 
@@ -11,20 +11,18 @@ harness = false
 
 [features]
 default = ["std"]
+# feature can be used together with rust standard library.
 std = ["core_affinity"]
 # optional feature for small symbol type less than 8 bytes
 small-symbol = []
+# support for strategy and worker async communcation.
 async = ["std", "futures-core", "parking"]
 
 [dependencies]
-cache-padded = "1.1.1"
-
-# core affinity support
 core_affinity = { version = "0.8", optional = true }
 
-# async feature support
 futures-core = { version = "0.3", default-features = false, features = ["alloc"], optional = true }
 parking = { version = "2", optional = true }
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"

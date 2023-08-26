@@ -1,10 +1,10 @@
 use super::builder::APIBuilder;
 use super::strategy::Strategy;
-use super::util::channel::{GroupReceiver, GroupSender};
+use super::util::channel::{BroadcastSender, GroupReceiver};
 
 pub trait API: Sized {
     /// message type from server to API and would be sent to strategies.
-    type SndMessage: Send;
+    type SndMessage: Send + Sync;
 
     /// message type from strategies to API and sent to server.
     type RecvMessage: Send;
@@ -19,7 +19,7 @@ pub trait API: Sized {
 
     fn run<const N: usize>(
         self,
-        sender: GroupSender<Self::SndMessage, N>,
+        sender: BroadcastSender<Self::SndMessage>,
         receiver: GroupReceiver<Self::RecvMessage, N>,
     );
 }

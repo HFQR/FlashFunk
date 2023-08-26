@@ -1,11 +1,10 @@
-use crate::util::channel::GroupIndex;
 use alloc::vec::Vec;
 
 use super::{
     api::API,
     strategy::Strategy,
     util::{
-        channel::{channel, GroupReceiver, GroupSender},
+        channel::{broadcast, channel, GroupReceiver},
         pin_to_core,
     },
     worker::Worker,
@@ -66,74 +65,29 @@ where
         // 收集核心cid
         let mut cores = pin_to_core::get_core_ids();
 
-        // 单向spsc:
+        // 单向spmc:
         // API -> Strategies.
-        let mut senders = Vec::new();
+        let (broadcast_tx, broadcast_rx) = broadcast(self.message_capacity);
+
         // Strategies -> API.
         let mut receivers = Vec::new();
 
-        // groups为与symbols相对应(vec index)的策略们的发送端vec.
-        let mut group = {
-            #[cfg(not(feature = "small-symbol"))]
-            {
-                crate::util::fx_hasher::FxHashMap::default()
-            }
-
-            #[cfg(feature = "small-symbol")]
-            {
-                crate::util::no_hasher::NoHashMap::default()
-            }
-        };
-
-        for (st_idx, st) in strategies.into_iter().enumerate() {
-            st.symbol().iter().for_each(|symbol| {
-                let g = {
-                    #[cfg(feature = "small-symbol")]
-                    {
-                        let bytes = symbol.as_bytes();
-
-                        assert!(bytes.len() <= 8, "small-symbol feature require a symbol with no more than 8 bytes in length.");
-
-                        let mut buf = [0; 8];
-                        for (idx, char) in bytes.iter().enumerate() {
-                            buf[idx] = *char;
-                        }
-
-                        let symbol = u64::from_le_bytes(buf);
-
-                        group.entry(symbol).or_insert_with(GroupIndex::default)
-                    }
-
-                    #[cfg(not(feature = "small-symbol"))]
-                    {
-                        group.entry(*symbol).or_insert_with(GroupIndex::default)
-                    }
-                };
-
-                assert!(!g.contains(&st_idx));
-                g.push(st_idx);
-            });
-
-            // API -> Strategies
-            let (s1, r1) = channel(message_capacity);
-
+        for st in strategies.into_iter() {
             // Strategies -> API.
-            let (s2, r2) = channel(message_capacity);
+            let (tx, rx) = channel(message_capacity);
 
-            senders.push(s1);
-            receivers.push(r2);
+            receivers.push(rx);
 
             let id = pin_to_core.then(|| cores.pop()).flatten();
-            Worker::new(st, s2, r1).run_in_core(id);
+            Worker::new(st, tx, broadcast_rx.clone()).run_in_core(id);
         }
 
-        let group_senders = GroupSender::<_, N>::new(senders, group);
         let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);
 
         // 分配最后一个核心给主线程
         let id = pin_to_core.then(|| cores.pop()).flatten();
         pin_to_core::pin_to_core(id);
 
-        api.run(group_senders, group_receivers);
+        api.run(broadcast_tx, group_receivers);
     }
 }

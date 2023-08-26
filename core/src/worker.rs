@@ -1,7 +1,7 @@
 use super::api::API;
 use super::strategy::{Context, Strategy};
 use super::util::{
-    channel::{Receiver, Sender},
+    channel::{BroadcastReceiver, Sender},
     pin_to_core::{self, CoreId},
 };
 
@@ -12,7 +12,7 @@ where
 {
     strategy: S,
     sender: Sender<A::RecvMessage>,
-    receiver: Receiver<A::SndMessage>,
+    receiver: BroadcastReceiver<A::SndMessage>,
 }
 
 impl<S, A> Worker<S, A>
@@ -23,7 +23,7 @@ where
     pub(super) fn new(
         strategy: S,
         sender: Sender<A::RecvMessage>,
-        receiver: Receiver<A::SndMessage>,
+        receiver: BroadcastReceiver<A::SndMessage>,
     ) -> Self {
         Self {
             strategy,
