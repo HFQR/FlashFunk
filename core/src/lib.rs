@@ -12,16 +12,18 @@ pub mod util;
 mod test {
     use super::api::API;
     use super::strategy::{Context, Strategy};
-    use super::util::channel::{channel, GroupReceiver, GroupSender, Sender};
+    use super::util::channel::{BroadcastSender, GroupReceiver};
 
     use alloc::vec::Vec;
+
+    use std::sync::mpsc;
 
     struct Rem;
 
     #[derive(Default)]
     struct RemContext;
 
-    struct APIMessage(Sender<u32>);
+    struct APIMessage(mpsc::Sender<u32>);
 
     struct StrategyMessage(u32);
 
@@ -31,30 +33,12 @@ mod test {
 
         fn run<const N: usize>(
             self,
-            mut sender: GroupSender<Self::SndMessage, N>,
+            mut sender: BroadcastSender<Self::SndMessage>,
             mut receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
-            #[cfg(feature = "small-symbol")]
-            {
-                let mut buf = [0; 8];
-                for (idx, char) in "dgr123".as_bytes().iter().enumerate() {
-                    buf[idx] = *char;
-                }
+            let (tx, rx) = mpsc::channel();
 
-                assert_eq!(
-                    sender.group().get(&u64::from_le_bytes(buf)).unwrap().len(),
-                    1
-                );
-            }
-
-            #[cfg(not(feature = "small-symbol"))]
-            {
-                assert_eq!(sender.group().get("dgr123").unwrap().len(), 1);
-            }
-
-            let (tx, mut rx) = channel(1);
-
-            sender.send_to(APIMessage(tx), 0);
+            sender.send(APIMessage(tx));
 
             #[cfg(not(feature = "async"))]
             {
@@ -96,12 +80,9 @@ mod test {
             self.symbols.as_slice()
         }
 
-        fn call(&mut self, msg: <Rem as API>::SndMessage, ctx: &mut Context<Rem>) {
-            let mut tx = msg.0;
-
+        fn call(&mut self, msg: &<Rem as API>::SndMessage, ctx: &mut Context<Rem>) {
             ctx.sender().send(StrategyMessage(251));
-
-            tx.send(996u32);
+            msg.0.send(996u32).unwrap();
         }
     }
 

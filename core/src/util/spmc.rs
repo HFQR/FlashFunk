@@ -151,11 +151,11 @@ mod test {
         let mut c1 = c.clone();
         let mut c2 = c.clone();
 
-        assert_eq!(c1.pop().unwrap(), 996);
-        assert_eq!(c2.pop().unwrap(), 996);
+        assert_eq!(c1.pop().unwrap(), &996);
+        assert_eq!(c2.pop().unwrap(), &996);
 
-        assert_eq!(c1.pop().unwrap(), 251);
-        assert_eq!(c2.pop().unwrap(), 251);
+        assert_eq!(c1.pop().unwrap(), &251);
+        assert_eq!(c2.pop().unwrap(), &251);
 
         assert!(c1.pop().is_none());
         assert!(c2.pop().is_none());
@@ -170,12 +170,6 @@ mod test {
         p.push(item.clone()).unwrap();
 
         assert_eq!(Arc::strong_count(&item), 2);
-
-        {
-            let _item1 = c.clone().pop().unwrap();
-            let _item2 = c.clone().pop().unwrap();
-            assert_eq!(Arc::strong_count(&item), 4);
-        }
 
         drop(p);
         assert_eq!(Arc::strong_count(&item), 2);
