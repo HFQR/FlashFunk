@@ -1,7 +1,6 @@
-use core::hash::Hasher;
+use core::hash::{BuildHasherDefault, Hasher};
 
-pub type NoHashMap<K, V> =
-    std::collections::HashMap<K, V, core::hash::BuildHasherDefault<NoHasher>>;
+pub type NoHashMap<K, V> = std::collections::HashMap<K, V, BuildHasherDefault<NoHasher>>;
 
 /// A simple hasher that do hashing by not doing it.
 #[derive(Default)]

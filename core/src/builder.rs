@@ -1,3 +1,5 @@
+use std::hash::BuildHasherDefault;
+
 use crate::util::channel::GroupIndex;
 use alloc::vec::Vec;
 
@@ -11,7 +13,7 @@ use super::{
     worker::Worker,
 };
 
-// 通道容量设为1024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
+// 通道容量设为3024.如果单tick中每个策略的消息数量超过这个数值（或者有消息积压），可以考虑放松此上限。
 // 只影响内存占用。 fixme:  开始启动的时候会导致消息过多 造成pusherror
 const MESSAGE_LIMIT: usize = 3024usize;
 
@@ -73,43 +75,13 @@ where
         let mut receivers = Vec::new();
 
         // groups为与symbols相对应(vec index)的策略们的发送端vec.
-        let mut group = {
-            #[cfg(not(feature = "small-symbol"))]
-            {
-                crate::util::fx_hasher::FxHashMap::default()
-            }
-
-            #[cfg(feature = "small-symbol")]
-            {
-                crate::util::no_hasher::NoHashMap::default()
-            }
-        };
+        let mut group = std::collections::HashMap::<_, _, BuildHasherDefault<A::Hasher>>::default();
 
         for (st_idx, st) in strategies.into_iter().enumerate() {
             st.symbol().iter().for_each(|symbol| {
-                let g = {
-                    #[cfg(feature = "small-symbol")]
-                    {
-                        let bytes = symbol.as_bytes();
-
-                        assert!(bytes.len() <= 8, "small-symbol feature require a symbol with no more than 8 bytes in length.");
-
-                        let mut buf = [0; 8];
-                        for (idx, char) in bytes.iter().enumerate() {
-                            buf[idx] = *char;
-                        }
-
-                        let symbol = u64::from_le_bytes(buf);
-
-                        group.entry(symbol).or_insert_with(GroupIndex::default)
-                    }
-
-                    #[cfg(not(feature = "small-symbol"))]
-                    {
-                        group.entry(*symbol).or_insert_with(GroupIndex::default)
-                    }
-                };
-
+                let g = group
+                    .entry(symbol.clone())
+                    .or_insert_with(GroupIndex::default);
                 assert!(!g.contains(&st_idx));
                 g.push(st_idx);
             });
@@ -127,7 +99,7 @@ where
             Worker::new(st, s2, r1).run_in_core(id);
         }
 
-        let group_senders = GroupSender::<_, N>::new(senders, group);
+        let group_senders = GroupSender::<_, _, _, N>::new(senders, group);
         let group_receivers = GroupReceiver::<_, N>::from_vec(receivers);
 
         // 分配最后一个核心给主线程

@@ -1,8 +1,10 @@
-use core::{hash::Hasher, mem::size_of, ops::BitXor};
+use core::{
+    hash::{BuildHasherDefault, Hasher},
+    mem::size_of,
+    ops::BitXor,
+};
 
-// TODO: figure a way to bring this to alloc.
-pub type FxHashMap<K, V> =
-    std::collections::HashMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
+pub type FxHashMap<K, V> = std::collections::HashMap<K, V, BuildHasherDefault<FxHasher>>;
 
 /// A speedy hash algorithm for use within rustc. The hashmap in liballoc
 /// by default uses SipHash which isn't quite as speedy as we want. In the

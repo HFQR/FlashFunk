@@ -1,5 +1,7 @@
 use core::{
+    cmp::Eq,
     fmt::{Debug, Display, Formatter, Result as FmtResult},
+    hash::{BuildHasherDefault, Hash, Hasher},
     ops::{Deref, DerefMut},
     ptr,
 };
@@ -182,25 +184,20 @@ mod r#async {
     }
 }
 
-#[cfg(feature = "small-symbol")]
-pub(crate) type HashMap<const N: usize> = super::no_hasher::NoHashMap<u64, GroupIndex<N>>;
+type HashMap<K, H, const N: usize> =
+    std::collections::HashMap<K, GroupIndex<N>, BuildHasherDefault<H>>;
 
-#[cfg(feature = "small-symbol")]
-type KeyRef<'a> = &'a u64;
-
-#[cfg(not(feature = "small-symbol"))]
-pub(crate) type HashMap<const N: usize> = super::fx_hasher::FxHashMap<&'static str, GroupIndex<N>>;
-
-#[cfg(not(feature = "small-symbol"))]
-type KeyRef<'a> = &'a str;
-
-pub struct GroupSender<M, const N: usize> {
+pub struct GroupSender<K, H, M, const N: usize> {
     senders: [Sender<M>; N],
-    group: HashMap<N>,
+    group: HashMap<K, H, N>,
 }
 
-impl<M, const N: usize> GroupSender<M, N> {
-    pub fn new(sender: Vec<Sender<M>>, group: HashMap<N>) -> Self {
+impl<K, H, M, const N: usize> GroupSender<K, H, M, N>
+where
+    K: Hash + Eq,
+    H: Hasher + Default,
+{
+    pub fn new(sender: Vec<Sender<M>>, group: HashMap<K, H, N>) -> Self {
         let this = Self {
             senders: sender.try_into().ok().unwrap(),
             group,
@@ -213,7 +210,7 @@ impl<M, const N: usize> GroupSender<M, N> {
     }
 
     #[inline]
-    pub fn group(&self) -> &HashMap<N> {
+    pub fn group(&self) -> &HashMap<K, H, N> {
         &self.group
     }
 
@@ -256,7 +253,7 @@ impl<M, const N: usize> GroupSender<M, N> {
 
     // 发送至指定group. group查找失败失败会返回消息.(group内的sender发送失败会panic)
     #[inline]
-    pub fn try_send_group<MM>(&mut self, mm: MM, symbol: KeyRef<'_>) -> Result<(), ChannelError<MM>>
+    pub fn try_send_group<MM>(&mut self, mm: MM, symbol: &K) -> Result<(), ChannelError<MM>>
     where
         MM: Into<M> + Clone,
     {
@@ -341,7 +338,7 @@ impl<const N: usize> GroupIndex<N> {
         self.iter().any(|i| i == idx)
     }
 
-    fn iter(&self) -> impl Iterator<Item = &usize> {
+    pub fn iter(&self) -> impl Iterator<Item = &usize> {
         // SAFETY:
         //
         // This is safe as self.len is bound checked against N with every GroupIndex::push call.
