@@ -24,9 +24,16 @@ mod test {
 
     struct StrategyMessage(u32);
 
+    #[repr(u64)]
+    #[derive(Debug, Clone, Hash, Eq, Copy, PartialEq, Default)]
+    enum Symbol {
+        #[default]
+        BTCUSDT = 1,
+    }
+
     impl API for Rem {
-        type Symbol = &'static str;
-        type Hasher = crate::util::fx_hasher::FxHasher;
+        type Symbol = Symbol;
+        type Hasher = crate::util::no_hasher::NoHasher;
         type SndMessage = APIMessage;
         type RecvMessage = StrategyMessage;
 
@@ -35,7 +42,7 @@ mod test {
             mut sender: GroupSender<Self::Symbol, Self::Hasher, Self::SndMessage, N>,
             mut receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
-            assert_eq!(sender.group().get("dgr123").unwrap().len(), 1);
+            assert_eq!(sender.group().get(&Symbol::BTCUSDT).unwrap().len(), 1);
 
             let (tx, mut rx) = channel(1);
 
@@ -73,7 +80,7 @@ mod test {
     }
 
     struct RemStrategy {
-        symbols: Vec<&'static str>,
+        symbols: Vec<Symbol>,
     }
 
     impl Strategy<Rem> for RemStrategy {
@@ -93,7 +100,7 @@ mod test {
     #[test]
     fn build() {
         let st = RemStrategy {
-            symbols: vec!["dgr123"],
+            symbols: vec![Symbol::BTCUSDT],
         };
         let api = Rem;
         api.into_builder([st])
