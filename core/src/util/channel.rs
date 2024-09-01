@@ -338,7 +338,7 @@ impl<const N: usize> GroupIndex<N> {
         self.iter().any(|i| i == idx)
     }
 
-    fn iter(&self) -> impl Iterator<Item = &usize> {
+    pub fn iter(&self) -> impl Iterator<Item = &usize> {
         // SAFETY:
         //
         // This is safe as self.len is bound checked against N with every GroupIndex::push call.

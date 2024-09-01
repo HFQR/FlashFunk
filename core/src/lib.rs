@@ -42,11 +42,14 @@ mod test {
             mut sender: GroupSender<Self::Symbol, Self::Hasher, Self::SndMessage, N>,
             mut receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
-            assert_eq!(sender.group().get(&Symbol::BTCUSDT).unwrap().len(), 1);
+            let group = sender.group().get(&Symbol::BTCUSDT).unwrap();
+            assert_eq!(group.len(), 1);
 
+            let idx = group.iter().next().unwrap();
+            assert_eq!(*idx, 0);
             let (tx, mut rx) = channel(1);
 
-            sender.send_to(APIMessage(tx), 0);
+            sender.send_to(APIMessage(tx), *idx);
 
             #[cfg(not(feature = "async"))]
             {
