@@ -5,7 +5,10 @@ use std::io;
 use flashfunk_core::{
     api::API,
     strategy::{Context, Strategy},
-    util::channel::{GroupReceiver, GroupSender},
+    util::{
+        channel::{GroupReceiver, GroupSender},
+        fx_hasher::FxHasher,
+    },
 };
 use futures_util::{SinkExt, StreamExt};
 use xitca_client::{bytes::Bytes, error::Error, http::Version, ws::Message, Client};
@@ -15,12 +18,14 @@ struct WsAPI;
 struct StrategyMessage(String);
 
 impl API for WsAPI {
+    type Symbol = &'static str;
+    type Hasher = FxHasher;
     type SndMessage = Bytes;
     type RecvMessage = StrategyMessage;
 
     fn run<const N: usize>(
         self,
-        mut sender: GroupSender<Self::SndMessage, N>,
+        mut sender: GroupSender<Self::Symbol, Self::Hasher, Self::SndMessage, N>,
         mut receiver: GroupReceiver<Self::RecvMessage, N>,
     ) {
         let res = tokio::runtime::Builder::new_current_thread()
@@ -34,7 +39,7 @@ impl API for WsAPI {
                     .set_pool_capacity(8)
                     .finish();
 
-                let mut ws = client.ws("wss://ws.kraken.com/")?.send().await?;
+                let mut ws = client.ws("wss://ws.kraken.com/").send().await?;
 
                 let msg = ws.next().await.unwrap()?;
                 println!("Connected: {:?}", msg);

@@ -1,6 +1,6 @@
 [package]
 name = "flashfunk-core"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["somewheve <somewheve@gmail.com>"]
 edition = "2021"
 
@@ -12,8 +12,6 @@ harness = false
 [features]
 default = ["std"]
 std = ["core_affinity"]
-# optional feature for small symbol type less than 8 bytes
-small-symbol = []
 async = ["std", "futures-core", "parking"]
 
 [dependencies]

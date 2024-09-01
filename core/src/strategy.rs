@@ -6,7 +6,7 @@ where
     A: API,
     Self: Send,
 {
-    fn symbol(&self) -> &[&'static str];
+    fn symbol(&self) -> &[A::Symbol];
 
     /// Method called when strategy is about to start.
     #[allow(unused_variables)]
@@ -27,7 +27,7 @@ where
     A: API,
 {
     #[inline]
-    fn symbol(&self) -> &[&'static str] {
+    fn symbol(&self) -> &[A::Symbol] {
         (**self).symbol()
     }
 

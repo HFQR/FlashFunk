@@ -25,31 +25,17 @@ mod test {
     struct StrategyMessage(u32);
 
     impl API for Rem {
+        type Symbol = &'static str;
+        type Hasher = crate::util::fx_hasher::FxHasher;
         type SndMessage = APIMessage;
         type RecvMessage = StrategyMessage;
 
         fn run<const N: usize>(
             self,
-            mut sender: GroupSender<Self::SndMessage, N>,
+            mut sender: GroupSender<Self::Symbol, Self::Hasher, Self::SndMessage, N>,
             mut receiver: GroupReceiver<Self::RecvMessage, N>,
         ) {
-            #[cfg(feature = "small-symbol")]
-            {
-                let mut buf = [0; 8];
-                for (idx, char) in "dgr123".as_bytes().iter().enumerate() {
-                    buf[idx] = *char;
-                }
-
-                assert_eq!(
-                    sender.group().get(&u64::from_le_bytes(buf)).unwrap().len(),
-                    1
-                );
-            }
-
-            #[cfg(not(feature = "small-symbol"))]
-            {
-                assert_eq!(sender.group().get("dgr123").unwrap().len(), 1);
-            }
+            assert_eq!(sender.group().get("dgr123").unwrap().len(), 1);
 
             let (tx, mut rx) = channel(1);
 
@@ -91,7 +77,7 @@ mod test {
     }
 
     impl Strategy<Rem> for RemStrategy {
-        fn symbol(&self) -> &[&'static str] {
+        fn symbol(&self) -> &[<Rem as API>::Symbol] {
             self.symbols.as_slice()
         }
 
