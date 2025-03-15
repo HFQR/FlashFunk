@@ -29,7 +29,7 @@ fn main() {
     }
 
     for _ in 0..99 {
-        owned_log::log!(Box::new(MyValue(1)));
+        owned_log::log!(MyValue(1));
     }
 
     let flag = Arc::new(AtomicBool::new(false));
@@ -47,7 +47,7 @@ fn main() {
 
     while time < 8 {
         if flag.swap(false, Ordering::SeqCst) {
-            let value = Box::new(MyValue(2)) as _;
+            let value = MyValue(2);
             let now = std::time::Instant::now();
             owned_log::log!(value);
             total += now.elapsed().as_nanos();
