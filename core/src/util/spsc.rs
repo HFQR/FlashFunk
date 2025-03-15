@@ -11,7 +11,7 @@ use core::{
 
 use alloc::{sync::Arc, vec::Vec};
 
-use cache_padded::CachePadded;
+use crossbeam_utils::CachePadded;
 
 /// The inner representation of a single-producer single-consumer queue.
 struct Inner<T> {

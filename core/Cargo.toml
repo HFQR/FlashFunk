@@ -15,11 +15,8 @@ std = ["core_affinity"]
 async = ["std", "futures-core", "parking"]
 
 [dependencies]
-cache-padded = "1.1.1"
-
-# core affinity support
+crossbeam-utils = "0.8"
 core_affinity = { version = "0.8", optional = true }
-
 # async feature support
 futures-core = { version = "0.3", default-features = false, features = ["alloc"], optional = true }
 parking = { version = "2", optional = true }

@@ -18,7 +18,7 @@ pub static OWNED_LOGGER: OnceCell<Arc<dyn OwnedLog>> = OnceCell::new();
 #[macro_export]
 macro_rules! log {
     ($value: expr) => {
-        ::owned_log::__private::OWNED_LOGGER_LOCAL.with(|logger| logger.log($value));
+        ::owned_log::__private::OWNED_LOGGER_LOCAL.with(|logger| logger.log(Box::new($value)));
     };
 }
 

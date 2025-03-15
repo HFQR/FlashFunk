@@ -8,16 +8,16 @@ pub mod fx_hasher;
 pub mod no_hasher;
 pub mod spin;
 
-pub(super) mod pin_to_core {
+pub mod pin_to_core {
     use alloc::vec::Vec;
 
     #[cfg(feature = "std")]
-    pub(crate) type CoreId = core_affinity::CoreId;
+    pub type CoreId = core_affinity::CoreId;
 
     #[cfg(not(feature = "std"))]
-    pub(crate) struct CoreId;
+    pub struct CoreId;
 
-    pub(crate) fn get_core_ids() -> Vec<CoreId> {
+    pub fn get_core_ids() -> Vec<CoreId> {
         #[cfg(feature = "std")]
         {
             core_affinity::get_core_ids().unwrap()
@@ -29,7 +29,7 @@ pub(super) mod pin_to_core {
         }
     }
 
-    pub(crate) fn pin_to_core(id: Option<CoreId>) {
+    pub fn pin_to_core(id: Option<CoreId>) {
         if let Some(id) = id {
             #[cfg(feature = "std")]
             {
