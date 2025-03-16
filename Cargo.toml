@@ -1,4 +1,5 @@
 [workspace]
+resolver = "1"
 members = [
     "core",
     "log",
@@ -8,14 +9,8 @@ members = [
 [patch.crates-io]
 flashfunk-core = { path = "./core" }
 owned-log = { path = "./log" }
-
-xitca-client = { git = "https://github.com/HFQR/xitca-web.git" }
-xitca-http = { git = "https://github.com/HFQR/xitca-web.git" }
-xitca-io = { git = "https://github.com/HFQR/xitca-web.git" }
-xitca-service = { git = "https://github.com/HFQR/xitca-web.git" }
-xitca-unsafe-collection = { git = "https://github.com/HFQR/xitca-web.git" }
-
-http-ws = { git = "https://github.com/HFQR/xitca-web.git" }
+xitca-client = { git = "https://github.com/HFQR/xitca-web/" }
+http-ws = { git = "https://github.com/HFQR/xitca-web/" }
 
 [profile.release]
 lto = true
